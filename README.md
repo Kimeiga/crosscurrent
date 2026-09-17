@@ -2,7 +2,7 @@
 
 A simultaneous strategy card game for two. Svelte and TypeScript, with solo computer opponents, private online tables, and pass-and-play on one device.
 
-Existing live app: https://crosscurrent-evvi8n.v2.appdeploy.ai/
+Production: https://crosscurrent-delta.vercel.app/
 
 ## Homepage demonstration
 
@@ -32,7 +32,7 @@ npm run build
 npm start
 ```
 
-The production server defaults to `127.0.0.1:3001`. Set `HOST=0.0.0.0` when serving outside the local machine. `PORT` changes the port; `DATA_DIR` changes the SQLite storage directory. Keep that directory on persistent storage. The local adapter uses Server-Sent Events to deliver room updates; AppDeploy uses its WebSocket service. Both use the same room and game logic.
+The production server defaults to `127.0.0.1:3001`. Set `HOST=0.0.0.0` when serving outside the local machine. `PORT` changes the port; `DATA_DIR` changes the SQLite storage directory. Keep that directory on persistent storage. The local adapter uses Server-Sent Events. Vercel uses the same room API with lightweight client polling, and the deployed room service persists state in project-scoped SQLite. AppDeploy can still use its WebSocket adapter when available.
 
 ## Source layout
 
@@ -50,7 +50,7 @@ The production server defaults to `127.0.0.1:3001`. Set `HOST=0.0.0.0` when serv
 npm run preview:homepage
 ```
 
-This writes `docs/homepage-preview.html`, a self-contained HTML preview using the production animation modules. Its play links open the existing live app; it is not an alternate online-game deployment.
+This writes `docs/homepage-preview.html`, a self-contained HTML preview using the production animation modules. Its play links open the production app; it is not an alternate online-game deployment.
 
 ## Verification
 
@@ -58,14 +58,18 @@ The source work passed 45 Node tests, including the twelve-turn animation timeli
 
 The standalone production-animation preview was exercised in Chromium at 320, 375, 390, 1280 and 1440 pixel widths. Checks cover continuous transform movement, stable card nodes, opacity remaining at one, pause/resume, a full loop, reduced motion, and the primary action staying above the fold. Full Svelte build and gameplay browser verification run in the Quality workflow; do not confuse the independent animation preview checks with a full-app test run.
 
-## Deployment status
+## Deployment
 
-Committing this repository does not automatically change the existing AppDeploy site. That site's publication is a separate operation. The homepage update was prepared while AppDeploy's September 17, 2026 daily deployment allowance was exhausted. The existing live app was left unchanged.
+Production is hosted on Vercel:
 
-For AppDeploy, use the existing app ID `crosscurrent-evvi8n`, preserve its SDK and backend configuration, and apply the changed homepage files listed in `docs/appdeploy-homepage-files.json`. Do not replace the live Vite configuration with the standalone local alias. The adapter can also be selected in this repository with `APPDEPLOY=1` when the platform supplies its SDK.
+https://crosscurrent-delta.vercel.app/
+
+Vercel builds the same Vite/Svelte frontend. Solo and local play stay entirely in the browser. Private online tables use the same seat-token protocol but persist through the independent room service in `services/rooms/`; Vercel polls for the opponent's completed state rather than depending on a long-lived WebSocket.
+
+For AppDeploy, `APPDEPLOY=1` leaves its injected client SDK in place. For Vercel, its built-in `VERCEL=1` selects `src/vercel-client.ts`. Local development selects `local/client.ts`.
 
 ## Rules and limitations
 
 Both players start with Ace through King. Every turn, secretly commit one Deploy, Shift or Recall order, then reveal both. Strength is the sum of ranks at each of three fronts. Turns 4, 8 and 12 award 1, 2 and 3 points per won front, followed by highest-card exhaustion. Recall can save its target; tied fronts award nothing. Higher accumulated score after twelve turns wins; equal scores draw. Read `docs/RULES.md` for details.
 
-The rules are symmetric at the start. The AI is not proven optimal. Private invitation links grant access to one seat, so share them only with the intended opponent. Pending opposing orders are not returned to the other client. The AppDeploy storage adapter has no conditional-write primitive: these are casual friend rooms, not a ranked adversarial-concurrency guarantee. Local pass-and-play relies on looking away, not security against inspecting the device.
+The rules are symmetric at the start. The AI is not proven optimal. Private invitation links grant access to one seat, so share them only with the intended opponent. Pending opposing orders are not returned to the other client. The production room service uses compare-and-swap updates per seat so retries are idempotent and simultaneous players do not overwrite each other's pending orders. These remain casual private rooms, not a ranked anti-cheat system. Local pass-and-play relies on looking away, not security against inspecting the device.
