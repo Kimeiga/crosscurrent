@@ -34,7 +34,7 @@ footer { padding-block: 10px 24px; color: var(--muted); font-size: 11px; } .sr-o
 ${css}
 </style></head><body><div class="shell">
 <header class="masthead"><a class="brand" href="https://crosscurrent-evvi8n.v2.appdeploy.ai/">CROSSCURRENT<small>SEA / LAND / AIR</small></a><a class="help" href="https://crosscurrent-evvi8n.v2.appdeploy.ai/">How to play ↗</a></header>
-<main class="landing"><section class="intro"><p class="eyebrow"><span class="status-dot"></span>A SIMULTANEOUS STRATEGY GAME FOR TWO</p><h1>An equal start.<br><span>Make it yours.</span></h1><a class="primary hero-play" href="https://crosscurrent-evvi8n.v2.appdeploy.ai/" title="Open the live Crosscurrent game">Play vs AI <span>→</span></a></section>
+<main class="landing"><section class="intro"><p class="eyebrow"><span class="status-dot"></span>CROSSCURRENT</p><h1>A tactical, balanced card game for two.</h1><a class="primary hero-play" href="https://crosscurrent-evvi8n.v2.appdeploy.ai/" title="Open the live Crosscurrent game">Play vs AI <span>→</span></a></section>
 <section id="game-demo" aria-label="Animated Crosscurrent demonstration"></section>
 <section class="play-options"><div class="section-heading"><h2>Choose your table</h2><span>No account needed</span></div><div class="mode-grid">
 <section class="mode-card"><div class="mode-heading">01 / SOLO</div><h3>Read the machine.</h3><p>Casual · Tactical · Deep</p><a class="primary" href="https://crosscurrent-evvi8n.v2.appdeploy.ai/">Play vs AI <span>→</span></a></section>
