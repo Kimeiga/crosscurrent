@@ -1,0 +1,9 @@
+node_modules
+.git
+.data
+.data-e2e
+test-results
+playwright-report
+*.sqlite*
+.env*
+source-prototype

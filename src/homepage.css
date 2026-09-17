@@ -1,0 +1,17 @@
+/* The primary action precedes the animation in DOM and visual order on phones. */
+.landing { align-items: center; padding-top: clamp(26px, 4vw, 52px); }
+.intro { align-self: center; padding-bottom: 24px; }
+.intro h1 { margin-block: 20px 24px; }
+.hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.hero-play { min-width: 220px; }
+.hero-resume { min-height: 44px; display: inline-flex; align-items: center; gap: 10px; padding: 8px 0; color: var(--accent); font-size: 14px; }
+.landing > .game-demo { margin-bottom: 24px; }
+@media (max-width: 760px) {
+  .landing { padding-top: 18px; }
+  .intro { padding-bottom: 12px; }
+  .intro h1 { font-size: clamp(40px, 11vw, 56px); margin-block: 13px 17px; }
+  .hero-cta { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .hero-play { width: 100%; min-width: 0; }
+  .hero-resume { justify-content: space-between; }
+  .landing > .game-demo { margin-block: 2px 20px; }
+}

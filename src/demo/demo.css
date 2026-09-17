@@ -1,0 +1,46 @@
+/* A fixed-aspect, clipped table. Card opacity never animates. */
+.game-demo { min-width: 0; align-self: center; width: 100%; overflow: hidden; }
+.demo-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin-bottom: 5px; color: var(--muted); font-size: 10px; letter-spacing: .09em; }
+.demo-heading b { color: var(--paper); font-weight: 500; margin-left: 13px; font-variant-numeric: tabular-nums; }
+.demo-controls { display: flex; }
+.demo-controls button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 3px; font-size: 20px; font-weight: 400; letter-spacing: 0; }
+.demo-controls button:hover { color: var(--paper); background: #ffffff0d; }
+.demo-stage { display: block; width: 100%; height: auto; overflow: hidden; isolation: isolate; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.demo-rails { font-size: 11px; font-weight: 500; letter-spacing: .08em; }
+.demo-order { font-size: 10px; font-weight: 400; letter-spacing: .04em; }
+.demo-total { font-size: 24px; font-weight: 550; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.demo-you { fill: #d3dfbe; }
+.demo-them { fill: #d8b7a6; }
+.demo-front-0 > rect { fill: #152630; }
+.demo-front-1 > rect { fill: #2a251f; }
+.demo-front-2 > rect { fill: #242f37; }
+.demo-front-0 { color: #8eafc0; }
+.demo-front-1 { color: #bdab8a; }
+.demo-front-2 { color: #b5cbd8; }
+.demo-divider { stroke: #ffffff14; stroke-width: 1; }
+.demo-front-label { fill: currentColor; font-size: 13px; letter-spacing: .09em; font-weight: 500; }
+.demo-strength { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.demo-strength.demo-scoring { font-weight: 700; }
+.demo-award { font-size: 16px; font-weight: 600; }
+.demo-card-shadow { fill: #00000033; }
+.demo-card-face { stroke: #ffffff50; stroke-width: 1; }
+.demo-card-you .demo-card-face { fill: #e4e9dd; }
+.demo-card-them .demo-card-face { fill: #cabbad; }
+.demo-card-you text { fill: #171c1b; }
+.demo-card-them text { fill: #2d2622; }
+.demo-rank { font-size: 26px; font-weight: 600; letter-spacing: -.05em; }
+.demo-suit { font-size: 16px; }
+.demo-value { font-size: 11px; }
+.demo-footline { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; font-size: 12px; color: var(--muted); }
+.demo-footline > span:first-child { color: var(--paper); }
+.demo-footline > span:last-child { flex-shrink: 0; font-size: 9px; letter-spacing: .04em; }
+.demo-track { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-block: 4px 0; }
+.demo-track span { height: 3px; background: #343a3b; }
+.demo-track .checkpoint { background: #788273; }
+.demo-track .done { background: #8f9d83; }
+.demo-track .current { background: #d3dfbe; }
+@media (max-width: 760px) {
+  .demo-heading { margin-bottom: 0; }
+  .demo-footline { font-size: 11px; min-height: 34px; }
+  .demo-footline > span:last-child { font-size: 8px; }
+}

@@ -1,0 +1,10 @@
+[
+  "src/main.ts",
+  "src/Lobby.svelte",
+  "src/GameDemo.svelte",
+  "src/homepage.css",
+  "src/demo/timeline.ts",
+  "src/demo/player.ts",
+  "src/demo/demo.css",
+  "tests/tests.json"
+]

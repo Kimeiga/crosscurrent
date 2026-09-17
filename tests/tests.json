@@ -1,0 +1,64 @@
+[
+  {
+    "name": "Homepage motion, visible play action and saved solo turn",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": ["full twelve-turn demo", "automatic loop", "transform-only card motion", "clip", "pause and restart", "above-fold Play vs AI", "AI difficulty", "solo turn", "saved game recovery"],
+    "description": "The demo completes a match without blocking the primary action.",
+    "steps": [
+      "Verify Play vs AI is visible before scrolling. Observe cards entering from opposite edges and moving between fronts. Pause the demo, verify it stops, then restart and play it.",
+      "Observe turns 1 through 12, checkpoint scoring and a 10–8 finish followed by an automatic fresh game.",
+      "Choose Casual, click the first Play vs AI, deploy King to Sea and lock. After turn 2, reload, then explicitly Continue saved solo game."
+    ],
+    "expected": "Cards move inside the clipped board without fading. The loop restarts, and the saved solo turn survives reload."
+  },
+  {
+    "name": "Mobile actions, scoring and motion controls",
+    "viewport": "mobile",
+    "covers": ["mobile above-fold action", "no horizontal overflow", "manual demo step", "deploy", "shift", "recall", "payment", "checkpoint exhaustion", "rules and history"],
+    "description": "The mobile home stays compact and all actions retain v0.2 behavior.",
+    "steps": [
+      "Verify Play vs AI is visible before scrolling. Pause the demo and use Next demo turn repeatedly through twelve turns; restart. Verify no page overflow.",
+      "Start solo. Turn 1 deploy King to Sea. Turn 2 Shift King to Land. Turn 3 Recall King. Turn 4 deploy King to Air. Lock each order and wait for the reveal.",
+      "Verify turn 5: Ace, 2 and King are spent. Open Game details, Scoring details and Rules, then close each."
+    ],
+    "expected": "The action stays accessible and movement, payment, scoring, recall and exhaustion are correct."
+  },
+  {
+    "name": "Private online table across two actors",
+    "viewport": "desktop",
+    "covers": ["POST /api/rooms", "POST /api/rooms/:id/join", "POST /api/rooms/:id/view", "POST /api/rooms/:id/order", "POST /api/subscriptions", "POST /api/subscriptions/remove", "invitation acceptance", "pending-order privacy", "realtime updates", "reconnect"],
+    "description": "Two separate browser contexts reveal only after both orders lock.",
+    "steps": [
+      "Actor A clicks Invite a friend and copies the invitation. Actor B opens it in a separate context and clicks Join table.",
+      "A deploys King to Sea and locks. B must see an empty board and no opposing order details. B deploys Queen to Land and locks. Both advance to turn 2.",
+      "Reload both, explicitly Rejoin private table, then open Game details and Reconnect. Each deploys another legal card and locks."
+    ],
+    "expected": "Both recover their correct seat, see the same resolved board, and advance live without leaking pending orders."
+  },
+  {
+    "name": "Local complete game with private handoffs",
+    "viewport": "mobile",
+    "covers": ["local two-player", "handoff concealment", "explicit reveal", "local persistence", "complete twelve-turn game", "play again"],
+    "description": "Local players retain simultaneous orders and can finish a match.",
+    "steps": [
+      "Choose Local 2-player. Player 1 clicks I’m ready, deploys King to Sea and locks. Player 2 sees only a handoff, then an unchanged empty board after clicking I’m ready.",
+      "Player 2 deploys Queen to Land and locks. Click Reveal together, then Next turn. Reload and explicitly Continue local game.",
+      "Complete the remaining eleven turns by selecting legal deployments at each handoff, revealing together and choosing Next turn. At the final result choose Play again."
+    ],
+    "expected": "Selections remain concealed until shared reveal, completed turns persist, and play again starts a new twelve-turn game."
+  },
+  {
+    "name": "Invalid input and room failure keep solo available",
+    "viewport": "desktop",
+    "covers": ["invalid invitation", "incomplete order", "unavailable opening actions", "saved-game replacement confirmation", "POST /api/rooms failure", "error recovery"],
+    "description": "Invalid or failed online actions do not block solo play.",
+    "qa_faults": [{"method": "POST", "path": "/api/rooms", "status": 503, "body_json": {"error": "Table service unavailable"}}],
+    "steps": [
+      "Open Already have an invitation, paste invalid-link and join. Confirm validation. Invite a friend and confirm the injected visible error.",
+      "Start solo. Lock order, Shift and Recall should be disabled on an empty board. Select King only and verify an incomplete order still cannot lock.",
+      "Deploy King to Sea and lock. Return to Lobby, start solo again and choose Keep saved game. Continue saved solo game."
+    ],
+    "expected": "The original turn is retained, validation is visible, and online failure does not prevent solo play."
+  }
+]

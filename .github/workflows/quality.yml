@@ -1,0 +1,38 @@
+name: Quality
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-fund
+      - name: Type and Svelte checks
+        run: npm run check
+      - name: Rules, AI, rooms and persistence tests
+        run: npm test
+      - name: Install test browsers
+        run: npx playwright install --with-deps chromium webkit
+      - name: Browser workflows
+        run: npm run test:e2e
+      - name: Save browser diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-diagnostics
+          path: test-results/
+      - name: Build standalone site
+        run: npm run build
+      - name: Save verified frontend
+        uses: actions/upload-artifact@v4
+        with:
+          name: crosscurrent-frontend
+          path: dist/
