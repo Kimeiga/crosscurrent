@@ -57,7 +57,7 @@ export function mountGameDemo(root: HTMLElement) {
         </g>
       </g>
     </svg>
-    <div class="demo-footline"><span data-phase>Same cards. Equal start.</span><span data-checkpoint>4 / 8 / 12</span></div>
+    <div class="demo-footline"><span data-phase>Same cards. Simultaneous play.</span><span data-checkpoint>4 / 8 / 12</span></div>
     <div class="demo-track" aria-hidden="true">${Array.from({ length: 12 }, (_, i) => `<span data-tick="${i + 1}" class="${(i + 1) % 4 === 0 ? 'checkpoint' : ''}"></span>`).join('')}</div>
     <p class="sr-only">This scripted example finishes 10 points to 8 and repeats. Pause, advance by one turn, or restart with the controls above. Both players start with the same cards. Scoring happens after turns four, eight and twelve.</p>
   `;
