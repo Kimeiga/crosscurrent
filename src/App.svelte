@@ -262,7 +262,7 @@
 <svelte:head>
   <title>Crosscurrent · {screen === 'home' ? 'Sea. Land. Air.' : finished ? 'Final score' : `Turn ${turn} of 12`}</title>
   <meta name="theme-color" content="#101214" />
-  <meta name="description" content="Thirteen cards. Three fronts. One equal start. Play Crosscurrent against the computer, a friend online, or together on one device." />
+  <meta name="description" content="A tactical, balanced card game for two. Play against the computer, a friend online, or together on one device." />
 </svelte:head>
 
 <div class="shell" class:at-table={screen === 'game'}>
