@@ -64,7 +64,7 @@ Production is hosted on Vercel:
 
 https://crosscurrent-delta.vercel.app/
 
-Vercel builds the same Vite/Svelte frontend. Solo and local play stay entirely in the browser. Private online tables use the same seat-token protocol but persist through the independent room service in `services/rooms/`; Vercel polls for the opponent's completed state rather than depending on a long-lived WebSocket.
+Vercel builds the same Vite/Svelte frontend. Solo and local play stay entirely in the browser. Private online tables call the independent HTTPS room service in `services/rooms/` directly using the same seat-token protocol; the Vercel client polls for the opponent's completed state rather than depending on a long-lived WebSocket or serverless proxy.
 
 For AppDeploy, `APPDEPLOY=1` leaves its injected client SDK in place. For Vercel, its built-in `VERCEL=1` selects `src/vercel-client.ts`. Local development selects `local/client.ts`.
 
