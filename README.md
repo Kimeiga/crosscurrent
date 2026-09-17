@@ -2,7 +2,7 @@
 
 A simultaneous strategy card game for two. Svelte and TypeScript, with solo computer opponents, private online tables, and pass-and-play on one device.
 
-Production: https://crosscurrent-delta.vercel.app/
+Production: https://hakanalpay.com/crosscurrent/\n\nVercel mirror: https://crosscurrent-delta.vercel.app/
 
 ## Homepage demonstration
 
