@@ -1,4 +1,7 @@
-/** Vercel transport: normal room HTTP plus lightweight polling for cross-client updates. */
+/** Vercel transport: persistent room HTTP plus lightweight polling. */
+const ROOM_SERVICE =
+  'https://kimeiga--01a0b172475676fa961044fb286e97ea.web.val.run';
+
 let subscribedEntity: string | null = null;
 let emitUpdate: ((message: any) => void) | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -19,12 +22,29 @@ function ensurePoller() {
   }, 1200);
 }
 
-async function request(path: string, method: string, data?: unknown): Promise<{ data: any }> {
+function endpoint(path: string) {
+  if (path === '/api/rooms') return `${ROOM_SERVICE}/rooms`;
+  const match = path.match(/^\/api\/rooms\/([^/]+)\/(view|join|order)$/);
+  if (match) {
+    return `${ROOM_SERVICE}/rooms/${encodeURIComponent(match[1])}/${match[2]}`;
+  }
+  return path;
+}
+
+async function request(
+  path: string,
+  method: string,
+  data?: unknown,
+): Promise<{ data: any }> {
   if (method === 'POST' && path === '/api/subscriptions') {
     const body = (data || {}) as { entity_id?: string };
     subscribedEntity = body.entity_id || null;
     ensurePoller();
-    return { data: { subscription: subscribedEntity ? `poll:${subscribedEntity}` : 'poll' } };
+    return {
+      data: {
+        subscription: subscribedEntity ? `poll:${subscribedEntity}` : 'poll',
+      },
+    };
   }
 
   if (method === 'POST' && path === '/api/subscriptions/remove') {
@@ -32,16 +52,21 @@ async function request(path: string, method: string, data?: unknown): Promise<{ 
     return { data: { ok: true } };
   }
 
-  const response = await fetch(path, {
+  const response = await fetch(endpoint(path), {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    // text/plain keeps these cross-origin room POSTs simple CORS requests.
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
     body: method === 'GET' ? undefined : JSON.stringify(data ?? {}),
     cache: 'no-store',
   });
   const body = await response.json();
   if (!response.ok) {
-    const error = new Error(body.error || `Request failed (${response.status}).`);
-    Object.assign(error, { response: { status: response.status, data: body } });
+    const error = new Error(
+      body.error || `Request failed (${response.status}).`,
+    );
+    Object.assign(error, {
+      response: { status: response.status, data: body },
+    });
     throw error;
   }
   return { data: body };
@@ -65,7 +90,8 @@ export const ws = {
       ready: Promise.resolve(),
       onMessage: (fn: (message: any) => void) => {
         messages.push(fn);
-        emitUpdate = message => messages.forEach(callback => callback(message));
+        emitUpdate = message =>
+          messages.forEach(callback => callback(message));
       },
       onOpen: (fn: () => void) => {
         opens.push(fn);
