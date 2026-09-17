@@ -21,8 +21,8 @@
 
 <main class="landing">
   <section class="intro">
-    <p class="eyebrow"><span class="status-dot"></span> A SIMULTANEOUS STRATEGY GAME FOR TWO</p>
-    <h1>An equal start.<br /><span>Make it yours.</span></h1>
+    <p class="eyebrow"><span class="status-dot"></span> CROSSCURRENT</p>
+    <h1>A tactical, balanced card game for two.</h1>
     <div class="hero-cta">
       <button class="primary hero-play" on:click={onSolo} disabled={busy}>Play vs AI <Icon name="arrow" size={20} /></button>
       {#if savedSolo}<button class="hero-resume" on:click={onResumeSolo} disabled={busy}>Continue saved solo game <span>↗</span></button>{/if}
