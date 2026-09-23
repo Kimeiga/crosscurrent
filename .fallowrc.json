@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "minimumVersion": "3.23.0",
+  "entry": [
+    "backend/**/*.ts",
+    "local/**/*.ts",
+    "services/**/*.ts",
+    "scripts/**/*.mjs",
+    "svelte.config.js"
+  ],
+  "audit": {
+    "gate": "new-only"
+  }
+}
