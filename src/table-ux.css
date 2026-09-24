@@ -29,11 +29,6 @@
 .cc-mini-hand > span { display: grid; place-items: center; min-width: 0; height: 27px; border-block: 1px solid var(--line); color: var(--enemy); font-size: 15px; font-variant-numeric: tabular-nums; }
 .cc-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: 42px minmax(88px, auto) 60px minmax(88px, auto) 42px; gap: 0 4px; }
 .cc-front { display: grid; grid-template-rows: subgrid; grid-row: 1 / span 5; min-width: 0; position: relative; border: 1px solid #ffffff0b; background: var(--lane-bg); border-radius: 3px; transition: box-shadow 140ms; }
-.cc-battlefield { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; transition: opacity 420ms ease; }
-.cc-battlefield.active { opacity: .92; }
-.cc-front > :not(.cc-battlefield) { position: relative; z-index: 1; }
-.cc-front::after { content: ''; position: absolute; z-index: 0; inset: 0; pointer-events: none; background: linear-gradient(180deg, #080a0cb8 0%, transparent 28%, transparent 72%, #080a0cb8 100%); }
-.cc-front.cc-destination .cc-battlefield { filter: saturate(1.2) brightness(1.18); }
 .cc-front.cc-destination { box-shadow: inset 0 0 0 2px var(--accent); }
 .cc-strength { display: flex; justify-content: center; align-items: center; gap: 8px; min-width: 0; font-variant-numeric: tabular-nums; }
 .cc-strength strong { font-size: 32px; font-weight: 500; letter-spacing: -.05em; line-height: 1; }
