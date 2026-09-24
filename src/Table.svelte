@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { crossfade } from 'svelte/transition';
   import Icon from './Icon.svelte';
+  import Front from './Front.svelte';
   import { fronts, orderText, revealFrames } from './ui';
   import { sum, rank, rankName, type State, type TurnRecord, type Action, type ActionKind } from './engine';
 
@@ -162,28 +163,30 @@
 
   <section class="cc-board" aria-label="Sea, Land and Air fronts">
     {#each fronts as front, index}
-      <section class={`cc-front ${front.theme}`} class:cc-destination={destination === index && !!order && !animating} aria-label={`${front.name} front`}>
-        <div class="cc-strength cc-enemy-strength" class:cc-scored={scoredWinner(index, 1 - seat)} aria-label={`${opponentName} strength at ${front.name}: ${sum(theirs.board[index])}`}>
-          {#key sum(theirs.board[index])}<strong>{sum(theirs.board[index])}</strong>{/key}
-        </div>
-        <div class="cc-pieces cc-enemy-zone" aria-label={`Opponent cards at ${front.name}`}>
-          {#each theirs.board[index] as card (card)}
-            <span class="cc-piece cc-enemy-piece" in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }} aria-label={`${rankName(card)}, value ${card}`}><b>{rank(card)}</b><small>{card}</small></span>
-          {/each}
-        </div>
-        <button class="cc-front-target" class:cc-available={choosingFront && !(kind === 'shift' && origin === index)} aria-label={`Choose front ${front.name}`} aria-pressed={destination === index && !!order && !animating} disabled={!choosingFront || (kind === 'shift' && origin === index)} on:click={() => onFront(index)}>
-          <Icon name={front.icon} size={24} /><strong>{front.name}</strong><span class="cc-target-status" aria-hidden="true">{destination === index && order && !animating ? '✓' : choosingFront && !(kind === 'shift' && origin === index) ? '+' : front.code}</span>
-        </button>
-        <div class="cc-pieces cc-own-zone" aria-label={`Your cards at ${front.name}`}>
-          {#each mine.board[index] as card (card)}
-            <button class="cc-piece cc-own-piece" class:cc-picked={selected === card && kind !== 'deploy' && !animating} in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }} disabled={blocked || kind === 'deploy'} on:click={() => onBoardCard(card)} aria-label={`Select your ${rankName(card)} at ${front.name}`} aria-pressed={selected === card && kind !== 'deploy' && !animating}><b>{rank(card)}</b><small>{card}</small></button>
-          {/each}
-        </div>
-        <div class="cc-strength cc-own-strength" class:cc-scored={scoredWinner(index, seat)} aria-label={`${yourName} strength at ${front.name}: ${sum(mine.board[index])}`}>
-          {#key sum(mine.board[index])}<strong>{sum(mine.board[index])}</strong>{/key}
-          {#if order && !animating && projected[index] !== sum(mine.board[index])}<small class="cc-projection">→ {projected[index]}</small>{/if}
-        </div>
-      </section>
+      <Front
+        {front}
+        {index}
+        {mine}
+        {theirs}
+        {seat}
+        {opponentName}
+        {yourName}
+        {kind}
+        {origin}
+        {destination}
+        {order}
+        {animating}
+        {selected}
+        {blocked}
+        {choosingFront}
+        projected={projected[index]}
+        enemyScored={scoredWinner(index, 1 - seat)}
+        ownScored={scoredWinner(index, seat)}
+        {send}
+        {receive}
+        {onFront}
+        {onBoardCard}
+      />
     {/each}
   </section>
   <div class="cc-board-key"><span>↑ {opponentName}</span><span>{checkpoint && !finished ? 'Highest cards leave after scoring' : 'Strength = sum of card values'}</span><span>↓ {yourName}</span></div>
