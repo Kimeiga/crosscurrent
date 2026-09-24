@@ -107,7 +107,7 @@ async function start(front: HTMLElement): Promise<Field | null> {
 }
 
 /** Attach GPU fields to whichever game table is currently mounted. */
-export function installBattlefields(root: ParentNode = document) {
+export function installBattlefields(root: Document | Element = document) {
   const fields = new Map<HTMLElement, Field>();
   let syncing = false;
 
