@@ -1,6 +1,19 @@
-import { battlefieldShader, bufferUsage, gpuRuntime, webgpuContext, type FrontTheme } from "./gpu";
+import {
+  battlefieldShader,
+  GPU_BUFFER_USAGE,
+  gpuRuntime,
+  webgpuContext,
+  type FrontTheme,
+} from "./gpu";
 
-interface Field { stop(): void; }
+interface Field {
+  stop(): void;
+}
+
+interface RunningField {
+  canvas: HTMLCanvasElement;
+  stop: () => void;
+}
 
 function themeOf(front: HTMLElement): FrontTheme {
   if (front.classList.contains("sea")) return "sea";
@@ -12,7 +25,7 @@ function strength(front: HTMLElement, selector: string) {
   return Number(front.querySelector(selector)?.textContent?.trim() ?? 0) || 0;
 }
 
-function state(front: HTMLElement) {
+function currentState(front: HTMLElement) {
   return {
     own: strength(front, ".cc-own-strength strong"),
     enemy: strength(front, ".cc-enemy-strength strong"),
@@ -21,14 +34,51 @@ function state(front: HTMLElement) {
   };
 }
 
+function makeCanvas(front: HTMLElement) {
+  const canvas = document.createElement("canvas");
+  canvas.dataset.crosscurrentBattlefield = "";
+  canvas.setAttribute("aria-hidden", "true");
+  Object.assign(canvas.style, {
+    position: "absolute",
+    inset: "0",
+    width: "100%",
+    height: "100%",
+    pointerEvents: "none",
+    opacity: "0.92",
+    zIndex: "-1",
+  });
+  front.style.isolation = "isolate";
+  front.prepend(canvas);
+  return canvas;
+}
+
+function fitCanvas(canvas: HTMLCanvasElement, front: HTMLElement) {
+  const box = front.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio, 1.5);
+  canvas.width = Math.max(2, Math.round(box.width * dpr));
+  canvas.height = Math.max(2, Math.round(box.height * dpr));
+}
+
+function stopField(
+  canvas: HTMLCanvasElement,
+  resize: ResizeObserver,
+  frame: number,
+) {
+  cancelAnimationFrame(frame);
+  resize.disconnect();
+  canvas.remove();
+}
+
+function themeIndex(front: HTMLElement) {
+  const theme = themeOf(front);
+  return theme === "sea" ? 0 : theme === "land" ? 1 : 2;
+}
+
 async function start(front: HTMLElement): Promise<Field | null> {
   const runtime = await gpuRuntime();
   if (!runtime || !front.isConnected) return null;
 
-  const canvas = document.createElement("canvas");
-  canvas.className = "cc-battlefield";
-  canvas.setAttribute("aria-hidden", "true");
-  front.prepend(canvas);
+  const canvas = makeCanvas(front);
   const context = webgpuContext(canvas);
   if (!context) {
     canvas.remove();
@@ -44,40 +94,47 @@ async function start(front: HTMLElement): Promise<Field | null> {
     fragment: { module, entryPoint: "fs", targets: [{ format }] },
     primitive: { topology: "triangle-list" },
   });
-  const usage = bufferUsage();
-  const uniform = device.createBuffer({ size: 48, usage: usage.uniform | usage.copyDst });
+  const uniform = device.createBuffer({
+    size: 48,
+    usage: GPU_BUFFER_USAGE.uniform | GPU_BUFFER_USAGE.copyDst,
+  });
   const bind = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [{ binding: 0, resource: { buffer: uniform } }],
   });
-  const theme = themeOf(front);
-  const themeIndex = theme === "sea" ? 0 : theme === "land" ? 1 : 2;
+  const theme = themeIndex(front);
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const started = performance.now();
   let frame = 0;
   let stopped = false;
 
-  const fit = () => {
-    const box = front.getBoundingClientRect();
-    const dpr = Math.min(devicePixelRatio, 1.5);
-    const width = Math.max(2, Math.round(box.width * dpr));
-    const height = Math.max(2, Math.round(box.height * dpr));
-    if (canvas.width !== width) canvas.width = width;
-    if (canvas.height !== height) canvas.height = height;
-  };
-  const resize = new ResizeObserver(fit);
+  const resize = new ResizeObserver(() => fitCanvas(canvas, front));
   resize.observe(front);
-  fit();
-  canvas.classList.add("active");
+  fitCanvas(canvas, front);
 
   const draw = (now: number) => {
     if (stopped || !canvas.isConnected) return;
-    const current = state(front);
-    device.queue.writeBuffer(uniform, 0, new Float32Array([
-      canvas.width, canvas.height,
-      (now - started) / 1000, current.own, current.enemy,
-      current.targeted, current.scoring, themeIndex, reduced.matches ? 0 : 1,
-    ]));
+
+    const state = currentState(front);
+    canvas.style.filter = state.targeted
+      ? "saturate(1.2) brightness(1.18)"
+      : "";
+    device.queue.writeBuffer(
+      uniform,
+      0,
+      new Float32Array([
+        canvas.width,
+        canvas.height,
+        (now - started) / 1000,
+        state.own,
+        state.enemy,
+        state.targeted,
+        state.scoring,
+        theme,
+        reduced.matches ? 0 : 1,
+      ]),
+    );
+
     const encoder = device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
       colorAttachments: [{
@@ -99,42 +156,69 @@ async function start(front: HTMLElement): Promise<Field | null> {
   return {
     stop() {
       stopped = true;
-      cancelAnimationFrame(frame);
-      resize.disconnect();
-      canvas.remove();
+      stopField(canvas, resize, frame);
     },
   };
+}
+
+function pruneFields(
+  fronts: Set<HTMLElement>,
+  fields: Map<HTMLElement, Field>,
+) {
+  for (const [front, field] of fields) {
+    if (fronts.has(front)) continue;
+    field.stop();
+    fields.delete(front);
+  }
+}
+
+function attachField(front: HTMLElement, fields: Map<HTMLElement, Field>) {
+  if (
+    fields.has(front) ||
+    front.querySelector("[data-crosscurrent-battlefield]")
+  )
+    return;
+
+  void start(front).then((field) => {
+    if (!field) return;
+    if (!front.isConnected) {
+      field.stop();
+      return;
+    }
+    fields.set(front, field);
+  });
+}
+
+function attachFields(
+  fronts: Set<HTMLElement>,
+  fields: Map<HTMLElement, Field>,
+) {
+  for (const front of fronts) attachField(front, fields);
 }
 
 /** Attach GPU fields to whichever game table is currently mounted. */
 export function installBattlefields(root: Document | Element = document) {
   const fields = new Map<HTMLElement, Field>();
-  let syncing = false;
+  let scheduled = false;
 
   const sync = () => {
-    syncing = false;
+    scheduled = false;
     const fronts = new Set(root.querySelectorAll<HTMLElement>(".cc-front"));
-    for (const [front, field] of fields) {
-      if (fronts.has(front)) continue;
-      field.stop();
-      fields.delete(front);
-    }
-    for (const front of fronts) {
-      if (fields.has(front) || front.querySelector(".cc-battlefield")) continue;
-      void start(front).then((field) => {
-        if (!field) return;
-        if (!front.isConnected) { field.stop(); return; }
-        fields.set(front, field);
-      });
-    }
+    pruneFields(fronts, fields);
+    attachFields(fronts, fields);
   };
+
   const schedule = () => {
-    if (syncing) return;
-    syncing = true;
+    if (scheduled) return;
+    scheduled = true;
     requestAnimationFrame(sync);
   };
+
   const observer = new MutationObserver(schedule);
-  observer.observe(root === document ? document.documentElement : root, { childList: true, subtree: true });
+  observer.observe(
+    root === document ? document.documentElement : root,
+    { childList: true, subtree: true },
+  );
   schedule();
 
   return () => {
