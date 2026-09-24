@@ -69,6 +69,10 @@ function themeIndex(front: HTMLElement) {
   return theme === "sea" ? 0 : theme === "land" ? 1 : 2;
 }
 
+function targetFilter(targeted: number) {
+  return targeted ? "saturate(1.2) brightness(1.18)" : "";
+}
+
 async function start(front: HTMLElement): Promise<Field | null> {
   const runtime = await gpuRuntime();
   if (!runtime || !front.isConnected) return null;
@@ -111,9 +115,7 @@ async function start(front: HTMLElement): Promise<Field | null> {
     if (stopped || !canvas.isConnected) return;
 
     const state = currentState(front);
-    canvas.style.filter = state.targeted
-      ? "saturate(1.2) brightness(1.18)"
-      : "";
+    canvas.style.filter = targetFilter(state.targeted);
     device.queue.writeBuffer(
       uniform,
       0,
@@ -126,7 +128,7 @@ async function start(front: HTMLElement): Promise<Field | null> {
         state.targeted,
         state.scoring,
         theme,
-        reduced.matches ? 0 : 1,
+        Number(!reduced.matches),
       ]),
     );
 
