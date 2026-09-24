@@ -51,10 +51,10 @@ export function webgpuContext(canvas: HTMLCanvasElement): GpuContext | null {
   return canvas.getContext("webgpu") as unknown as GpuContext | null;
 }
 
-export function bufferUsage(): { uniform: number; copyDst: number } {
-  const usage = (globalThis as typeof globalThis & { GPUBufferUsage?: { UNIFORM: number; COPY_DST: number } }).GPUBufferUsage;
-  return { uniform: usage?.UNIFORM ?? 0x40, copyDst: usage?.COPY_DST ?? 0x08 };
-}
+export const GPU_BUFFER_USAGE = {
+  uniform: 0x40,
+  copyDst: 0x08,
+} as const;
 
 export const battlefieldShader = `
 struct Params {
