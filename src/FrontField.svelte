@@ -34,7 +34,7 @@
         primitive: { topology: "triangle-list" },
       });
       const usage = bufferUsage();
-      const uniform = device.createBuffer({ size: 32, usage: usage.uniform | usage.copyDst });
+      const uniform = device.createBuffer({ size: 48, usage: usage.uniform | usage.copyDst });
       const bind = device.createBindGroup({
         layout: pipeline.getBindGroupLayout(0),
         entries: [{ binding: 0, resource: { buffer: uniform } }],
