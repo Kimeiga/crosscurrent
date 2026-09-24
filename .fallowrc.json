@@ -8,6 +8,9 @@
     "scripts/**/*.mjs",
     "svelte.config.js"
   ],
+  "rules": {
+    "duplicate-exports": "warn"
+  },
   "audit": {
     "gate": "new-only"
   }
