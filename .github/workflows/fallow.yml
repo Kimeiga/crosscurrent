@@ -9,12 +9,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: fallow-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   audit:
     if: github.event_name == 'pull_request'
-    concurrency:
-      group: fallow-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
