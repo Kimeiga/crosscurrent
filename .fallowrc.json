@@ -6,7 +6,8 @@
     "local/**/*.ts",
     "services/**/*.ts",
     "scripts/**/*.mjs",
-    "svelte.config.js"
+    "svelte.config.js",
+    "src/main.ts"
   ],
   "audit": {
     "gate": "new-only"
