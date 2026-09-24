@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { crossfade } from 'svelte/transition';
   import Icon from './Icon.svelte';
+  import FrontField from './FrontField.svelte';
   import { fronts, orderText, revealFrames } from './ui';
   import { sum, rank, rankName, type State, type TurnRecord, type Action, type ActionKind } from './engine';
 
@@ -163,6 +164,13 @@
   <section class="cc-board" aria-label="Sea, Land and Air fronts">
     {#each fronts as front, index}
       <section class={`cc-front ${front.theme}`} class:cc-destination={destination === index && !!order && !animating} aria-label={`${front.name} front`}>
+        <FrontField
+          theme={front.theme}
+          own={sum(mine.board[index])}
+          enemy={sum(theirs.board[index])}
+          targeted={destination === index && !!order && !animating}
+          scoring={!!scoringRecord?.checkpoint}
+        />
         <div class="cc-strength cc-enemy-strength" class:cc-scored={scoredWinner(index, 1 - seat)} aria-label={`${opponentName} strength at ${front.name}: ${sum(theirs.board[index])}`}>
           {#key sum(theirs.board[index])}<strong>{sum(theirs.board[index])}</strong>{/key}
         </div>
