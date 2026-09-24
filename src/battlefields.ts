@@ -10,11 +10,6 @@ interface Field {
   stop(): void;
 }
 
-interface RunningField {
-  canvas: HTMLCanvasElement;
-  stop: () => void;
-}
-
 function themeOf(front: HTMLElement): FrontTheme {
   if (front.classList.contains("sea")) return "sea";
   if (front.classList.contains("land")) return "land";
