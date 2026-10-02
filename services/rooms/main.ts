@@ -11,6 +11,9 @@ type Match = { state: State; history: TurnRecord[] };
 type Player = { seat: 0 | 1; hash: string; joined: boolean; orders: Action[] };
 
 const ranks = Array.from({ length: 13 }, (_, i) => i + 1);
+/** v0.3 points per front won at each scoring turn. Clients recompute scoring from the
+ * revealed orders, so an older deployment with v0.2 values still plays correctly. */
+const POINTS = [0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4];
 const labels = ["A", "B", "C"];
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 const sorted = (values: number[]) => values.sort((a, b) => a - b);
@@ -170,8 +173,8 @@ function resolve(state: State, a: Action, b: Action): { state: State; record: Tu
     prepare(state.sides[0], a),
     prepare(state.sides[1], b),
   ] as const;
-  const scored = next % 4 === 0;
-  const points = next / 4;
+  const points = POINTS[next] ?? 0;
+  const scored = points > 0;
   const strengths = prepared.map((entry) => entry.side.board.map(sum)) as [
     number[],
     number[],
@@ -376,7 +379,7 @@ const app = new Hono();
 
 app.get("/health", async (c) => {
   await ensureSchema();
-  return c.json({ ok: true, service: "crosscurrent-rooms" });
+  return c.json({ ok: true, service: "crosscurrent-rooms", rules: "v0.3" });
 });
 
 app.post("/rooms", async (c) => c.json(await createRoom()));

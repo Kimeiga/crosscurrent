@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { initial, actions, prepare, resolve, replay, checkInvariants, isAction, rank, rankName, V02, type Action, type State, type Side } from '../src/engine.ts';
+import { initial, actions, prepare, resolve, replay, checkInvariants, isAction, rank, rankName, outcome, V02, type Action, type State, type Side } from '../src/engine.ts';
 const D = (card: number, front: number): Action => ({ kind: 'deploy', card, front });
 const S = (card: number, front: number): Action => ({ kind: 'shift', card, front });
 const R = (card: number): Action => ({ kind: 'recall', card, front: -1 });
@@ -24,7 +24,7 @@ test('noncheckpoint recall returns target and spends payment', () => {
 });
 test('recalled highest card scores then returns with no replacement exhaustion', () => {
   const s: State = { turn: 3, scores: [0, 0], sides: [{ hand: [1, 3], board: [[2, 13], [], []], spent: [] }, { hand: [1, 3], board: [[12], [], []], spent: [] }] };
-  const next = resolve(s, R(13), D(1, 1)); assert.deepEqual(next.state.scores, [1, 1]); assert.deepEqual(next.state.sides[0].board, [[2], [], []]); assert.deepEqual(next.state.sides[0].hand, [3, 13]); assert.deepEqual(next.state.sides[0].spent, [1]);
+  const next = resolve(s, R(13), D(1, 1), V02); assert.deepEqual(next.state.scores, [1, 1]); assert.deepEqual(next.state.sides[0].board, [[2], [], []]); assert.deepEqual(next.state.sides[0].hand, [3, 13]); assert.deepEqual(next.state.sides[0].spent, [1]);
 });
 test('recalling a lower card does not save the highest', () => {
   const side: Side = { hand: [1, 3], board: [[2, 13], [], []], spent: [] };
@@ -83,5 +83,22 @@ test('golden fixtures agree with original Python v0.2 for 720 turns', () => {
     assert.equal(states.length, 12);
     assert.equal(createHash('sha256').update(canonical(states)).digest('hex'), expected);
   }
+});
+for (const [turn, points] of [[3, 2], [7, 3], [11, 4]]) test(`v0.3 scoring after turn ${turn + 1} awards ${points} per front`, () => {
+  const s: State = { turn, scores: [0, 0], sides: [{ hand: [1], board: [[13], [], []], spent: [] }, { hand: [1], board: [[], [12], []], spent: [] }] };
+  assert.deepEqual(resolve(s, D(1, 2), D(1, 2)).state.scores, [points, points]);
+});
+test('equal points are decided by total strength at the final scoring, then drawn', () => {
+  const level: State = { turn: 11, scores: [5, 5], sides: [
+    { hand: [1, 2], board: [[13], [], [3]], spent: [] },
+    { hand: [5, 6], board: [[4], [2], [3]], spent: [] },
+  ] };
+  const out = resolve(level, D(2, 1), D(5, 1));
+  assert.deepEqual(out.state.scores, [9, 9]);
+  assert.deepEqual(outcome(out.state, [out.record]), { winner: 0, by: 'strength', strength: [18, 14] });
+  const side = (): Side => ({ hand: [1, 2], board: [[13], [], []], spent: [] });
+  const even = resolve({ ...level, sides: [side(), side()] }, D(2, 1), D(2, 1));
+  assert.equal(outcome(even.state, [even.record]).winner, null);
+  assert.equal(outcome(even.state, [even.record], V02).by, 'draw');
 });
 test('rank labels retain exact card values', () => { assert.equal(rank(1), 'A'); assert.equal(rank(13), 'K'); assert.equal(rankName(12), 'Queen'); });

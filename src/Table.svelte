@@ -2,7 +2,7 @@
   import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
   import { crossfade } from 'svelte/transition';
   import Card from './Card.svelte';
-  import { actions as legalActions, prepare, sameAction, sum, rank, rankName, pointsAt, scoringTurns, type Action, type State, type TurnRecord } from './engine';
+  import { actions as legalActions, prepare, sameAction, sum, rank, rankName, pointsAt, scoringTurns, tiebreakStrength, RULES, type Action, type State, type TurnRecord } from './engine';
   import { fronts, orderText, revealFrames, exhaustTargets } from './ui';
 
   type Props = {
@@ -128,6 +128,14 @@
     });
   });
   const last = $derived(history.at(-1));
+  /** Shown only while points are level and the tiebreak could decide the game. */
+  const tiebreak = $derived.by(() => {
+    if (RULES.tiebreak === 'none' || shown.scores[0] !== shown.scores[1] || phase !== 'idle') return null;
+    const recorded = history.filter(entry => entry.turn <= shown.turn);
+    if (RULES.tiebreak === 'total-strength' && !recorded.some(entry => entry.checkpoint)) return null;
+    if (RULES.tiebreak === 'final-strength' && shown.turn < 12) return null;
+    return tiebreakStrength(recorded);
+  });
   const revealing = $derived(phase !== 'idle' && last && last.turn === shown.turn ? last : null);
 
   function choose(from: 'hand' | 'board', card: number) {
@@ -197,6 +205,11 @@
   <section class="scoreline" aria-label="Score">
     <div class="player me"><span class="name">{names[seat]}</span><strong>{shown.scores[seat]}</strong></div>
     <div class="player them"><strong>{shown.scores[1 - seat]}</strong><span class="name">{names[1 - seat]}</span></div>
+    {#if tiebreak}
+      <p class="tiebreak" title={RULES.tiebreak === 'total-strength' ? 'Equal points are decided by total strength summed over every scoring' : 'Equal points are decided by total strength at the last scoring'}>
+        Level on points. Tiebreak strength: {names[seat]} {tiebreak[seat]}, {names[1 - seat]} {tiebreak[1 - seat]}
+      </p>
+    {/if}
   </section>
   <ol class="track" aria-hidden="true">
     {#each Array(12) as _, i}
@@ -211,6 +224,7 @@
     {:else}<b>Turn {nextTurn} of 12</b> · next scoring on turn {upcoming}, {pointsAt(upcoming)} per front{/if}
   </p>
 
+  {#if coach}<p class="coach" role="note">{coach}</p>{/if}
   {#if banner}{@render banner()}{/if}
 
   <section class="side-row them-row" aria-label={`${names[1 - seat]}’s hand`}>
@@ -273,19 +287,17 @@
     </div>
   </section>
 
-  <section class="hand" aria-label="Your hand">
-    {#each me.hand as card (card)}
-      <button class="in-hand" class:picked={pick?.from === 'hand' && pick.card === card}
-        class:pays={(pick?.from === 'board' || (staged && staged.kind !== 'deploy')) && card === payment && phase === 'idle'}
-        class:leaving={staged?.kind === 'deploy' && staged.card === card}
-        disabled={!interactive} onclick={() => choose('hand', card)} aria-label={`${rankName(card)} in your hand`} aria-pressed={pick?.from === 'hand' && pick.card === card}
-        in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }}><Card {card} {seat} /></button>
-    {/each}
-  </section>
 
-  {#if coach || game.turn < 12 || phase !== 'idle' || footer}
-    <div class="dock">
-      {#if coach}<p class="coach" role="note">{coach}</p>{/if}
+  <div class="dock">
+    <section class="hand" aria-label="Your hand">
+      {#each me.hand as card (card)}
+        <button class="in-hand" class:picked={pick?.from === 'hand' && pick.card === card}
+          class:pays={(pick?.from === 'board' || (staged && staged.kind !== 'deploy')) && card === payment && phase === 'idle'}
+          class:leaving={staged?.kind === 'deploy' && staged.card === card}
+          disabled={!interactive} onclick={() => choose('hand', card)} aria-label={`${rankName(card)} in your hand`} aria-pressed={pick?.from === 'hand' && pick.card === card}
+          in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }}><Card {card} {seat} /></button>
+      {/each}
+    </section>
       {#if footer && phase === 'idle'}
         <div class="command">{@render footer()}</div>
       {:else if game.turn < 12 || phase !== 'idle'}
@@ -294,7 +306,7 @@
             <p>{instruction}</p>
             {#if revealing}
               <small>{names[seat]}: {orderText(revealing.actions[seat])} · {names[1 - seat]}: {orderText(revealing.actions[1 - seat])}</small>
-            {:else if detail}<small>{detail}</small>{/if}
+            {:else if detail}<small class:recap={detail.startsWith('Last turn')}>{detail}</small>{/if}
           </div>
           <div class="do">
             {#if pick?.from === 'board' && interactive}
@@ -307,8 +319,7 @@
           </div>
         </div>
       {/if}
-    </div>
-  {/if}
+  </div>
 
   {#if history.length}
     <details class="log">
@@ -329,6 +340,7 @@
   .player strong { font-family: var(--serif); font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
   .player .name { font-size: 15px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .player.them { justify-content: flex-end; }
+  .tiebreak { grid-column: 1 / -1; font-size: 13px; color: var(--ink-2); }
   .player.me strong { color: var(--mine); }
   .player.them strong { color: var(--theirs); }
   .track { list-style: none; display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin: 0; padding: 0; }
@@ -402,11 +414,11 @@
   .in-hand.leaving { opacity: .4; }
   .in-hand:disabled { cursor: default; }
 
-  .dock { position: sticky; bottom: 0; z-index: 3; display: grid; gap: 8px; padding: 10px 0 max(10px, env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line); }
+  .dock { position: sticky; bottom: 0; z-index: 3; display: grid; gap: 8px; padding: 10px 0 max(10px, env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line); box-shadow: 0 -10px 16px -12px #2a20101f; }
   .coach { padding: 10px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 15px; line-height: 1.4; }
   @media (max-width: 640px) { .coach { font-size: 14px; padding: 8px 12px; } }
   .command { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .say { min-width: 0; }
+  .say { min-width: 0; flex: 1 1 160px; }
   .say p { font-size: 16px; font-weight: 600; line-height: 1.3; }
   .say small { display: block; margin-top: 2px; font-size: 13px; color: var(--ink-2); }
   .do { display: flex; gap: 6px; align-items: center; flex-shrink: 0; margin-left: auto; }
@@ -436,6 +448,13 @@
     .log li { grid-template-columns: 22px 1fr 1fr; }
     .log .pts { grid-column: 2 / -1; }
     .lock { min-width: 96px; }
+  }
+  @media (max-width: 640px) and (max-height: 760px) {
+    .in-hand :global(.card) { --ch: 54px; --rs: 20px; --ss: 12px; --bs: 20px; padding-top: 4px; }
+    .hand { gap: 4px 6px; }
+    .front { grid-template-rows: minmax(46px, auto) 24px 34px 24px minmax(46px, auto); }
+    .say small.recap { display: none; }
+    .dock { gap: 6px; padding-top: 8px; }
   }
   @media (max-width: 370px) {
     .pile :global(.card.sm) { --cw: 30px; --ch: 42px; --rs: 14px; }

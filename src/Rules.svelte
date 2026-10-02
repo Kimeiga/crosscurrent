@@ -20,7 +20,7 @@
   <p>Paid cards are spent for the rest of the game. You can’t pass.</p>
 
   <h3>Scoring</h3>
-  <p>Turns 4, 8 and 12 score. Each front goes to whoever is stronger there: <b>1 point</b> per front on turn 4, <b>2</b> on turn 8 and <b>3</b> on turn 12. A tied front scores nothing, and winning by more scores no more.</p>
+  <p>Turns 4, 8 and 12 score. Each front goes to whoever is stronger there: <b>2 points</b> per front on turn 4, <b>3</b> on turn 8 and <b>4</b> on turn 12. A tied front scores nothing, and winning by more scores no more.</p>
   <p>After each scoring, both players lose their <b>highest card on every front they occupy</b>, win or lose. Those cards are spent. A recalled card goes back to your hand instead; if it was your highest card there, nothing else is removed.</p>
 
   <h3>Winning</h3>
@@ -28,7 +28,7 @@
 
   <h3>Worth knowing</h3>
   <ul>
-    <li>The last scoring is worth half of all the points. Early fronts matter, but saving strength matters too.</li>
+    <li>Later scorings are worth more, so saving strength matters, but the first two are still more than half of all points.</li>
     <li>Your opponent gets one order per turn, so they can change at most one or two fronts. On scoring turns the app marks a lead <b>safe</b> when no single order can overturn it.</li>
     <li>Your highest card on a front is spent after scoring. Win with as little as you can.</li>
   </ul>

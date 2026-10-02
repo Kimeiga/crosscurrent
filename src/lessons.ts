@@ -37,11 +37,13 @@ export function bestReply(game: State, mine: Action): Action {
   return best!;
 }
 
-/** A reachable final-turn position from the original research: one shift wins against all 18 replies. */
+/** A final-turn position reached in strong self-play under the current rules, found by
+ * research/sim `puzzles`: exactly one of the player's 24 orders wins against all 21 replies. */
 export const puzzleOrders: [Action, Action][] = [
-  [D(13, 2), D(11, 2)], [D(12, 2), D(3, 2)], [D(8, 0), D(4, 2)], [D(3, 1), D(6, 1)], [R(12), R(4)], [D(2, 2), D(9, 0)],
-  [D(6, 0), D(12, 1)], [D(5, 0), D(10, 2)], [S(5, 1), D(2, 0)], [D(12, 0), S(2, 2)], [D(9, 1), D(7, 0)],
+  [D(8, 1), D(8, 1)], [D(9, 2), D(7, 1)], [D(7, 2), D(9, 2)], [D(10, 1), D(12, 2)], [D(6, 2), D(13, 1)], [D(12, 1), D(4, 2)],
+  [D(13, 2), D(6, 1)], [R(13), D(1, 0)], [D(13, 1), D(5, 0)], [D(11, 2), D(10, 1)], [S(6, 1), S(4, 0)],
 ];
+export const puzzleAnswer = S(11, 0);
 
 export const lessons: Lesson[] = [
   {
@@ -57,14 +59,14 @@ export const lessons: Lesson[] = [
     start: () => position(3, [0, 0],
       side([1, 2, 3, 5, 6, 7, 10, 11, 12, 13], [[8], [9], [4]], []),
       side([1, 2, 3, 4, 7, 8, 9, 11, 12, 13], [[10], [6], [5]], [])),
-    before: 'Turn 4 scores: 1 point for each front where you are stronger. You trail on Right, 4 to 5. Deploy your 3 there.',
+    before: 'Turn 4 scores: 2 points for each front where you are stronger. You trail on Right, 4 to 5. Deploy your 3 there.',
     allowed: a => is(a, D(3, 2)),
     reply: () => D(2, 1),
-    after: 'You won Middle and Right, 2 points to 1. Then each player’s highest card on every front was spent, win or lose. Big cards played early don’t last.',
+    after: 'You won Middle and Right, 4 points to 2. Then each player’s highest card on every front was spent, win or lose. Big cards played early don’t last.',
   },
   {
     title: 'Shift',
-    start: () => position(6, [1, 2],
+    start: () => position(6, [2, 4],
       side([3, 4, 5, 6, 8, 9, 11, 13], [[10], [7, 12], []], [1, 2]),
       side([2, 4, 7, 8, 9, 10, 12, 13], [[11], [5], [6]], [1, 3])),
     before: 'Shift moves one of your cards to another front. You have more than you need on Middle (19 to 5). Tap your 7 there, then tap Right.',
@@ -74,22 +76,22 @@ export const lessons: Lesson[] = [
   },
   {
     title: 'Recall',
-    start: () => position(7, [1, 2],
+    start: () => position(7, [2, 4],
       side([4, 6, 7, 8, 10, 11], [[9], [12], [5, 13]], [1, 2, 3]),
       side([3, 4, 5, 6, 7, 9, 12, 13], [[11], [8], [10]], [1, 2])),
-    before: 'Turn 8 scores 2 per front. Your King on Right is dashed: it would be spent after scoring. Tap it, then Recall. It still counts this turn, then returns to your hand.',
+    before: 'Turn 8 scores 3 per front. Your King on Right is dashed: it would be spent after scoring. Tap it, then Recall. It still counts this turn, then returns to your hand.',
     allowed: a => is(a, R(13)),
     reply: () => D(3, 0),
-    after: 'You won Middle and Right for 4 points. The King counted, then came home, and because it was your highest card there, your 5 stayed too.',
+    after: 'You won Middle and Right for 6 points. The King counted, then came home, and because it was your highest card there, your 5 stayed too.',
   },
   {
     title: 'The last turn',
-    start: () => { const m = replay(puzzleOrders); return { game: m.state, history: [] }; },
-    before: 'Last turn: 3 points per front, and you trail 4 to 5. The computer sees what you see and gets one order too. Find an order that wins whatever it does.',
+    start: () => { const m = replay(puzzleOrders); return { game: m.state, history: m.history }; },
+    before: 'Last turn: 4 points per front, and you trail 5 to 8, so you need two fronts. The computer sees what you see and gets one order too. Find the only order that wins whatever it does.',
     allowed: null,
     check: (game, record) => outcome(game, [record]).winner === 0,
-    hint: 'they can change only one front. Be ahead on two fronts by more than any one of their orders can swing.',
-    after: 'That’s it. With one order they could overturn only one front, and you were safely ahead on two.',
-    retry: 'Their best reply beat that order. One answer: shift your 9 from Middle to Right. Then you lead Left 12–7, Middle 5–0 and Right 9–5, and no single order of theirs can overturn two of them.',
+    hint: 'their one order can take back only one front. Can you lead on all three?',
+    after: 'That’s it. You lead all three fronts, so their one order can take back only one of them, and two fronts win the game.',
+    retry: 'Their best reply beat that order. The only answer: shift your Jack from Right to Left. Then you lead 11–9, 27–23 and 7–0, and no single order can overturn two fronts.',
   },
 ];

@@ -33,7 +33,7 @@ test('solo game: deploy, shift, recall, scoring, resume and a full game', async 
   await turn(page, 4);
   await expect(page.getByRole('button', { name: 'King in your hand', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '2 in your hand', exact: true })).toHaveCount(0);
-  await expect(page.locator('.stakes')).toContainText('scores 1 per front');
+  await expect(page.locator('.stakes')).toContainText('scores 2 per front');
   await deploy(page, 'King', 'Right');
   await turn(page, 5);
   await page.locator('.log > summary').click();
@@ -154,8 +154,14 @@ test('the guided lessons teach each order and end with the final-turn puzzle', a
   await page.getByRole('button', { name: 'Lock in', exact: true }).click();
   await idle(page);
   await page.getByRole('button', { name: 'Next lesson', exact: true }).click();
-  await page.getByRole('button', { name: 'Your 9 on Middle', exact: true }).click();
-  await page.getByRole('button', { name: /^Right front/ }).click();
+  await page.getByRole('button', { name: 'Your 6 on Middle', exact: true }).click();
+  await page.getByRole('button', { name: /^Left front/ }).click();
+  await page.getByRole('button', { name: 'Lock in', exact: true }).click();
+  await idle(page);
+  await expect(page.locator('.coach')).toContainText('shift your Jack from Right to Left');
+  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await page.getByRole('button', { name: 'Your Jack on Right', exact: true }).click();
+  await page.getByRole('button', { name: /^Left front/ }).click();
   await page.getByRole('button', { name: 'Lock in', exact: true }).click();
   await idle(page);
   await page.getByRole('button', { name: 'Finish', exact: true }).click();

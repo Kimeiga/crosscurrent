@@ -1,22 +1,34 @@
 # Crosscurrent
 
-A simultaneous strategy card game for two. Svelte and TypeScript, with solo computer opponents, private online tables, and pass-and-play on one device.
+A card game for two with no shuffle and no dice. Both players hold the same thirteen cards, choose one order in secret each turn, and reveal together. Play the computer, a friend online, or pass and play on one device.
 
-Production: https://hakanalpay.com/crosscurrent/\n\nVercel mirror: https://crosscurrent-delta.vercel.app/
+Production: https://hakanalpay.com/crosscurrent/ · Vercel mirror: https://crosscurrent-delta.vercel.app/
 
-## Design context
+## The game in brief
 
-Crosscurrent was designed from a broader investigation into one-game fairness, strategic depth, simultaneous play, and skill expression in two-player card games. The repository preserves that research so future rule or AI changes can be evaluated against the original goal rather than only against the current implementation.
+Each player has one suit, Ace (1) to King (13). There are three fronts: Left, Middle and Right. Every turn both players secretly choose one order: **Deploy** a card to a front, **Shift** a deployed card to another front, or **Recall** a deployed card to hand. Shift and Recall cost your lowest card in hand. Turns 4, 8 and 12 score 2, 3 and 4 points for each front where you are stronger; afterwards each player's highest card on every front they occupy is spent. Most points after turn 12 wins; equal points go to the player with more total strength at the last scoring. Full rules: [docs/RULES.md](docs/RULES.md).
 
-Start with [docs/README.md](docs/README.md). The full history is in [docs/RESEARCH.md](docs/RESEARCH.md), exact historical measurements are in [docs/BENCHMARKS.json](docs/BENCHMARKS.json), and the mechanic-by-mechanic rationale is in [docs/DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md).
+## Design and research
 
-## Homepage demonstration
+Crosscurrent tests a specific hypothesis: an original two-player card game can be structurally fair from the first game, have no deal luck, offer many meaningful choices, and let better reasoning win measurably often, so that even a single game is evidence of who played better.
 
-The homepage plays a complete scripted match using the same v0.2 rules engine as the game. All twelve turns, all three scoring checkpoints, shifts, recalls and highest-card exhaustion are included. The example ends 10–8, sweeps the table, and repeats every 50.35 seconds. It is an illustration, not a claim of optimal play.
+- [docs/RESEARCH.md](docs/RESEARCH.md): the full record, from the original Piquet, Schnapsen and GOPS comparisons to the 2026 audit and the v0.3 rule change.
+- [docs/DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md): why each mechanic exists.
+- [docs/EVALUATION.md](docs/EVALUATION.md) and [docs/BENCHMARKS.json](docs/BENCHMARKS.json): how changes are judged and every measurement so far.
+- [research/](research/): the Rust simulator, exact reduced-game solver and raw logs behind the numbers.
 
-Twenty-six persistent SVG card nodes move by transforms inside a clipped stage. Deployments enter from the top or bottom, shifts travel between fronts, recalls return toward their owner, and discarded cards leave sideways. Cards do not cross-fade. The primary Play vs AI button precedes the demonstration on mobile.
+Headline measurements behind v0.3 (simulations with search bots, 1,200 games for the main ladder; see RESEARCH.md for intervals and caveats): against a bot with a quarter of its search, the stronger bot won outright 65% of v0.2 games with 14% draws, and about 78% of v0.3 games with draws under 1%. None of the computer opponents is claimed to be optimal.
 
-Pause, next-turn and restart controls work by touch or keyboard. Reduced-motion preferences start the example paused at a scoring position. Playback stops while the tab is hidden or the demonstration is offscreen, and all listeners and animation frames are cleaned up when leaving the lobby.
+## The app
+
+- **Start screen:** what the game is in one sentence, the three ways to play, a guided lesson, and a complete example game playing in the corner.
+- **Learn by playing:** five one-turn lessons on real positions (secret orders, scoring and spent cards, Shift, Recall) ending with a last-turn puzzle that has exactly one winning order.
+- **Table:** tap a card in your hand or on the board, then a front. The table previews your new strengths, marks the payment card for Shift and Recall, shows which cards will be spent after a scoring, and marks leads no single opposing order can overturn.
+- **Computer:** Easy, Medium and Hard run the same tree search with 300, 3,000 and 24,000 iterations in a Web Worker and solve the last turn exactly. It only ever sees the public position.
+- **Online:** one tap creates a private table and a link to share; your friend joins with one tap. Orders stay on the server, hidden, until both are in.
+- **Pass and play:** handoff screens keep each player's order private until both reveal together.
+
+Light and dark themes follow the system setting. Phone and desktop layouts are both first-class; on phones your hand and the Lock in button stay at the bottom of the screen.
 
 ## Run locally
 
@@ -24,58 +36,32 @@ Use Node.js 22.16 or later. The standalone server uses Node's built-in SQLite su
 
 ```sh
 npm install
-npm run dev
-```
-
-Open the Vite URL printed in the terminal. The development launcher starts the frontend and room service together.
-
-```sh
-npm run check
-npm test
+npm run dev        # frontend and room service together
+npm run check      # Svelte and TypeScript checks
+npm test           # rules, AI, lessons, rooms, persistence and demo tests
 npx playwright install chromium webkit
-npm run test:e2e
-npm run build
-npm start
+npm run test:e2e   # browser workflows on desktop Chrome and iPhone WebKit
+npm run build && npm start
 ```
 
-The production server defaults to `127.0.0.1:3001`. Set `HOST=0.0.0.0` when serving outside the local machine. `PORT` changes the port; `DATA_DIR` changes the SQLite storage directory. Keep that directory on persistent storage. The local adapter uses Server-Sent Events. Vercel uses the same room API with lightweight client polling, and the deployed room service persists state in project-scoped SQLite. AppDeploy can still use its WebSocket adapter when available.
+The production server defaults to `127.0.0.1:3001`. Set `HOST=0.0.0.0` when serving outside the local machine; `PORT` changes the port and `DATA_DIR` the SQLite directory (keep it on persistent storage).
 
 ## Source layout
 
-- `src/engine.ts`: immutable rules shared by UI, AI and server.
-- `src/ai.ts`, `src/ai.worker.ts`: public-position computer opponents, calculated off the main thread.
-- `src/App.svelte`, `src/Table.svelte`: solo, local and online play, saved games, staged reveals and rules.
-- `src/Lobby.svelte`, `src/GameDemo.svelte`, `src/demo/`: homepage and full-match animation.
-- `backend/`: AppDeploy adapter and authenticated room service.
-- `local/`: standalone HTTP, SQLite and realtime adapters.
-- `tests/`: engine, AI, room, persistence, demo and browser tests.
+- `src/engine.ts`: the rules, shared by the UI, the computer and the servers. Scoring values and the tiebreak are a `Rules` parameter; `V02` keeps the original values for the reference fixtures.
+- `src/ai.ts`, `src/ai/`: the computer opponent: a bitmask copy of the engine, simultaneous-move tree search and an exact matrix-game solver.
+- `src/App.svelte`, `src/Home.svelte`, `src/Table.svelte`, `src/Tutorial.svelte`, `src/lessons.ts`, `src/Rules.svelte`: the app.
+- `src/demo/`: the start-screen example game (26 persistent SVG cards moved by transforms).
+- `backend/`, `local/`, `services/rooms/`: room services for AppDeploy, the standalone server and the hosted Val Town deployment.
+- `research/`: the simulator, solver and experiment logs.
+- `tests/`: unit, reference-fixture and browser tests.
 
-## Preview the homepage independently
+## Online play and deployment
 
-```sh
-npm run preview:homepage
-```
+The Vercel build calls the room service in `services/rooms/` (deployed on Val Town) directly and polls for the opponent's order. The room service enforces hidden orders, turn order and legality; both clients recompute the score from the revealed orders, so a room service still on v0.2 scoring keeps working. Redeploying `services/rooms/main.ts` brings its own score fields up to date.
 
-This writes `docs/homepage-preview.html`, a self-contained HTML preview using the production animation modules. Its play links open the production app; it is not an alternate online-game deployment.
+Private invitation links grant one seat, so share them only with your opponent. These are casual private tables, not a ranked anti-cheat system. Pass and play relies on players looking away.
 
 ## Verification
 
-The source work passed 45 Node tests, including the twelve-turn animation timeline and 720 original Python reference transitions. The reference states are stored as per-match SHA-256 digests with their exact action transcripts, not regenerated expectations from the TypeScript engine. See `tests/GOLDEN.md`.
-
-The standalone production-animation preview was exercised in Chromium at 320, 375, 390, 1280 and 1440 pixel widths. Checks cover continuous transform movement, stable card nodes, opacity remaining at one, pause/resume, a full loop, reduced motion, and the primary action staying above the fold. Full Svelte build and gameplay browser verification run in the Quality workflow; do not confuse the independent animation preview checks with a full-app test run.
-
-## Deployment
-
-Production is hosted on Vercel:
-
-https://crosscurrent-delta.vercel.app/
-
-Vercel builds the same Vite/Svelte frontend. Solo and local play stay entirely in the browser. Private online tables call the independent HTTPS room service in `services/rooms/` directly using the same seat-token protocol; the Vercel client polls for the opponent's completed state rather than depending on a long-lived WebSocket or serverless proxy.
-
-For AppDeploy, `APPDEPLOY=1` leaves its injected client SDK in place. For Vercel, its built-in `VERCEL=1` selects `src/vercel-client.ts`. Local development selects `local/client.ts`.
-
-## Rules and limitations
-
-Both players start with Ace through King. Every turn, secretly commit one Deploy, Shift or Recall order, then reveal both. Strength is the sum of ranks at each of three fronts. Turns 4, 8 and 12 award 1, 2 and 3 points per won front, followed by highest-card exhaustion. Recall can save its target; tied fronts award nothing. Higher accumulated score after twelve turns wins; equal scores draw. Read `docs/RULES.md` for details.
-
-The rules are symmetric at the start. The AI is not proven optimal. Private invitation links grant access to one seat, so share them only with the intended opponent. Pending opposing orders are not returned to the other client. The production room service uses compare-and-swap updates per seat so retries are idempotent and simultaneous players do not overwrite each other's pending orders. These remain casual private rooms, not a ranked anti-cheat system. Local pass-and-play relies on looking away, not security against inspecting the device.
+`npm test` replays the 60 original Python reference transcripts (720 transitions, SHA-256 digests of the expected states; see `tests/GOLDEN.md`) under the v0.2 values, checks the AI's bitmask engine against the reference engine on 2,000 random games, checks the exact final-turn solver against full resolution, and verifies every tutorial position, including that the final puzzle has exactly one winning order. The browser suite covers a full solo game with Shift, Recall and resuming, online tables that hide pending orders, pass and play, failure handling, the lessons and the start-screen animation.

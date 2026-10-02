@@ -37,8 +37,8 @@ test('full match uses persistent moving cards, pauses, ends and loops', async ({
   await page.getByRole('button', { name: 'Play demo', exact: true }).click();
   await page.clock.runFor(47000);
   await expect(page.locator('.game-demo')).toHaveAttribute('data-phase', 'winner');
-  await expect(page.locator('[data-score="0"]')).toHaveText('10');
-  await expect(page.locator('[data-score="1"]')).toHaveText('8');
+  await expect(page.locator('[data-score="0"]')).toHaveText('15');
+  await expect(page.locator('[data-score="1"]')).toHaveText('12');
   await page.clock.runFor(4300);
   await expect(page.locator('.game-demo')).toHaveAttribute('data-turn', '1');
   await expect(page.locator('[data-score="0"]')).toHaveText('0');

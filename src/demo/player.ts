@@ -53,7 +53,7 @@ export function mountGameDemo(root: HTMLElement) {
     </svg>
     <div class="demo-footline"><span data-phase>Same cards, secret orders.</span><span data-checkpoint>Scores on turns 4, 8, 12</span></div>
     <div class="demo-track" aria-hidden="true">${Array.from({ length: 12 }, (_, i) => `<span data-tick="${i + 1}" class="${pointsAt(i + 1) ? 'checkpoint' : ''}"></span>`).join('')}</div>
-    <p class="sr-only">This scripted example finishes 10 points to 8 and repeats. Pause, advance by one turn, or restart with the controls above. Both players start with the same cards. Scoring happens after turns four, eight and twelve.</p>
+    <p class="sr-only">This scripted example finishes ${timeline.final.scores[0]} points to ${timeline.final.scores[1]} and repeats. Pause, advance by one turn, or restart with the controls above. Both players start with the same cards. Scoring happens after turns four, eight and twelve.</p>
   `;
   const get = <T extends Element>(selector: string) => root.querySelector<T>(selector)!;
   const cards = new Map(cardIds.map(({ id }) => [id, get<SVGGElement>(`[data-card="${id}"]`)]));

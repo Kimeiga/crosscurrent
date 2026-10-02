@@ -69,3 +69,68 @@ base+noshift                     mctsx:4000 vs mctsx:4000     n=400   A=0.526±0
     final turns that were sequential: 0 of 400
 base+noshift                 final turn via mctsx:4000 n=400 saddle=76.8% (already decided 63.8%)  mean guess width=0.201  mixed support=2.03 of 13.0 actions  NE-minus-random=0.377  width hist [("0.0", 307), ("0.5", 25), ("1.0", 68)]
 === base+norecall
+base+norecall                    mctsx:4000 vs mctsx:1000     n=400   A=0.744±0.039  W/D/L 273/49/78  draw=12.2%  seat0=0.511  margin=+1.98  tA=0.16s tB=0.03s
+    decided=351 winner behind after cp1=37.3% cp2=26.2%  lead changes/game=0.71  final cp could decide=100.0%  A kinds D/S/R=91/9/0%  B kinds=89/11/0%
+base+norecall                    mctsx:4000 vs mctsx:4000     n=400   A=0.468±0.045  W/D/L 155/64/181  draw=16.0%  seat0=0.495  margin=-0.19  tA=0.17s tB=0.17s
+    decided=336 winner behind after cp1=35.7% cp2=30.1%  lead changes/game=0.73  final cp could decide=100.0%  A kinds D/S/R=91/9/0%  B kinds=90/10/0%
+    final turns that were sequential: 0 of 400
+base+norecall                final turn via mctsx:4000 n=400 saddle=49.8% (already decided 40.8%)  mean guess width=0.430  mixed support=2.50 of 17.9 actions  NE-minus-random=0.305  width hist [("0.0", 199), ("0.5", 58), ("1.0", 143)]
+=== base+initlow
+base+initlow                     mctsx:4000 vs mctsx:1000     n=400   A=0.777±0.036  W/D/L 283/56/61  draw=14.0%  seat0=0.482  margin=+2.62  tA=0.14s tB=0.03s
+    decided=344 winner behind after cp1=36.3% cp2=25.0%  lead changes/game=0.69  final cp could decide=100.0%  A kinds D/S/R=85/12/3%  B kinds=82/14/4%
+base+initlow                     mctsx:4000 vs mctsx:4000     n=400   A=0.476±0.046  W/D/L 163/55/182  draw=13.8%  seat0=0.514  margin=-0.07  tA=0.17s tB=0.17s
+    decided=345 winner behind after cp1=37.1% cp2=28.4%  lead changes/game=0.74  final cp could decide=100.0%  A kinds D/S/R=85/12/3%  B kinds=86/12/2%
+    final turns that were sequential: 356 of 400
+base+initlow                 final turn via mctsx:4000 n=44 saddle=59.1% (already decided 50.0%)  mean guess width=0.364  mixed support=2.17 of 22.8 actions  NE-minus-random=0.259  width hist [("0.0", 26), ("0.5", 4), ("1.0", 14)]
+=== base+initlow+tbfinal
+base+initlow+tbfinal             mctsx:4000 vs mctsx:1000     n=400   A=0.776±0.041  W/D/L 310/1/89  draw=0.2%  seat0=0.519  margin=+2.35  tA=0.27s tB=0.06s
+    decided=399 winner behind after cp1=38.8% cp2=31.6%  lead changes/game=0.50  final cp could decide=100.0%  A kinds D/S/R=85/12/3%  B kinds=83/13/4%
+base+initlow+tbfinal             mctsx:4000 vs mctsx:4000     n=400   A=0.472±0.049  W/D/L 186/6/208  draw=1.5%  seat0=0.527  margin=-0.08  tA=0.16s tB=0.16s
+    decided=394 winner behind after cp1=38.1% cp2=38.8%  lead changes/game=0.63  final cp could decide=100.0%  A kinds D/S/R=85/12/3%  B kinds=86/12/3%
+    final turns that were sequential: 368 of 400
+base+initlow+tbfinal         final turn via mctsx:4000 n=32 saddle=59.4% (already decided 59.4%)  mean guess width=0.406  mixed support=2.27 of 23.3 actions  NE-minus-random=0.351  width hist [("0.0", 19), ("1.0", 13)]
+=== base+inithigh
+base+inithigh                    mctsx:4000 vs mctsx:1000     n=400   A=0.723±0.041  W/D/L 265/48/87  draw=12.0%  seat0=0.515  margin=+2.18  tA=0.18s tB=0.04s
+    decided=352 winner behind after cp1=38.6% cp2=32.7%  lead changes/game=0.76  final cp could decide=100.0%  A kinds D/S/R=84/13/3%  B kinds=83/13/3%
+base+inithigh                    mctsx:4000 vs mctsx:4000     n=400   A=0.485±0.046  W/D/L 167/54/179  draw=13.5%  seat0=0.505  margin=-0.26  tA=0.21s tB=0.21s
+    decided=346 winner behind after cp1=41.9% cp2=35.3%  lead changes/game=0.82  final cp could decide=100.0%  A kinds D/S/R=83/14/3%  B kinds=83/14/3%
+    final turns that were sequential: 351 of 400
+base+inithigh                final turn via mctsx:4000 n=49 saddle=40.8% (already decided 36.7%)  mean guess width=0.459  mixed support=2.55 of 22.1 actions  NE-minus-random=0.324  width hist [("0.0", 20), ("0.5", 13), ("1.0", 16)]
+=== base+initbehind
+base+initbehind                  mctsx:4000 vs mctsx:1000     n=400   A=0.686±0.043  W/D/L 257/35/108  draw=8.8%  seat0=0.504  margin=+1.71  tA=0.16s tB=0.04s
+    decided=365 winner behind after cp1=37.5% cp2=58.1%  lead changes/game=1.12  final cp could decide=100.0%  A kinds D/S/R=85/12/3%  B kinds=83/14/3%
+base+initbehind                  mctsx:4000 vs mctsx:4000     n=400   A=0.497±0.047  W/D/L 186/26/188  draw=6.5%  seat0=0.530  margin=-0.19  tA=0.15s tB=0.15s
+    decided=374 winner behind after cp1=43.6% cp2=62.3%  lead changes/game=1.18  final cp could decide=100.0%  A kinds D/S/R=85/12/3%  B kinds=85/12/3%
+    final turns that were sequential: 364 of 400
+base+initbehind              final turn via mctsx:4000 n=36 saddle=44.4% (already decided 44.4%)  mean guess width=0.486  mixed support=3.15 of 24.0 actions  NE-minus-random=0.378  width hist [("0.0", 16), ("0.5", 5), ("1.0", 15)]
+=== base+initahead
+base+initahead                   mctsx:4000 vs mctsx:1000     n=400   A=0.746±0.039  W/D/L 274/49/77  draw=12.2%  seat0=0.489  margin=+2.33  tA=0.16s tB=0.03s
+    decided=351 winner behind after cp1=22.8% cp2=6.6%  lead changes/game=0.29  final cp could decide=100.0%  A kinds D/S/R=84/13/3%  B kinds=83/15/3%
+base+initahead                   mctsx:4000 vs mctsx:4000     n=400   A=0.512±0.045  W/D/L 171/68/161  draw=17.0%  seat0=0.492  margin=+0.21  tA=0.18s tB=0.17s
+    decided=332 winner behind after cp1=16.9% cp2=6.6%  lead changes/game=0.23  final cp could decide=100.0%  A kinds D/S/R=85/12/3%  B kinds=85/12/3%
+    final turns that were sequential: 382 of 400
+base+initahead               final turn via mctsx:4000 n=18 saddle=22.2% (already decided 22.2%)  mean guess width=0.639  mixed support=2.54 of 24.2 actions  NE-minus-random=0.386  width hist [("0.0", 4), ("0.5", 5), ("1.0", 9)]
+=== base+s111+tbstr
+base+s111+tbstr                  mctsx:4000 vs mctsx:1000     n=600   A=0.797±0.032  W/D/L 478/1/121  draw=0.2%  seat0=0.534  margin=+0.82  tA=0.19s tB=0.04s
+    decided=599 winner behind after cp1=26.7% cp2=6.5%  lead changes/game=0.22  final cp could decide=97.5%  A kinds D/S/R=90/9/1%  B kinds=90/9/1%
+base+s111+tbstr                  mctsx:4000 vs mctsx:4000     n=400   A=0.517±0.049  W/D/L 206/2/192  draw=0.5%  seat0=0.485  margin=+0.03  tA=0.21s tB=0.21s
+    decided=398 winner behind after cp1=33.2% cp2=6.8%  lead changes/game=0.27  final cp could decide=98.5%  A kinds D/S/R=91/9/0%  B kinds=91/8/1%
+    final turns that were sequential: 0 of 400
+base+s111+tbstr              final turn via mctsx:4000 n=400 saddle=72.8% (already decided 72.5%)  mean guess width=0.266  mixed support=2.68 of 23.5 actions  NE-minus-random=0.324  width hist [("0.0", 291), ("0.5", 5), ("1.0", 104)]
+=== base+s111+tbearly
+base+s111+tbearly                mctsx:4000 vs mctsx:1000     n=600   A=0.772±0.034  W/D/L 462/2/136  draw=0.3%  seat0=0.498  margin=+0.77  tA=0.43s tB=0.09s
+    decided=598 winner behind after cp1=16.2% cp2=0.3%  lead changes/game=0.17  final cp could decide=96.3%  A kinds D/S/R=88/11/2%  B kinds=88/10/2%
+base+s111+tbearly                mctsx:4000 vs mctsx:4000     n=400   A=0.489±0.049  W/D/L 195/1/204  draw=0.2%  seat0=0.476  margin=-0.03  tA=0.45s tB=0.45s
+    decided=399 winner behind after cp1=22.3% cp2=1.0%  lead changes/game=0.23  final cp could decide=99.2%  A kinds D/S/R=90/10/1%  B kinds=90/10/1%
+    final turns that were sequential: 0 of 400
+base+s111+tbearly            final turn via mctsx:4000 n=400 saddle=78.5% (already decided 78.5%)  mean guess width=0.214  mixed support=2.58 of 22.2 actions  NE-minus-random=0.259  width hist [("0.0", 314), ("0.5", 1), ("1.0", 85)]
+=== base+s111+tbfinal
+base+s111+tbfinal                mctsx:4000 vs mctsx:1000     n=600   A=0.774±0.033  W/D/L 463/3/134  draw=0.5%  seat0=0.539  margin=+0.88  tA=0.18s tB=0.04s
+    decided=597 winner behind after cp1=26.0% cp2=9.9%  lead changes/game=0.22  final cp could decide=95.8%  A kinds D/S/R=89/10/1%  B kinds=89/10/1%
+base+s111+tbfinal                mctsx:4000 vs mctsx:4000     n=400   A=0.453±0.049  W/D/L 179/4/217  draw=1.0%  seat0=0.477  margin=-0.09  tA=0.18s tB=0.18s
+    decided=396 winner behind after cp1=32.1% cp2=10.9%  lead changes/game=0.26  final cp could decide=99.2%  A kinds D/S/R=90/9/1%  B kinds=91/9/1%
+    final turns that were sequential: 0 of 400
+base+s111+tbfinal            final turn via mctsx:4000 n=400 saddle=71.5% (already decided 71.2%)  mean guess width=0.275  mixed support=2.57 of 23.2 actions  NE-minus-random=0.290  width hist [("0.0", 286), ("0.5", 8), ("1.0", 106)]
+=== base+tbearly
+base+tbearly                     mctsx:4000 vs mctsx:1000     n=600   A=0.759±0.034  W/D/L 455/1/144  draw=0.2%  seat0=0.458  margin=+1.72  tA=0.44s tB=0.09s
+    decided=599 winner behind after cp1=31.4% cp2=22.0%  lead changes/game=0.58  final cp could decide=100.0%  A kinds D/S/R=89/10/1%  B kinds=89/10/1%

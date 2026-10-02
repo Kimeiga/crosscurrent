@@ -12,7 +12,7 @@ test('homepage replays twelve legal simultaneous turns through the actual engine
     assert.deepEqual(timeline.completed[i], state);
   }
   assert.equal(state.turn, 12);
-  assert.deepEqual(state.scores, [10, 8]);
+  assert.deepEqual(state.scores, [15, 12]);
   assert.deepEqual(timeline.final, state);
 });
 
@@ -25,7 +25,7 @@ test('demo includes deployment, movement and recall by both players', () => {
 test('all three checkpoints appear exactly once and score before cleanup', () => {
   const frames = timeline.frames.filter(frame => frame.phase === 'score');
   assert.deepEqual(frames.map(frame => frame.turn), [4, 8, 12]);
-  assert.deepEqual(frames.map(frame => frame.after.scores), [[1, 2], [7, 2], [10, 8]]);
+  assert.deepEqual(frames.map(frame => frame.after.scores), [[2, 4], [11, 4], [15, 12]]);
   for (const frame of frames) {
     const index = timeline.frames.indexOf(frame);
     assert.equal(timeline.frames[index - 1].phase, 'settle');
