@@ -763,7 +763,9 @@ In `mctsx:16000` self-play, the eventual winner trailed after turn 4 in 36.8% of
 
 ### Looking for dominant simple strategies (simulation)
 
-Against `mctsx:4000` under the tiebreak rule described below: one-front stacking lost 98.5%, high-card-first 95.5%, piling onto a front already won 99.8%, mirroring the opponent's previous card 94.0%, random deploys 96.5%, v0.2 Casual 95.0%. The strongest simple rule found was **lowfirst**, play your lowest card where you are furthest behind: it lost 84.5% to `mctsx:4000` and 97% to `mctsx:16000`, beat v0.2 Casual 78.5%, and lost to v0.2 Tactical 84.8%. No simple rule approached strong play. That lowfirst is the best of them supports the reading that conserving high cards is central.
+Against `mctsx:4000`, with v0.2 scoring and the final-strength tiebreak studied below (these runs were not logged to `research/results/`): one-front stacking lost 98.5%, high-card-first 95.5%, piling onto a front already won 99.8%, mirroring the opponent's previous card 94.0%, random deploys 96.5%, v0.2 Casual 95.0%. The strongest simple rule found was **lowfirst**, play your lowest card where you are furthest behind: it lost 84.5% to `mctsx:4000` and 97% to `mctsx:16000`, beat v0.2 Casual 78.5%, and lost to v0.2 Tactical 84.8%. No simple rule approached strong play. That lowfirst is the best of them supports the reading that conserving high cards is central.
+
+Repeated under the adopted v0.3 rules (`research/results/probes.log`, 200 games each): `mctsx:4000` scored 99.0% against one-front stacking, high-card-first and piling, 98.5% against mirroring, 94.0% against random deploys, 92.5% against v0.2 Casual and 96.5% against lowfirst; `mctsx:16000` won all 200 games against lowfirst. Lowfirst and Casual were even (49.4% over 400 games), and v0.2 Tactical beat lowfirst 95.3%.
 
 
 ## 2026 rule-variant study and v0.3
