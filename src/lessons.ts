@@ -9,7 +9,8 @@ export type Lesson = {
   /** Scripted opponent order; omitted means the opponent's best reply. */
   reply?: (game: State, mine: Action) => Action;
   /** Lesson succeeds only if this holds after the turn. */
-  check?: (game: State, record: TurnRecord) => boolean;
+  /** Receives the whole game so far, including the lesson's turn. */
+  check?: (game: State, history: TurnRecord[]) => boolean;
   hint?: string;
   retry?: string;
 };
@@ -25,12 +26,12 @@ const position = (turn: number, scores: [number, number], mine: Side, theirs: Si
 });
 
 /** The opponent's strongest single reply to a known order (used for the final puzzle). */
-export function bestReply(game: State, mine: Action): Action {
+export function bestReply(game: State, mine: Action, history: TurnRecord[] = []): Action {
   let best: Action | null = null;
   let bestValue = Infinity;
   for (const reply of actions(game.sides[1])) {
     const out = resolve(game, mine, reply);
-    const result = outcome(out.state, [out.record]).winner;
+    const result = outcome(out.state, [...history, out.record]).winner;
     const value = result === 0 ? 1 : result === 1 ? 0 : 0.5;
     if (value < bestValue) { bestValue = value; best = reply; }
   }
@@ -89,7 +90,7 @@ export const lessons: Lesson[] = [
     start: () => { const m = replay(puzzleOrders); return { game: m.state, history: m.history }; },
     before: 'Last turn: 4 points per front, and you trail 5 to 8, so you need two fronts. The computer sees what you see and gets one order too. Find the only order that wins whatever it does.',
     allowed: null,
-    check: (game, record) => outcome(game, [record]).winner === 0,
+    check: (game, history) => outcome(game, history).winner === 0,
     hint: 'their one order can take back only one front. Can you lead on all three?',
     after: 'That’s it. You lead all three fronts, so their one order can take back only one of them, and two fronts win the game.',
     retry: 'Their best reply beat that order. The only answer: shift your Jack from Right to Left. Then you lead 11–9, 27–23 and 7–0, and no single order can overturn two fronts.',

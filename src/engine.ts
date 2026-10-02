@@ -14,7 +14,7 @@ export type Rules = { name: string; points: readonly number[]; tiebreak: Tiebrea
 /** The original rules, kept for the Python reference fixtures and old saved games. */
 export const V02: Rules = { name: 'v0.2', points: [0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3], tiebreak: 'none' };
 /** Current rules. */
-export const RULES: Rules = { name: 'v0.3', points: [0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4], tiebreak: 'final-strength' };
+export const RULES: Rules = { name: 'v0.3', points: [0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4], tiebreak: 'total-strength' };
 /** Points per front won if `turn` is a scoring turn, otherwise 0. */
 export const pointsAt = (turn: number, rules: Rules = RULES) => rules.points[turn] ?? 0;
 export const scoringTurns = (rules: Rules = RULES) => rules.points.flatMap((p, t) => (p > 0 ? [t] : []));

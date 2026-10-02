@@ -28,8 +28,9 @@ test('the final-turn puzzle has exactly one order that wins against every reply'
   assert.equal(winners.length, 1, `${RULES.name} should leave one winning order`);
   assert(sameAction(winners[0], puzzleAnswer));
   const wrong = actions(game.sides[0]).find(a => !sameAction(a, puzzleAnswer))!;
-  const out = resolve(game, wrong, bestReply(game, wrong));
-  assert.notEqual(outcome(out.state, [out.record]).winner, 0);
+  const out = resolve(game, wrong, bestReply(game, wrong, history));
+  assert.notEqual(outcome(out.state, [...history, out.record]).winner, 0);
+  assert(lesson.check!(resolve(game, puzzleAnswer, bestReply(game, puzzleAnswer, history)).state, [...history, resolve(game, puzzleAnswer, bestReply(game, puzzleAnswer, history)).record]));
 });
 
 test('scoring lessons describe the points the engine awards', () => {

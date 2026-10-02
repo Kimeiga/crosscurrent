@@ -24,7 +24,7 @@
   <p>After each scoring, both players lose their <b>highest card on every front they occupy</b>, win or lose. Those cards are spent. A recalled card goes back to your hand instead; if it was your highest card there, nothing else is removed.</p>
 
   <h3>Winning</h3>
-  <p>Most points after turn 12 wins. If the points are equal, whoever had more total strength across all three fronts at the last scoring wins. If that is equal too, it’s a draw.</p>
+  <p>Most points after turn 12 wins. If the points are equal, strength decides: add up each player’s strength on all three fronts at each of the three scorings, and the higher total wins. If that is equal too, it’s a draw.</p>
 
   <h3>Worth knowing</h3>
   <ul>

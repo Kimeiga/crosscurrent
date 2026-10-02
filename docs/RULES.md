@@ -38,7 +38,7 @@ For example, a front containing a King and a 5 scores with strength 18. Recallin
 
 ## End of the game
 
-After turn 12, the greater accumulated score wins. If the scores are equal, the player with greater total strength across all three fronts at the turn-12 scoring wins. If that is also equal, the game is a draw. There is no coin flip, seat handicap or redeal.
+After turn 12, the greater accumulated score wins. If the scores are equal, the tiebreak is total strength: for each player, add their strength on all three fronts at each of the three scorings (turns 4, 8 and 12, measured before cards are spent). The greater total wins. If that is also equal, the game is a draw. There is no coin flip, seat handicap or redeal.
 
 The starting rules are symmetric, but symmetry is not a guarantee of decisive games or a full-size optimal-play solution. The computer opponents and homepage example are not proven optimal.
 

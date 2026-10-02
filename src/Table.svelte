@@ -158,8 +158,8 @@
     <div class="player me"><span class="name">{names[seat]}</span><strong>{shown.scores[seat]}</strong></div>
     <div class="player them"><strong>{shown.scores[1 - seat]}</strong><span class="name">{names[1 - seat]}{#if theirsLocked && phase === 'idle' && game.turn < 12}<em class="ready">locked in</em>{/if}</span></div>
     {#if tiebreak}
-      <p class="tiebreak" title={RULES.tiebreak === 'total-strength' ? 'Equal points are decided by total strength summed over every scoring' : 'Equal points are decided by total strength at the last scoring'}>
-        Level on points. Tiebreak strength: {names[seat]} {tiebreak[seat]}, {names[1 - seat]} {tiebreak[1 - seat]}
+      <p class="tiebreak">
+        Level on points. Tiebreak strength{RULES.tiebreak === 'total-strength' ? ' so far' : ''}: {names[seat]} {tiebreak[seat]}, {names[1 - seat]} {tiebreak[1 - seat]}
       </p>
     {/if}
   </section>

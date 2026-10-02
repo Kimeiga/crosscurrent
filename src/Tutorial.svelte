@@ -26,9 +26,9 @@
     played = false; won = true;
   }
   function play(mine: Action) {
-    const theirs = lesson.reply ? lesson.reply(game, mine) : bestReply(game, mine);
+    const theirs = lesson.reply ? lesson.reply(game, mine) : bestReply(game, mine, history);
     const out = resolve(game, mine, theirs);
-    won = lesson.check ? lesson.check(out.state, out.record) : true;
+    won = lesson.check ? lesson.check(out.state, [...history, out.record]) : true;
     if (!won) attempts++;
     game = out.state; history = [...history, out.record];
     played = true;
