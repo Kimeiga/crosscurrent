@@ -19,7 +19,9 @@ $S match rules=base+s111+tbstr a=mctsx:16000 b=mctsx:4000 games=400 seed=1
 $S final rules=base+s111+tbstr policy=mctsx:4000 games=400 seed=1
 ```
 
-`results/` holds the raw logs and the scripts that produced them; `results/summarize.py` condenses a sweep log into one row per variant.
+`results/` holds the raw logs (`*.log`) and the scripts that produced them (`run-*.sh`). `table.py` turns the screening logs into the markdown table in RESEARCH.md, `finalists.py` pools the finalist runs (sweeps 3, 4 and 6), `to_json.py` exports every measurement for `docs/BENCHMARKS.json`, and `summarize.py` condenses a sweep log into one row per variant.
+
+Each `match` prints the result line, a line on comebacks and order mix, and (from the `target4` build on) how many games ended level on points and how the tiebreak settled them for policy A.
 
 ## Rule variants
 
@@ -33,6 +35,7 @@ A variant name is `base` plus `+`-separated modifiers. `base` is the v0.2 rules 
 | `tbhand` | Equal points: higher total of cards left in hand |
 | `s111`, `s234`, `s124`, `s135` | Points per front at turns 4/8/12 |
 | `s4x3`, `s4x3flat` | Scoring on turns 3/6/9/12 worth 1/2/3/4 or 1/1/1/1 |
+| `cp:T=P,...` | Any schedule, for example `cp:4=3,8=4,12=5` scores 3, 4 and 5 per front at turns 4, 8 and 12 |
 | `s6x2`, `s6inc` | Scoring every second turn, flat or 1–6 |
 | `s12`, `s12inc` | Scoring every turn |
 | `exnone`, `exwin`, `exall` | No exhaustion; only the front winner exhausts; whole board spent |

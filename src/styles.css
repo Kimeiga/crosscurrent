@@ -99,6 +99,12 @@ a { color: inherit; }
 .card.xs { --cw: 22px; --ch: 30px; --rs: 12px; --ss: 0px; padding: 2px 0 0 3px; border-radius: 4px; box-shadow: none; }
 .card.xs .s, .card.xs .big { display: none; }
 
+/* Centered single-purpose screens (invitation, pass-and-play handoff) */
+.center { min-height: calc(100dvh - 120px); display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px var(--gutter); text-align: center; }
+.center h1 { font-family: var(--serif); font-size: clamp(30px, 6vw, 44px); line-height: 1.1; }
+.center p { color: var(--ink-2); max-width: 26em; font-size: 17px; }
+.center .big { min-width: min(320px, 100%); min-height: 54px; font-size: 17px; }
+
 /* Dialogs */
 dialog { width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid var(--line); border-radius: 16px; color: var(--ink); background: var(--paper); box-shadow: 0 20px 60px #0000004d; overscroll-behavior: contain; }
 dialog::backdrop { background: #1a160f8c; }

@@ -60,3 +60,16 @@ export function disconnect() { void unwatchRoom(); connection?.disconnect(); con
 export function invitation(session: Session) {
   return `${location.origin}${location.pathname}#/join/${session.id}/${session.invite || session.token}`;
 }
+
+const nativeShare = () => typeof navigator.share === 'function' && matchMedia('(pointer: coarse)').matches;
+
+/** Shares the invitation with the phone's share sheet, or copies it. Returns the line to show afterwards. */
+export async function offerInvitation(link: string): Promise<string> {
+  try {
+    if (nativeShare()) { await navigator.share({ title: 'Crosscurrent', text: 'Play a game of Crosscurrent with me.', url: link }); return ''; }
+    await navigator.clipboard.writeText(link);
+    return 'Link copied. Send it to your friend.';
+  } catch {
+    return 'Copy the link from the box below.';
+  }
+}

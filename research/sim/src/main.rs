@@ -77,6 +77,10 @@ struct Tally {
     decided: u32,
     lead_changes: u32,
     final_cp_decisive: u32,
+    // games level on points after turn 12, and how the tiebreak (if any) settled them for A
+    level: u32,
+    level_a_wins: u32,
+    level_a_losses: u32,
     kinds: [[u64; 3]; 2],
     a_time: f64,
     b_time: f64,
@@ -96,6 +100,9 @@ impl Tally {
         self.decided += o.decided;
         self.lead_changes += o.lead_changes;
         self.final_cp_decisive += o.final_cp_decisive;
+        self.level += o.level;
+        self.level_a_wins += o.level_a_wins;
+        self.level_a_losses += o.level_a_losses;
         for p in 0..2 {
             for k in 0..3 {
                 self.kinds[p][k] += o.kinds[p][k];
@@ -184,6 +191,14 @@ fn run_match(rules: &Rules, a_spec: &str, b_spec: &str, games: u32, threads: u32
                     local.draws += 1;
                 }
                 local.seat0_score += res0;
+                if st.scores[0] == st.scores[1] {
+                    local.level += 1;
+                    if res_a > 0.75 {
+                        local.level_a_wins += 1;
+                    } else if res_a < 0.25 {
+                        local.level_a_losses += 1;
+                    }
+                }
                 let margin = (st.scores[a_seat] - st.scores[1 - a_seat]) as f64;
                 local.margin_sum += margin;
                 local.a_time += times[a_seat];
@@ -273,6 +288,14 @@ fn print_dynamics(t: &Tally) {
         100.0 * t.kinds[1][0] as f64 / kb as f64,
         100.0 * t.kinds[1][1] as f64 / kb as f64,
         100.0 * t.kinds[1][2] as f64 / kb as f64,
+    );
+    println!(
+        "    level on points={:.1}% ({} games: A won {}, drew {}, lost {})",
+        100.0 * t.level as f64 / t.games.max(1) as f64,
+        t.level,
+        t.level_a_wins,
+        t.level - t.level_a_wins - t.level_a_losses,
+        t.level_a_losses,
     );
 }
 

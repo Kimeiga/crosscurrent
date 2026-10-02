@@ -1,9 +1,7 @@
-import { prepare, rank, sum, type Action, type Side, type State, type TurnRecord } from './engine.ts';
+import { prepare, rank, type Action, type Side, type State, type TurnRecord } from './engine.ts';
 
 /** Presentation names only. Persisted front indices and all rules stay unchanged. */
 export const fronts = ['Left', 'Middle', 'Right'] as const;
-
-export const pip = (seat: number) => (seat === 0 ? '♠' : '♥');
 
 export function orderText(action: Action): string {
   if (action.kind === 'recall') return `Recall ${rank(action.card)}`;
@@ -19,8 +17,6 @@ export function revealFrames(previous: State, next: State, record: TurnRecord) {
   const scored: State = { ...revealed, scores: [...next.scores] };
   return { revealed, scored, settled: next };
 }
-
-export const strengths = (side: Side) => side.board.map(sum);
 
 /** The card each occupied front would lose after scoring, ignoring recalls. */
 export const exhaustTargets = (side: Side) => side.board.map(cards => (cards.length ? Math.max(...cards) : null));

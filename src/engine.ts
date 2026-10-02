@@ -19,12 +19,12 @@ export const RULES: Rules = { name: 'v0.3', points: [0, 0, 0, 0, 2, 0, 0, 0, 3, 
 export const pointsAt = (turn: number, rules: Rules = RULES) => rules.points[turn] ?? 0;
 export const scoringTurns = (rules: Rules = RULES) => rules.points.flatMap((p, t) => (p > 0 ? [t] : []));
 export const ranks = Array.from({ length: 13 }, (_, i) => i + 1);
-export const labels = ['A', 'B', 'C'];
+const labels = ['A', 'B', 'C'];
 export const rank = (n: number) => (({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<number, string>)[n] || String(n));
 export const rankName = (n: number) => (({ 1: 'Ace', 11: 'Jack', 12: 'Queen', 13: 'King' } as Record<number, string>)[n] || String(n));
 export const sum = (ns: number[]) => ns.reduce((a, b) => a + b, 0);
 const sorted = (ns: number[]) => ns.sort((a, b) => a - b);
-export const cloneSide = (s: Side): Side => ({ hand: [...s.hand], board: s.board.map(f => [...f]), spent: [...s.spent] });
+const cloneSide = (s: Side): Side => ({ hand: [...s.hand], board: s.board.map(f => [...f]), spent: [...s.spent] });
 export function initial(): State {
   const side = (): Side => ({ hand: [...ranks], board: [[], [], []], spent: [] });
   return { turn: 0, sides: [side(), side()], scores: [0, 0] };
@@ -63,7 +63,7 @@ export function prepare(source: Side, a: Action): { side: Side; recall: number |
   sorted(side.spent);
   return { side, recall };
 }
-export function finish(source: Side, recall: number | null, checkpoint: boolean): Side {
+function finish(source: Side, recall: number | null, checkpoint: boolean): Side {
   const side = cloneSide(source);
   if (checkpoint) side.board.forEach(front => {
     if (!front.length) return;
@@ -118,9 +118,6 @@ export function outcome(state: State, history: TurnRecord[] = [], rules: Rules =
   const complete = history.some(entry => entry.turn === 12);
   if (rules.tiebreak !== 'none' && complete && strength[0] !== strength[1]) return { winner: strength[0] > strength[1] ? 0 : 1, by: 'strength', strength };
   return { winner: null, by: 'draw', strength };
-}
-export function description(a: Action): string {
-  return a.kind === 'recall' ? `Recall ${rank(a.card)}` : `${a.kind === 'shift' ? 'Shift' : 'Deploy'} ${rank(a.card)} → ${labels[a.front]}`;
 }
 export function checkInvariants(s: State): boolean {
   return s.turn >= 0 && s.turn <= 12 && s.sides.every(side => {

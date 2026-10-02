@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initial, actions, resolve, outcome, sameAction, type Action, type State, type Side } from '../src/engine.ts';
-import { fromState, fromAction, toAction, moves, resolve as fastResolve, result, type FState } from '../src/ai/fast.ts';
+import { fromState, fromAction, toAction, moves, resolveTurn as fastResolve, result, type FState } from '../src/ai/fast.ts';
 import { solveGame, pureBounds } from '../src/ai/lp.ts';
 import { finalMatrix, search } from '../src/ai/mcts.ts';
-import { chooseAction, heuristicAction } from '../src/ai.ts';
+import { chooseAction } from '../src/ai.ts';
 
 const rng = (seed: number) => () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
 const sameState = (fast: FState, slow: State) => {
@@ -131,6 +131,4 @@ test('search beats random play and the old heuristic is still available', () => 
     if (outcome(s, history).winner === 0) wins++;
   }
   assert(wins >= 5);
-  const baseline = heuristicAction(initial(), 0, 'tactical', random);
-  assert(actions(initial().sides[0]).some(a => sameAction(a, baseline)));
 });

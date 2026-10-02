@@ -6,6 +6,7 @@
     "local/**/*.ts",
     "services/**/*.ts",
     "scripts/**/*.mjs",
+    "research/scripts/**/*.ts",
     "svelte.config.js"
   ],
   "audit": {

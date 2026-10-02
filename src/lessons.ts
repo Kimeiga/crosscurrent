@@ -39,7 +39,7 @@ export function bestReply(game: State, mine: Action): Action {
 
 /** A final-turn position reached in strong self-play under the current rules, found by
  * research/sim `puzzles`: exactly one of the player's 24 orders wins against all 21 replies. */
-export const puzzleOrders: [Action, Action][] = [
+const puzzleOrders: [Action, Action][] = [
   [D(8, 1), D(8, 1)], [D(9, 2), D(7, 1)], [D(7, 2), D(9, 2)], [D(10, 1), D(12, 2)], [D(6, 2), D(13, 1)], [D(12, 1), D(4, 2)],
   [D(13, 2), D(6, 1)], [R(13), D(1, 0)], [D(13, 1), D(5, 0)], [D(11, 2), D(10, 1)], [S(6, 1), S(4, 0)],
 ];

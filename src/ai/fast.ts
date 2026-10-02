@@ -8,16 +8,16 @@ export const TURNS = 12;
 export type Move = number;
 const RECALL_FRONT = 3;
 
-export const SUMS = new Uint8Array(1 << 13);
+const SUMS = new Uint8Array(1 << 13);
 for (let m = 1; m < SUMS.length; m++) SUMS[m] = SUMS[m & (m - 1)] + (31 - Math.clz32(m & -m)) + 1;
 
 export type FSide = { hand: number; board: [number, number, number]; spent: number };
 export type FState = { turn: number; sides: [FSide, FSide]; scores: [number, number]; strength: [number, number] };
 
 export const pack = (kind: number, card: number, front: number): Move => kind | (card << 2) | (front << 6);
-export const kindOf = (m: Move) => m & 3;
-export const cardOf = (m: Move) => (m >> 2) & 15;
-export const frontOf = (m: Move) => m >> 6;
+const kindOf = (m: Move) => m & 3;
+const cardOf = (m: Move) => (m >> 2) & 15;
+const frontOf = (m: Move) => m >> 6;
 const bit = (card: number) => 1 << (card - 1);
 const lowestCard = (mask: number) => 31 - Math.clz32(mask & -mask) + 1;
 const highestCard = (mask: number) => 32 - Math.clz32(mask);
@@ -91,7 +91,7 @@ function finishInto(s: FSide, recall: number, checkpoint: boolean) {
 }
 
 /** Resolves a full turn into a new state. `strength` holds the tiebreak totals for the current rules. */
-export function resolve(st: FState, a: Move, b: Move): FState {
+export function resolveTurn(st: FState, a: Move, b: Move): FState {
   const next = clone(st);
   advance(next, a, b);
   return next;

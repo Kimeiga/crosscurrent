@@ -2,8 +2,9 @@
   import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
   import { crossfade } from 'svelte/transition';
   import Card from './Card.svelte';
-  import { actions as legalActions, prepare, sameAction, sum, rank, rankName, pointsAt, scoringTurns, tiebreakStrength, RULES, type Action, type State, type TurnRecord } from './engine';
-  import { fronts, orderText, revealFrames, exhaustTargets } from './ui';
+  import { prepare, sum, rank, rankName, pointsAt, scoringTurns, RULES, type Action, type State, type TurnRecord } from './engine';
+  import { fronts, orderText, revealFrames } from './ui';
+  import { orderFor, samePick, exhaustionMarks, safeLeads, levelTiebreak, revealSteps, animates, instructionText, detailText, type Phase, type Pick, type Target } from './table';
 
   type Props = {
     game: State;
@@ -33,12 +34,11 @@
   };
   let { game, history, seat, names, canAct, status = '', locked = null, theirsLocked = false, allowed = null, coach = '', onDismissCoach, lockLabel = 'Lock in', onLock, onBusy = () => {}, banner, footer }: Props = $props();
 
-  type Phase = 'idle' | 'reveal' | 'score' | 'settle';
   let shown = $state.raw<State>(untrack(() => game));
   let phase = $state<Phase>('idle');
   let scoring = $state.raw<TurnRecord | null>(null);
-  let pick = $state<{ from: 'hand' | 'board'; card: number } | null>(null);
-  let target = $state<number | 'recall' | null>(null);
+  let pick = $state<Pick | null>(null);
+  let target = $state<Target | null>(null);
   let refusal = $state('');
   let movesDialog = $state<HTMLDialogElement>();
   let reduced = $state(false);
@@ -58,36 +58,24 @@
   });
 
   function accept(next: State, records: TurnRecord[]) {
-    if (next.turn === observed) {
-      if (phase === 'idle') shown = next;
-      return;
-    }
-    const previous = shown;
+    if (next.turn === observed) return refresh(next);
     const record = records.at(-1);
-    const consecutive = next.turn === observed + 1 && record?.turn === next.turn;
+    const animate = !reduced && animates(observed, next, record);
     observed = next.turn;
-    pick = null; target = null; refusal = '';
+    clear();
     const id = ++run;
-    if (reduced || !consecutive || !record) {
-      shown = next; phase = 'idle'; scoring = null; onBusy(false);
-      return;
-    }
-    const frames = revealFrames(previous, next, record);
+    if (animate) void play(shown, next, record!, id); else settle(next);
+  }
+  function refresh(next: State) { if (phase === 'idle') shown = next; }
+  function settle(next: State) { shown = next; phase = 'idle'; scoring = null; onBusy(false); }
+  async function play(previous: State, next: State, record: TurnRecord, id: number) {
     onBusy(true);
-    phase = 'reveal'; shown = frames.revealed; scoring = null;
-    void (async () => {
-      await wait(900);
+    for (const step of revealSteps(revealFrames(previous, next, record), record)) {
+      phase = step.phase; shown = step.shown; scoring = step.scoring;
+      await wait(step.ms);
       if (id !== run) return;
-      if (record.checkpoint) {
-        phase = 'score'; shown = frames.scored; scoring = record;
-        await wait(1700);
-        if (id !== run) return;
-      }
-      phase = 'settle'; shown = frames.settled;
-      await wait(450);
-      if (id !== run) return;
-      phase = 'idle'; scoring = null; onBusy(false);
-    })();
+    }
+    settle(next);
   }
 
   const me = $derived(shown.sides[seat]);
@@ -100,66 +88,42 @@
   const live = $derived(game.sides[seat]);
   const payment = $derived(live.hand[0]);
   const origin = $derived(pick?.from === 'board' ? live.board.findIndex(f => f.includes(pick!.card)) : -1);
-  const order = $derived.by((): Action | null => {
-    if (!pick || target === null) return null;
-    const candidate: Action = pick.from === 'hand'
-      ? { kind: 'deploy', card: pick.card, front: target as number }
-      : target === 'recall' ? { kind: 'recall', card: pick.card, front: -1 } : { kind: 'shift', card: pick.card, front: target as number };
-    return legalActions(live).some(a => sameAction(a, candidate)) ? candidate : null;
-  });
+  const order = $derived(orderFor(live, pick, target));
   const staged = $derived(locked ?? order);
   const projected = $derived(staged ? prepare(live, staged).side : null);
   const myStrength = $derived(me.board.map(sum));
   const theirStrength = $derived(them.board.map(sum));
   /** Cards spent after this turn's scoring: my side reflects a staged Recall, which saves its card. */
-  const marks = $derived.by(() => {
-    if (!scoringTurn || nextTurn === 12) return null;
-    const result = [exhaustTargets(shown.sides[0]), exhaustTargets(shown.sides[1])];
-    if (staged?.kind === 'recall') {
-      const front = live.board.findIndex(f => f.includes(staged.card));
-      if (front >= 0 && result[seat][front] === staged.card) result[seat][front] = null;
-    }
-    return result;
-  });
+  const marks = $derived(scoringTurn && nextTurn < 12 ? exhaustionMarks(shown.sides, seat, staged) : null);
   /** On scoring turns: fronts whose lead no single order of the other side can overturn. */
-  const safe = $derived.by(() => {
-    if (!scoringTurn) return null;
-    const mine = projected ?? live;
-    const theirs = game.sides[1 - seat];
-    const reach = (side: typeof live, front: number) => Math.max(0, ...side.hand, ...side.board.flatMap((cards, f) => (f === front ? [] : cards)));
-    return [0, 1, 2].map(f => {
-      const a = sum(mine.board[f]), b = sum(theirs.board[f]);
-      return { mine: a > b + reach(theirs, f), theirs: b > a + reach(live, f) };
-    });
-  });
+  const safe = $derived(scoringTurn ? safeLeads(projected ?? live, game.sides[1 - seat], live) : null);
   const last = $derived(history.at(-1));
   /** Shown only while points are level and the tiebreak could decide the game. */
-  const tiebreak = $derived.by(() => {
-    if (RULES.tiebreak === 'none' || shown.scores[0] !== shown.scores[1] || phase !== 'idle') return null;
-    const recorded = history.filter(entry => entry.turn <= shown.turn);
-    if (RULES.tiebreak === 'total-strength' && !recorded.some(entry => entry.checkpoint)) return null;
-    if (RULES.tiebreak === 'final-strength' && shown.turn < 12) return null;
-    return tiebreakStrength(recorded);
-  });
+  const tiebreak = $derived(phase === 'idle' ? levelTiebreak(shown.scores, shown.turn, history) : null);
   const revealing = $derived(phase !== 'idle' && last && last.turn === shown.turn ? last : null);
 
-  function choose(from: 'hand' | 'board', card: number) {
+  const aiming = $derived(interactive && pick !== null);
+  const ready = $derived(interactive && order !== null);
+  /** Tutorial steps accept only their taught order. */
+  const permitted = (a: Action | null) => !a || !allowed || allowed(a);
+  function refuse() { refusal = 'Not this time. Follow the highlighted step.'; target = null; }
+  function choose(from: Pick['from'], card: number) {
     if (!interactive) return;
-    refusal = '';
-    if (pick && pick.from === from && pick.card === card) { pick = null; target = null; return; }
-    pick = { from, card }; target = null;
+    const again = samePick(pick, from, card);
+    clear();
+    if (!again) pick = { from, card };
   }
-  function aim(front: number | 'recall') {
-    if (!interactive || !pick) return;
-    if (pick.from === 'board' && front === origin) { pick = null; target = null; return; }
+  function aim(front: Target) {
+    if (!aiming) return;
+    if (front === origin) return clear();
     target = front; refusal = '';
-    if (order && allowed && !allowed(order)) { refusal = 'Not this time. Follow the highlighted step.'; target = null; }
+    if (!permitted(order)) refuse();
   }
   function lock() {
-    if (!order || !interactive) return;
-    if (allowed && !allowed(order)) { refusal = 'Not this time. Follow the highlighted step.'; return; }
-    const chosen = order;
-    pick = null; target = null;
+    if (!ready) return;
+    if (!permitted(order)) return refuse();
+    const chosen = order!;
+    clear();
     onLock(chosen);
   }
   function clear() { pick = null; target = null; refusal = ''; }
@@ -169,7 +133,7 @@
   }
   function onKey(event: KeyboardEvent) {
     if (event.key === 'Escape') clear();
-    if (event.key === 'Enter' && order && interactive && !(event.target instanceof HTMLButtonElement)) lock();
+    else if (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement)) lock();
   }
   onMount(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -180,28 +144,11 @@
   });
   onDestroy(() => { run++; onBusy(false); });
 
-  const instruction = $derived.by(() => {
-    if (phase === 'reveal') return 'Both orders revealed.';
-    if (phase === 'score') return `Scoring: ${scoring?.checkpoint?.points ?? ''} per front won.`;
-    if (phase === 'settle') return scoring || last?.checkpoint ? 'Highest cards are spent. Recalled cards return.' : 'Recalled cards return.';
-    if (game.turn >= 12) return 'Game over.';
-    if (locked) return status || 'Locked in. Waiting for the other order.';
-    if (!canAct) return status;
-    if (refusal) return refusal;
-    if (order) return orderText(order);
-    if (!pick) return live.board.flat().length ? 'Pick a card in your hand or on the board.' : 'Pick a card from your hand.';
-    if (pick.from === 'hand') return `Deploy ${rank(pick.card)}: tap a front.`;
-    return `Move ${rank(pick.card)}: tap another front, or recall it.`;
-  });
-  const detail = $derived.by(() => {
-    if (phase !== 'idle' || game.turn >= 12) return '';
-    const cost = rank(payment);
-    if (locked) return orderText(locked);
-    if (order && order.kind !== 'deploy') return `Pays your lowest card, ${cost}.${order.kind === 'recall' ? stake ? ' It still counts for this scoring.' : '' : ''}`;
-    if (pick?.from === 'board') return `Shift or recall pays your lowest card, ${cost}.`;
-    if (!pick && last) return `Last turn · ${names[seat]}: ${orderText(last.actions[seat])} · ${names[1 - seat]}: ${orderText(last.actions[1 - seat])}`;
-    return '';
-  });
+  const instruction = $derived(instructionText({
+    phase, points: scoring?.checkpoint?.points ?? 0, scored: !!(scoring || last?.checkpoint), over: game.turn >= 12,
+    locked: !!locked, status, canAct, refusal, order, pick, boardEmpty: !live.board.flat().length,
+  }));
+  const detail = $derived(phase === 'idle' && game.turn < 12 ? detailText({ locked, order, pick, payment, stake, last, names, seat }) : '');
 </script>
 
 <svelte:window onkeydown={onKey} />
