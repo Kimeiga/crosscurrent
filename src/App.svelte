@@ -296,11 +296,11 @@
     const saved = read<string>('difficulty');
     if (saved) difficulty = normalizeLevel(saved);
   }
-  /** Navigation never silently resumes a saved match. Invitations ask first. */
+  /** Opens an invitation or the lesson from the address. Navigation never silently resumes a saved match; invitations ask first. */
   function route() {
     const invite = location.hash.match(/^#\/join\/([\w-]+)\/([a-f0-9]{64})$/);
-    if (invite) { joinTarget = { id: invite[1], token: invite[2] }; screen = 'join'; }
-    else if (location.hash === '#/learn') screen = 'learn';
+    if (invite) { epoch++; void unwatchRoom(); message = ''; joinTarget = { id: invite[1], token: invite[2] }; screen = 'join'; }
+    else if (location.hash === '#/learn') learn();
   }
   onMount(() => {
     startWorker();
@@ -308,7 +308,9 @@
     route();
     const onVisible = () => { if (document.visibilityState === 'visible') void refreshRoom(); };
     document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
+    // An invitation opened in a tab that already shows the game changes only the hash.
+    window.addEventListener('hashchange', route);
+    return () => { document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('hashchange', route); };
   });
   onDestroy(() => { alive = false; epoch++; worker?.terminate(); disconnect(); });
 </script>

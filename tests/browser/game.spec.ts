@@ -129,6 +129,9 @@ test('a missing table and a failed room service leave solo play available', asyn
   await page.getByRole('button', { name: 'Play the computer', exact: true }).click();
   await deploy(page, 'King', 'Left');
   await turn(page, 2);
+  // An invitation opened in the same tab changes only the hash.
+  await page.evaluate(() => { location.hash = `#/join/another-table/${'b'.repeat(64)}`; });
+  await expect(page.getByRole('button', { name: 'Join the game', exact: true })).toBeVisible();
 });
 
 test('the guided lessons teach each order and end with the final-turn puzzle', async ({ page }) => {
