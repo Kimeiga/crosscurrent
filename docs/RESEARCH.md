@@ -126,13 +126,26 @@ A single Piquet deal showed a large elder-hand advantage:
 
 - Elder result: **61.44%**
 
-A held-out experiment gave the younger side an **+8 score adjustment**, after which the elder result was **50.67%**.
+A handicap experiment fit an **+8-point terminal offset for the younger hand** on **10,000 training deals** and evaluated it on a separate **10,000-deal test set**.
+
+With the fitting policy, the elder's adjusted score share became:
+
+- **50.67%**
+- 95% interval: **49.54-51.80%**
+
+The same +8 re-scoring applied under different self-play policies produced very different elder adjusted score shares:
+
+- greedy self-play: **44.48%**
+- random self-play: **39.98%**
 
 That was not treated as a principled solution:
 
-- it was bot-specific,
-- it was an outcome handicap rather than strategic symmetry,
-- players could adapt differently to the handicap,
+- it was strongly policy-dependent,
+- it only re-scored completed games,
+- bots were not retrained to adapt to the handicap,
+- the game was not re-solved under the new payoff,
+- subtracting mean score advantage is not the same problem as balancing win probability around a median boundary,
+- a naive offset fitted to the already-balanced full partie can simply fit sampling noise,
 - full six-deal Piquet was already near balanced because roles alternate.
 
 This reinforced the desire for a game that does not need role alternation or compensation.
