@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "purpose": "Historical benchmark and prototype measurements that motivated Crosscurrent. Do not treat bot-specific measurements as exact game-theoretic results.",
+  "aggregate_research": {
+    "games_or_matches": 170632,
+    "deals": 718213
+  },
+  "existing_games": {
+    "piquet": {
+      "full_format_identical_bots": {
+        "matches": 20000,
+        "format": "six alternating deals",
+        "fixed_initial_seat_result_pct": 49.66,
+        "ci95_pct": [
+          48.86,
+          50.45
+        ],
+        "draw_pct": 0
+      },
+      "single_deal": {
+        "elder_result_pct": 61.44
+      },
+      "experimental_younger_score_adjustment": {
+        "adjustment_points": 8,
+        "held_out_elder_result_pct": 50.67,
+        "caveat": "Bot-specific outcome handicap; not a proof of strategic balance and not needed for the normal six-deal alternating format."
+      },
+      "stronger_vs_simpler_bot_result_pct": 81.08
+    },
+    "schnapsen": {
+      "full_format_identical_bots": {
+        "matches": 20000,
+        "format": "race to seven",
+        "fixed_initial_seat_result_pct": 50.54,
+        "ci95_pct": [
+          49.74,
+          51.33
+        ],
+        "draw_pct": 0
+      },
+      "stronger_vs_simpler_bot_result_pct": 56.9,
+      "hidden_hand_sampling_test": {
+        "games": 512,
+        "stronger_samples": 8,
+        "weaker_samples": 2,
+        "stronger_result_pct": 70.31
+      },
+      "deducible_endgames": {
+        "positions": 1000,
+        "positions_with_both_forcing_win_and_forcing_loss_move": 342
+      }
+    },
+    "gops": {
+      "full_format_identical_bots": {
+        "matches": 20000,
+        "format": "complete thirteen rounds",
+        "fixed_initial_seat_result_pct": 50.07,
+        "ci95_pct": [
+          49.3,
+          50.83
+        ],
+        "draw_pct_pairing_a": 27.79,
+        "draw_pct_pairing_b": 0.26
+      },
+      "stronger_vs_simpler_bot_result_pct": 88.02,
+      "mirror_policy_failure": {
+        "games": 5000,
+        "draws": 5000,
+        "mirror_policy": "bid prize value",
+        "exploit_score": [
+          78,
+          13
+        ],
+        "exploit_description": "Bid one above the prize value when possible, with the tested special handling around prize 13 / bid 1.",
+        "lesson": "Perfect self-play balance can coexist with trivial exploitability."
+      },
+      "reduced_exact_variant": {
+        "cards": 5,
+        "optimal_strategy_pairing_pct": {
+          "win": 33.45,
+          "draw": 33.09,
+          "loss": 33.45
+        }
+      }
+    }
+  },
+  "crosscurrent_early_prototype": {
+    "recorded_full_size_games": 8000,
+    "passing_tests_at_that_stage": 14,
+    "tactical_vs_random": {
+      "games": 2000,
+      "tactical_result_pct": 96.8
+    },
+    "tactical_vs_builder": {
+      "games": 2000,
+      "tactical_result_pct": 66,
+      "builder_description": "Evaluated deployments but did not use Shift or Recall."
+    },
+    "tactical_self_play": {
+      "games": 1000,
+      "fixed_initial_seat_expected_result_pct": 51.2,
+      "wins": 476,
+      "losses": 452,
+      "draws": 72,
+      "draw_pct": 7.2
+    },
+    "rejected_scoring_prototype": {
+      "description": "Earlier version with unequal front values.",
+      "observed_behavior": "Tactical self-play collapsed into all draws."
+    },
+    "tiny_exact_variant": {
+      "cards": 3,
+      "observed_optimal_pairing": "always draws",
+      "caveat": "Warning about mirror-draw equilibria; does not establish the full game's equilibrium draw rate."
+    },
+    "tactical_position": {
+      "before_turn": 12,
+      "score": [
+        4,
+        5
+      ],
+      "checkpoint_points_per_front": 3,
+      "player_1": {
+        "fronts": {
+          "A": [
+            12
+          ],
+          "B": [
+            5,
+            9
+          ],
+          "C": []
+        },
+        "hand": [
+          7,
+          10,
+          11
+        ]
+      },
+      "player_2": {
+        "fronts": {
+          "A": [
+            7
+          ],
+          "B": [],
+          "C": [
+            2,
+            3
+          ]
+        },
+        "hand": [
+          5,
+          8,
+          13
+        ]
+      },
+      "tested_best_action": "Shift 9 from B to C, paying 7",
+      "enumerated_opponent_replies": 18,
+      "contrast": "Shifting Q from A to B lost against every legal opponent reply in the tested position."
+    }
+  },
+  "interpretation_rules": [
+    "Structural symmetry is proved by rules, not by self-play statistics.",
+    "Full-size bot results are not proofs of optimal play.",
+    "Reduced variants explicitly labeled exact may support exact claims only for those reduced games.",
+    "A 50/50 expected result does not imply a short series will finish near 50/50.",
+    "Draw rate is policy-dependent unless established under solved optimal play."
+  ]
+}
