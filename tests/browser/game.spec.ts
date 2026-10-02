@@ -36,7 +36,7 @@ test('solo game: deploy, shift, recall, scoring, resume and a full game', async 
   await expect(page.locator('.stakes')).toContainText('scores 2 per front');
   await deploy(page, 'King', 'Right');
   await turn(page, 5);
-  await page.locator('.log > summary').click();
+  await page.getByRole('button', { name: 'Moves so far', exact: true }).click();
   await expect(page.locator('.log')).toContainText('Deploy K to Right');
   await page.reload();
   await expect(page.locator('.home')).toBeVisible();
@@ -74,12 +74,13 @@ test('online table hides pending orders and both seats can rejoin', async ({ bro
     await deploy(host, 'King', 'Left');
     await expect(host.locator('.command')).toContainText('Waiting for your friend');
     await expect(guest.locator('.pile.theirs .placed')).toHaveCount(0);
-    await expect(guest.locator('.log')).toHaveCount(0);
+    await expect(guest.getByRole('button', { name: 'Moves so far', exact: true })).toHaveCount(0);
+    await expect(guest.locator('.log li:not(.head)')).toHaveCount(0);
     await deploy(guest, 'Queen', 'Middle');
     await turn(host, 2); await turn(guest, 2);
-    await host.locator('.log > summary').click();
+    await host.getByRole('button', { name: 'Moves so far', exact: true }).click();
     await expect(host.locator('.log')).toContainText('Deploy K to Left');
-    await guest.locator('.log > summary').click();
+    await guest.getByRole('button', { name: 'Moves so far', exact: true }).click();
     await expect(guest.locator('.log')).toContainText('Deploy K to Left');
     await host.reload(); await guest.reload();
     for (const page of [host, guest]) {
@@ -113,7 +114,7 @@ test('pass and play keeps both orders private until the reveal', async ({ page }
   await page.getByRole('button', { name: /Continue your pass-and-play game/ }).click();
   await page.getByRole('button', { name: /I’m Player 1/ }).click();
   await turn(page, 2);
-  await page.locator('.log > summary').click();
+  await page.getByRole('button', { name: 'Moves so far', exact: true }).click();
   await expect(page.locator('.log')).toContainText('Deploy K to Left');
 });
 

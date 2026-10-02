@@ -388,10 +388,10 @@
   {/key}
 {/if}
 
-<dialog bind:this={rulesDialog} aria-labelledby="rules-title">
+<dialog bind:this={rulesDialog} aria-labelledby="rules-title" onclick={event => { if (event.target === event.currentTarget) rulesDialog?.close(); }}>
   <Rules onClose={() => rulesDialog?.close()} onLearn={() => { rulesDialog?.close(); learn(); }} />
 </dialog>
-<dialog bind:this={restartDialog} aria-labelledby="restart-title">
+<dialog bind:this={restartDialog} aria-labelledby="restart-title" onclick={event => { if (event.target === event.currentTarget) restartDialog?.close(); }}>
   <div class="sheet">
     <h2 id="restart-title">Start a new game?</h2>
     <p>This replaces {replacing}.</p>

@@ -1,0 +1,5 @@
+=== base+cp:4=3,8=4,12=5+tbfinal
+base+cp:4=3,8=4,12=5+tbfinal     mctsx:4000 vs mctsx:1000     n=1200  A=0.760±0.024  W/D/L 912/1/287  draw=0.1%  seat0=0.487  margin=+3.54  tA=0.17s tB=0.04s
+    decided=1199 winner behind after cp1=25.9% cp2=25.3%  lead changes/game=0.58  final cp could decide=99.4%  A kinds D/S/R=89/10/1%  B kinds=89/10/1%
+base+cp:4=3,8=4,12=5+tbfinal    mctsx:16000 vs mctsx:4000     n=600   A=0.705±0.037  W/D/L 423/0/177  draw=0.0%  seat0=0.522  margin=+2.72  tA=0.90s tB=0.20s
+    decided=600 winner behind after cp1=28.5% cp2=24.0%  lead changes/game=0.54  final cp could decide=100.0%  A kinds D/S/R=90/10/1%  B kinds=91/9/1%

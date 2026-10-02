@@ -38,6 +38,7 @@
   let pick = $state<{ from: 'hand' | 'board'; card: number } | null>(null);
   let target = $state<number | 'recall' | null>(null);
   let refusal = $state('');
+  let movesDialog = $state<HTMLDialogElement>();
   let reduced = $state(false);
   let observed = untrack(() => game.turn);
   let run = 0;
@@ -280,14 +281,15 @@
   </section>
   {#if marks}<p class="legend"><span class="swatch"></span> Dashed cards are spent after scoring unless recalled.</p>{/if}
 
-  <section class="side-row me-row" aria-label="Your spent cards" class:empty={!me.spent.length}>
-    <div class="spent mine-spent">
+  <div class="side-row me-row" class:empty={!me.spent.length && !history.length}>
+    {#if history.length}<button class="link moves" onclick={() => movesDialog?.showModal()}>Moves so far</button>{/if}
+    <section class="spent mine-spent" aria-label="Your spent cards">
       {#if me.spent.length}<span class="row-label">Your spent cards</span>{/if}
       {#each me.spent as card (card)}
         <span class="mini gone" in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }}><Card {card} {seat} size="xs" /></span>
       {/each}
-    </div>
-  </section>
+    </section>
+  </div>
 
 
   <div class="dock">
@@ -323,20 +325,27 @@
       {/if}
   </div>
 
-  {#if history.length}
-    <details class="log">
-      <summary>Moves so far</summary>
-      <ol>
-        {#each history as entry}
-          <li><span class="t">{entry.turn}</span><span>{orderText(entry.actions[seat])}</span><span class="opp">{orderText(entry.actions[1 - seat])}</span>{#if entry.checkpoint}<span class="pts">+{entry.checkpoint.gained[seat]} / +{entry.checkpoint.gained[1 - seat]}</span>{/if}</li>
-        {/each}
-      </ol>
-    </details>
-  {/if}
+<dialog bind:this={movesDialog} aria-labelledby="moves-title" onclick={event => { if (event.target === event.currentTarget) movesDialog?.close(); }}>
+  <div class="sheet">
+    <div class="sheet-top">
+      <h2 id="moves-title">Moves so far</h2>
+      <button class="close" onclick={() => movesDialog?.close()} aria-label="Close the move list">×</button>
+    </div>
+    <ol class="log">
+      <li class="head" aria-hidden="true"><span class="t">Turn</span><span>{names[seat]}</span><span class="opp">{names[1 - seat]}</span></li>
+      {#each history as entry}
+        <li>
+          <span class="t">{entry.turn}</span><span>{orderText(entry.actions[seat])}</span><span class="opp">{orderText(entry.actions[1 - seat])}</span>
+          {#if entry.checkpoint}<span class="pts">Scoring: {names[seat]} +{entry.checkpoint.gained[seat]}, {names[1 - seat]} +{entry.checkpoint.gained[1 - seat]}</span>{/if}
+        </li>
+      {/each}
+    </ol>
+  </div>
+</dialog>
 </div>
 
 <style>
-  .table { width: min(100%, 760px); margin: 0 auto; padding: 4px var(--gutter) max(16px, env(safe-area-inset-bottom)); display: grid; gap: 10px; }
+  .table { width: min(100%, 760px); margin: 0 auto; padding: 4px var(--gutter) max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; flex: 1 0 auto; gap: 10px; }
   .scoreline { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 8px; }
   .player { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
   .player strong { font-family: var(--serif); font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -366,20 +375,12 @@
   .mini { display: inline-flex; }
   .mini.gone { opacity: .45; }
   .me-row { min-height: 30px; }
-  @media (min-width: 900px) {
-    .table { width: min(100%, 980px); gap: 12px; }
-    .player strong { font-size: 40px; }
-    .front { grid-template-rows: minmax(84px, auto) 34px 44px 34px minmax(84px, auto); }
-    .pile :global(.card.sm) { --cw: 52px; --ch: 72px; --rs: 23px; --ss: 14px; padding: 5px 0 0 6px; border-radius: 7px; }
-    .num { font-size: 26px; }
-    .label { font-size: 15px; }
-    .in-hand :global(.card) { max-width: 66px; --ch: 92px; --rs: 26px; --ss: 16px; --bs: 30px; }
-    .mini :global(.card.xs) { --cw: 26px; --ch: 36px; --rs: 14px; }
-  }
   .mine-spent { margin-left: auto; }
+  .moves { font-size: 14px; color: var(--ink-2); }
 
-  .board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .front { display: grid; grid-template-rows: minmax(58px, auto) 30px 40px 30px minmax(58px, auto); border-radius: var(--radius); background: var(--paper-2); transition: box-shadow 140ms, background-color 200ms; min-width: 0; }
+  /* One row grid shared by all three fronts (subgrid), so their labels line up whatever each pile holds. */
+  .board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: minmax(58px, auto) 30px 40px 30px minmax(58px, auto); gap: 0 8px; }
+  .front { grid-row: span 5; display: grid; grid-template-rows: minmax(58px, auto) 30px 40px 30px minmax(58px, auto); grid-template-rows: subgrid; border-radius: var(--radius); background: var(--paper-2); transition: box-shadow 140ms, background-color 200ms; min-width: 0; }
   .front.lead-me { background: linear-gradient(to top, var(--mine-wash), transparent 70%), var(--paper-2); }
   .front.lead-them { background: linear-gradient(to bottom, var(--theirs-wash), transparent 70%), var(--paper-2); }
   .front.target { box-shadow: inset 0 0 0 2px var(--ink-3); }
@@ -393,7 +394,7 @@
   .placed.moving { opacity: .5; }
   .placed.doomed :global(.card) { border-style: dashed; border-color: var(--heart); }
   .ghost { display: inline-flex; opacity: .55; }
-  .num { display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--serif); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .num { display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; font-family: var(--serif); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .num.theirs { color: var(--theirs); }
   .num.mine { color: var(--mine); }
   .num i { font-style: normal; font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--ink-2); }
@@ -431,12 +432,12 @@
     .command.stacked .say { flex-basis: 100%; }
   }
 
-  .log summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 15px; color: var(--ink-2); }
-  .log ol { list-style: none; margin: 0 0 8px; padding: 0; font-size: 14px; }
-  .log li { display: grid; grid-template-columns: 26px 1fr 1fr auto; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+  .log { list-style: none; margin: 4px 0 0; padding: 0; font-size: 15px; }
+  .log li { display: grid; grid-template-columns: 40px 1fr 1fr; gap: 2px 10px; padding: 8px 0; border-top: 1px solid var(--line); color: var(--ink); }
+  .log li.head { padding-top: 0; border-top: 0; font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .log .t { color: var(--ink-3); font-variant-numeric: tabular-nums; }
   .log .opp { color: var(--theirs); }
-  .log .pts { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .log .pts { grid-column: 2 / -1; font-size: 13px; color: var(--ink-2); }
   .busy .command { opacity: 1; }
   @keyframes pop { 40% { transform: scale(1.25); } }
 
@@ -445,21 +446,37 @@
     .player strong { font-size: 30px; }
     .hand { grid-template-columns: repeat(7, minmax(0, 1fr)); }
     .in-hand :global(.card) { --ch: 64px; }
-    .front { grid-template-rows: minmax(52px, auto) 26px 38px 26px minmax(52px, auto); }
+    .board { grid-template-rows: minmax(52px, auto) 26px 38px 26px minmax(52px, auto); column-gap: 6px; }
     .num { font-size: 20px; }
-    .board { gap: 6px; }
-    .log li { grid-template-columns: 22px 1fr 1fr; }
-    .log .pts { grid-column: 2 / -1; }
+    .log { font-size: 14px; }
     .lock { min-width: 96px; }
   }
-  @media (max-width: 640px) and (max-height: 760px) {
+  /* Phones and portrait tablets: the board takes the spare height, so the hand and Lock in sit at the bottom of the screen. */
+  @media (max-width: 640px), (max-width: 899px) and (orientation: portrait) {
+    .board { flex: 1 0 auto; }
+    .dock { margin-top: auto; }
+  }
+  @media (max-width: 640px) and (max-height: 760px), (max-height: 500px) {
     .in-hand :global(.card) { --ch: 54px; --rs: 20px; --ss: 12px; --bs: 20px; padding-top: 4px; }
     .hand { gap: 4px 6px; }
-    .front { grid-template-rows: minmax(46px, auto) 24px 34px 24px minmax(46px, auto); }
+    .board { grid-template-rows: minmax(46px, auto) 24px 34px 24px minmax(46px, auto); }
     .say small.recap { display: none; }
     .dock { gap: 6px; padding-top: 8px; }
   }
   @media (max-width: 370px) {
     .pile :global(.card.sm) { --cw: 30px; --ch: 42px; --rs: 14px; }
+    .num { gap: 3px; }
+    .num i { font-size: 12px; }
+    .safe { font-size: 10px; padding: 0 4px; }
+  }
+  @media (min-width: 900px) {
+    .table { width: min(100%, 980px); gap: 12px; }
+    .player strong { font-size: 40px; }
+    .board { grid-template-rows: minmax(84px, auto) 34px 44px 34px minmax(84px, auto); }
+    .pile :global(.card.sm) { --cw: 52px; --ch: 72px; --rs: 23px; --ss: 14px; padding: 5px 0 0 6px; border-radius: 7px; }
+    .num { font-size: 26px; }
+    .label { font-size: 15px; }
+    .in-hand :global(.card) { max-width: 66px; --ch: 92px; --rs: 26px; --ss: 16px; --bs: 30px; }
+    .mini :global(.card.xs) { --cw: 26px; --ch: 36px; --rs: 14px; }
   }
 </style>
