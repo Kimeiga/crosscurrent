@@ -55,6 +55,7 @@ study = {
                 "tiebreak": "total strength on all fronts summed over the three scorings, then draw",
                 "status": "Adopted on simulation evidence; not yet tested with human players."},
     "product_levels_calibration": records(CALIBRATION),
+    "scripted_probes_v03": records(['probes.log']),
     "screening_runs": records(SCREENING),
     "finalist_runs": records(FINALISTS),
 }
