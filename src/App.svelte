@@ -64,6 +64,17 @@
   }
 
   const finished = $derived(game.turn === 12);
+  /** Short tips through the first game of a player who has not taken the lesson. */
+  let tips = $state(false);
+  const tip = $derived.by(() => {
+    if (!tips || finished) return '';
+    if (game.turn === 0) return 'Both players choose one order in secret, then both orders are revealed together. Tap a card in your hand, then a front.';
+    if (game.turn < 3) return 'Turn 4 scores 2 points for each front where your cards add up to more. You can also tap one of your cards on a front to shift or recall it, paid with your lowest card.';
+    if (game.turn === 3) return 'This turn scores. Afterwards each player loses their highest card on every front they occupy, shown dashed.';
+    return 'Turn 8 scores 3 points per front and turn 12 scores 4. Most points after turn 12 wins.';
+  });
+  function hideTips() { tips = false; store('tips', 'off'); }
+  $effect(() => { if (finished && tips) hideTips(); });
   const names = $derived.by((): [string, string] => {
     if (mode === 'local') return ['Player 1', 'Player 2'];
     if (mode === 'online') return seat === 0 ? ['You', 'Friend'] : ['Friend', 'You'];
@@ -261,7 +272,7 @@
     window.scrollTo(0, 0);
   }
   function finishTutorial(play: boolean) {
-    newcomer = false; store('learned', true);
+    newcomer = false; store('learned', true); tips = false;
     if (play) { difficulty = 'easy'; requestStart('solo'); } else home();
   }
   function again() {
@@ -296,6 +307,7 @@
     } catch { worker = null; }
     refreshSaved();
     newcomer = !read('learned');
+    tips = newcomer && read('tips') !== 'off';
     const saved = read<string>('difficulty');
     if (saved) difficulty = normalizeLevel(saved);
     // Navigation never silently resumes a saved match. Invitations ask first.
@@ -361,7 +373,7 @@
       <button class="btn primary" onclick={nextLocalTurn}>Next turn</button>
     {/snippet}
     <Table {game} {history} {seat} {names} {canAct} {status} locked={myLockedOrder} theirsLocked={mode === 'online' && locked[1 - seat]}
-      footer={mode === 'local' && localStage === 'review' && !finished ? review : undefined}
+      footer={mode === 'local' && localStage === 'review' && !finished ? review : undefined} coach={tip} onDismissCoach={hideTips}
       onLock={lockOrder} onBusy={value => { animating = value; }}>
       {#snippet banner()}
         {#if mode === 'online' && !joined[1 - seat]}

@@ -20,8 +20,10 @@
     theirsLocked?: boolean;
     /** Tutorial constraint. */
     allowed?: ((a: Action) => boolean) | null;
-    /** Coaching line shown above the command bar (tutorial and hints). */
+    /** Coaching line shown above the board (tutorial and first-game tips). */
     coach?: string;
+    /** Adds a Hide tips button to the coaching line. */
+    onDismissCoach?: () => void;
     lockLabel?: string;
     onLock: (a: Action) => void;
     onBusy?: (busy: boolean) => void;
@@ -29,7 +31,7 @@
     /** Replaces the command buttons (tutorial navigation). */
     footer?: Snippet;
   };
-  let { game, history, seat, names, canAct, status = '', locked = null, theirsLocked = false, allowed = null, coach = '', lockLabel = 'Lock in', onLock, onBusy = () => {}, banner, footer }: Props = $props();
+  let { game, history, seat, names, canAct, status = '', locked = null, theirsLocked = false, allowed = null, coach = '', onDismissCoach, lockLabel = 'Lock in', onLock, onBusy = () => {}, banner, footer }: Props = $props();
 
   type Phase = 'idle' | 'reveal' | 'score' | 'settle';
   let shown = $state.raw<State>(untrack(() => game));
@@ -227,7 +229,7 @@
     {:else}<b>Turn {nextTurn} of 12</b> · next scoring on turn {upcoming}, {pointsAt(upcoming)} per front{/if}
   </p>
 
-  {#if coach}<p class="coach" role="note">{coach}</p>{/if}
+  {#if coach}<div class="coach" role="note"><p>{coach}</p>{#if onDismissCoach}<button class="hide" onclick={onDismissCoach} aria-label="Hide tips" title="Hide tips">×</button>{/if}</div>{/if}
   {#if banner}{@render banner()}{/if}
 
   <section class="side-row them-row" aria-label={`${names[1 - seat]}’s hand`}>
@@ -419,7 +421,10 @@
   .in-hand:disabled { cursor: default; }
 
   .dock { position: sticky; bottom: 0; z-index: 3; display: grid; gap: 8px; padding: 10px 0 max(10px, env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line); box-shadow: 0 -10px 16px -12px #2a20101f; }
-  .coach { padding: 10px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 15px; line-height: 1.4; }
+  .coach { display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 15px; line-height: 1.4; }
+  .coach p { flex: 1; }
+  .coach .hide { width: 36px; height: 36px; margin: -8px -10px -8px 0; border-radius: 50%; font-size: 22px; line-height: 1; color: var(--ink-2); flex-shrink: 0; }
+  .coach .hide:hover { background: var(--paper-2); }
   @media (max-width: 640px) { .coach { font-size: 14px; padding: 8px 12px; } }
   .command { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .say { min-width: 0; flex: 1 1 160px; }
