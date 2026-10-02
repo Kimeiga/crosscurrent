@@ -22,8 +22,22 @@
       },
       "experimental_younger_score_adjustment": {
         "adjustment_points": 8,
-        "held_out_elder_result_pct": 50.67,
-        "caveat": "Bot-specific outcome handicap; not a proof of strategic balance and not needed for the normal six-deal alternating format."
+        "training_deals": 10000,
+        "held_out_test_deals": 10000,
+        "fitting_policy_elder_adjusted_score_share_pct": 50.67,
+        "fitting_policy_ci95_pct": [
+          49.54,
+          51.8
+        ],
+        "greedy_self_play_elder_adjusted_score_share_pct": 44.48,
+        "random_self_play_elder_adjusted_score_share_pct": 39.98,
+        "caveats": [
+          "Policy-dependent; not a universal komi.",
+          "Existing completed games were re-scored; bots were not retrained to adapt.",
+          "The game was not re-solved under the adjusted payoff.",
+          "Balancing mean score and balancing win probability are different objectives.",
+          "The normal six-deal alternating partie was already near 50/50."
+        ]
       },
       "stronger_vs_simpler_bot_result_pct": 81.08
     },
