@@ -4,6 +4,12 @@ A simultaneous strategy card game for two. Svelte and TypeScript, with solo comp
 
 Production: https://hakanalpay.com/crosscurrent/\n\nVercel mirror: https://crosscurrent-delta.vercel.app/
 
+## Design context
+
+Crosscurrent was designed from a broader investigation into one-game fairness, strategic depth, simultaneous play, and skill expression in two-player card games. The repository preserves that research so future rule or AI changes can be evaluated against the original goal rather than only against the current implementation.
+
+Start with [docs/README.md](docs/README.md). The full history is in [docs/RESEARCH.md](docs/RESEARCH.md), exact historical measurements are in [docs/BENCHMARKS.json](docs/BENCHMARKS.json), and the mechanic-by-mechanic rationale is in [docs/DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md).
+
 ## Homepage demonstration
 
 The homepage plays a complete scripted match using the same v0.2 rules engine as the game. All twelve turns, all three scoring checkpoints, shifts, recalls and highest-card exhaustion are included. The example ends 10–8, sweeps the table, and repeats every 50.35 seconds. It is an illustration, not a claim of optimal play.
