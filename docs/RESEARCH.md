@@ -39,6 +39,21 @@ The desired properties were:
 7. **Simple physical rules**
    - It should remain understandable as a card game rather than become a disguised numerical optimization exercise.
 
+## Historical framing of "skill"
+
+Earlier design-space discussions sometimes used a different proxy for skill: whether strong or optimal play increases the tendency toward draws in highly symmetric games. That framing was useful for thinking about equilibrium behavior, but it is not the current project's sole objective.
+
+Crosscurrent's present target separates several properties that can conflict:
+
+- structural fairness,
+- skill sensitivity,
+- exploitability,
+- strategic choice density,
+- draw rate,
+- human enjoyment.
+
+A game can score well on one and badly on another.
+
 ## What "50/50" can and cannot mean
 
 A central distinction in the research was between **fair expectation** and **observed short-run score**.
@@ -89,6 +104,21 @@ These experiments were not intended as definitive game-theoretic solutions to th
 | GOPS | Full thirteen rounds | 50.07% | 49.30-50.83% | 27.79% in one identical-bot pairing |
 
 A separate GOPS bot pairing produced only **0.26% draws**, showing that GOPS draw rate depends heavily on policy rather than being a fixed property of the rules under arbitrary play.
+
+### Earlier Piquet agency research
+
+Before the simulation work, Piquet was also examined qualitatively to identify where its meaningful decisions actually occur.
+
+The main sources of agency identified were:
+
+- exchange count and which cards to discard,
+- declaration information and what the opponent can infer,
+- trick leads, high/low timing, and suit forcing,
+- scoring-risk management.
+
+This mattered because a game can have complicated rules while many turns are effectively automatic. Crosscurrent's target is repeated consequential choice, not complexity for its own sake.
+
+An earlier claim that Piquet involved roughly "80–90% variance by skill" was later checked and found to be unsupported by any credible source. It should **not** be repeated as evidence.
 
 ### Piquet seat/deal asymmetry
 
@@ -332,10 +362,11 @@ Bots included:
 
 Measured results:
 
-| Matchup | Games | Tactical result |
+| Matchup | Games | Result |
 | --- | ---: | ---: |
-| Tactical vs random | 2,000 | 96.8% |
-| Tactical vs builder | 2,000 | 66.0% |
+| Random vs random | 1,000 | 48.10% for the recorded seat, 11.6% draws |
+| Tactical vs random | 2,000 | 96.8% Tactical |
+| Tactical vs builder | 2,000 | 66.025% Tactical |
 | Tactical self-play, fixed initial seat | 1,000 | 51.2% result |
 
 Tactical self-play detail:
@@ -350,6 +381,13 @@ Tactical self-play detail:
 - win = 1
 - draw = 0.5
 - loss = 0
+
+The same prototype validation also included:
+
+- **6,000 transition symmetry / conservation checks**,
+- all **1,521 legal opening action pairs**,
+- the final-turn witness with **18 legal opponent replies**,
+- **14 unit tests** at that stage.
 
 These numbers support several limited claims:
 
@@ -368,21 +406,25 @@ They do **not** prove:
 
 ### Important failed first prototype
 
-An earlier scoring version used unequal front values.
+Crosscurrent v0.1 used rotating unequal front weights:
 
-In tactical self-play it collapsed into all draws.
+- checkpoint 1: 3 / 2 / 1,
+- checkpoint 2: 1 / 3 / 2,
+- checkpoint 3: 2 / 1 / 3.
+
+In Tactical self-play it drew **all 300 games**.
 
 That version was rejected.
 
-The current checkpoint/scoring structure was introduced partly to break that draw attractor while retaining symmetry.
+The current equal-front checkpoints with escalating whole-checkpoint value were introduced partly to break that draw attractor while retaining player symmetry and resource-timing pressure.
 
-### Reduced game result
+### Reduced-game exact results
 
-A tiny three-card Crosscurrent variant has an optimal-strategy pairing that always draws.
+Reduced **three-front** and **two-front** Crosscurrent variants were solved and admitted all-draw optimal equilibria. A tiny three-card formulation likewise has an optimal-strategy pairing that always draws.
 
-This is a warning, not a success criterion.
+These are warnings, not success criteria.
 
-Symmetric deterministic simultaneous games can naturally possess mirror strategies and draw equilibria. The full thirteen-rank game's optimal draw structure remains unsolved.
+Symmetric deterministic simultaneous games can naturally possess mirror strategies and draw equilibria. None of these reduced results establishes the full thirteen-rank game's equilibrium draw rate or depth.
 
 ## Why structural symmetry is strong but insufficient
 
