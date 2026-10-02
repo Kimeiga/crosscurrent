@@ -4,7 +4,7 @@ test('play action stays above the fold at phone and desktop widths', async ({ pa
   for (const [width, height] of [[320, 568], [375, 667], [390, 844], [1280, 800]]) {
     await page.setViewportSize({ width, height });
     await page.goto('/');
-    const box = await page.locator('.hero-play').boundingBox();
+    const box = await page.locator('.play-cta').boundingBox();
     expect(box).not.toBeNull();
     expect(box!.y + box!.height).toBeLessThan(height);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

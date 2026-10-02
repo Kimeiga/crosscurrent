@@ -1,8 +1,27 @@
 import { actions, prepare, finish, sum, resolve, type Action, type Side, type State } from './engine.ts';
-export type Difficulty = 'casual' | 'tactical' | 'expert';
+import { fromState, toAction } from './ai/fast.ts';
+import { search } from './ai/mcts.ts';
 
-/** Each call accepts a public snapshot only, never the human's selected order. */
-export function chooseAction(state: State, seat: 0 | 1, level: Difficulty = 'tactical', random = Math.random): Action {
+export type Difficulty = 'easy' | 'medium' | 'hard';
+export const levelName = (level: Difficulty) => ({ easy: 'Easy', medium: 'Medium', hard: 'Hard' })[level];
+/** Accepts current names and the names stored by earlier versions. */
+export function normalizeLevel(value: string): Difficulty {
+  if (value === 'easy' || value === 'casual') return 'easy';
+  if (value === 'hard' || value === 'expert') return 'hard';
+  return 'medium';
+}
+/** Search budget per decision. Strengths are measured in docs/RESEARCH.md. */
+export const budgets: Record<Difficulty, number> = { easy: 300, medium: 3000, hard: 24000 };
+
+/** Each call accepts a public snapshot only, never the other player's pending order.
+ * `strength` is the public tiebreak total so far (see engine.tiebreakStrength). */
+export function chooseAction(state: State, seat: 0 | 1, difficulty: Difficulty = 'medium', random = Math.random, strength: [number, number] = [0, 0]): Action {
+  if (!actions(state.sides[seat]).length) throw new Error('No legal actions.');
+  return toAction(search(fromState(state, strength), seat, { iterations: budgets[difficulty], random }));
+}
+
+/** The v0.2 one-turn heuristic opponent, kept as a fixed baseline for research comparisons. */
+export function heuristicAction(state: State, seat: 0 | 1, level: 'casual' | 'tactical' | 'expert' = 'tactical', random = Math.random): Action {
   const own = actions(state.sides[seat]);
   const other = actions(state.sides[1 - seat]);
   if (!own.length) throw new Error('No legal actions.');
@@ -24,7 +43,7 @@ export function chooseAction(state: State, seat: 0 | 1, level: Difficulty = 'tac
     if (turn === 12) {
       let margin = state.scores[seat] - state.scores[1 - seat];
       for (let f = 0; f < 3; f++) margin += 3 * Math.sign(a.strengths[f] - b.strengths[f]);
-      return Math.sign(margin); // Endgame optimizes W/D/L, not score margin.
+      return Math.sign(margin);
     }
     let value = a.resources - b.resources;
     for (let f = 0; f < 3; f++) {
@@ -39,7 +58,6 @@ export function chooseAction(state: State, seat: 0 | 1, level: Difficulty = 'tac
     return own[averages.indexOf(Math.max(...averages))];
   }
   // Fictitious play approximates a mixed strategy of this one-step payoff model.
-  // It is not an exact or full-game equilibrium solver.
   const countA = Array(own.length).fill(0) as number[];
   const utilityA = Array(own.length).fill(0) as number[];
   const utilityB = Array(other.length).fill(0) as number[];

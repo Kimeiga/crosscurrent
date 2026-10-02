@@ -91,3 +91,33 @@ This file is a compact decision log. See `RESEARCH.md` for the full evidence and
 **Decision:** Describe Crosscurrent as a tactical, balanced card game for two. Avoid grandiose taglines.
 
 **Reason:** The value proposition is the game design itself.
+
+## D16: Positional front names
+
+**Decision:** The three fronts are called Left, Middle and Right.
+
+**Reason:** Sea, Land and Air carried no rules meaning and closely echoed the theaters of the published game *Air, Land & Sea*. Positional names need no learning and keep move descriptions unambiguous ("Shift 9 to Right").
+
+## D17: Computer levels are search budgets of one algorithm
+
+**Decision:** Easy, Medium and Hard run the same simultaneous-move tree search with exact final-turn solving, at 300, 3,000 and 24,000 iterations. The v0.2 one-turn heuristic is kept only as a research baseline.
+
+**Reason:** The v0.2 "Deep" level was measured at 48.9% against "Tactical": not stronger. Levels that differ only in search budget are strictly ordered by construction, and their gaps are measured (RESEARCH.md). None is claimed optimal.
+
+## D18: Teach by playing constrained turns
+
+**Decision:** "Learn by playing" is five one-turn lessons on real positions: secret orders, scoring and spent cards, Shift, Recall, and a final-turn puzzle. Each lesson allows only the order it teaches and explains what happened after the reveal.
+
+**Reason:** The homepage already shows a complete game (D14). A newcomer still needs to make each kind of order once, see a scoring and see a card spent, before a full game against Easy is comfortable.
+
+## D19: The client recomputes online scoring
+
+**Decision:** The online room service enforces hidden orders, turn order and legality. Clients rebuild the game, including scores and the tiebreak, from the revealed orders.
+
+**Reason:** The room service is deployed separately. Rule sets that keep board evolution identical (all v0.3 changes) then work with an older room service, and both players always compute the same result from the same public history.
+
+## D20: Mark safe leads on scoring turns
+
+**Decision:** On scoring turns the table marks a front "safe" when no single order of the other player can overturn its leader.
+
+**Reason:** The central tactic is building leads the opponent's one order cannot reach. The marker uses only public information and makes that idea visible while players learn; it does not suggest moves.

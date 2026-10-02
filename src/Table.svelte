@@ -1,247 +1,443 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
   import { crossfade } from 'svelte/transition';
-  import Icon from './Icon.svelte';
-  import { fronts, orderText, revealFrames } from './ui';
-  import { sum, rank, rankName, type State, type TurnRecord, type Action, type ActionKind } from './engine';
+  import Card from './Card.svelte';
+  import { actions as legalActions, prepare, sameAction, sum, rank, rankName, pointsAt, scoringTurns, type Action, type State, type TurnRecord } from './engine';
+  import { fronts, orderText, revealFrames, exhaustTargets } from './ui';
 
-  export let game: State;
-  export let history: TurnRecord[];
-  export let seat: 0 | 1;
-  export let mode: 'solo' | 'online' | 'local';
-  export let opponentName: string;
-  export let busy: boolean;
-  export let disabled: boolean;
-  export let joined: [boolean, boolean];
-  export let locked: [boolean, boolean];
-  export let myLockedOrder: Action | null;
-  export let connectionStatus: string;
-  export let inviteLink: string;
-  export let toast: string;
-  export let kind: ActionKind;
-  export let selected: number | null;
-  export let destination: number | null;
-  export let order: Action | null;
-  export let projected: number[];
-  export let localReview = false;
-  export let onKind: (kind: ActionKind) => void;
-  export let onCard: (card: number) => void;
-  export let onBoardCard: (card: number) => void;
-  export let onFront: (front: number) => void;
-  export let onLock: () => void;
-  export let onCopy: () => void;
-  export let onReconnect: () => void;
-  export let onAgain: () => void;
-  export let onNext: () => void;
-  export let onAnimation: (busy: boolean) => void;
+  type Props = {
+    game: State;
+    history: TurnRecord[];
+    seat: 0 | 1;
+    /** Display names indexed by seat. */
+    names: [string, string];
+    canAct: boolean;
+    /** Shown in the command bar whenever the player cannot act. */
+    status?: string;
+    /** My committed order while the other player is still choosing. */
+    locked?: Action | null;
+    /** Tutorial constraint. */
+    allowed?: ((a: Action) => boolean) | null;
+    /** Coaching line shown above the command bar (tutorial and hints). */
+    coach?: string;
+    lockLabel?: string;
+    onLock: (a: Action) => void;
+    onBusy?: (busy: boolean) => void;
+    banner?: Snippet;
+    /** Replaces the command buttons (tutorial navigation). */
+    footer?: Snippet;
+  };
+  let { game, history, seat, names, canAct, status = '', locked = null, allowed = null, coach = '', lockLabel = 'Lock in', onLock, onBusy = () => {}, banner, footer }: Props = $props();
 
-  let shown: State = game;
-  let observedTurn = game.turn;
-  let animationId = 0;
-  let animating = false;
-  let motionPhase = '';
-  let reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let scoringRecord: TurnRecord | null = null;
-  let scoringDialog: HTMLDialogElement;
-  const pause = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+  type Phase = 'idle' | 'reveal' | 'score' | 'settle';
+  let shown = $state.raw<State>(untrack(() => game));
+  let phase = $state<Phase>('idle');
+  let scoring = $state.raw<TurnRecord | null>(null);
+  let pick = $state<{ from: 'hand' | 'board'; card: number } | null>(null);
+  let target = $state<number | 'recall' | null>(null);
+  let refusal = $state('');
+  let reduced = $state(false);
+  let observed = untrack(() => game.turn);
+  let run = 0;
+
   const [send, receive] = crossfade({
-    duration: () => reduced ? 0 : 440,
-    fallback: () => ({
-      duration: reduced ? 0 : 280,
-      css: (t: number) => `opacity: ${t}; transform: translateY(${(1 - t) * -10}px) scale(${0.92 + t * 0.08});`,
-    }),
+    duration: () => (reduced ? 0 : 420),
+    fallback: () => ({ duration: reduced ? 0 : 220, css: (t: number) => `opacity: ${t}; transform: scale(${0.9 + t * 0.1});` }),
+  });
+  const wait = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, reduced ? 0 : ms));
+
+  $effect(() => {
+    const next = game;
+    const records = history;
+    untrack(() => accept(next, records));
   });
 
-  // Only completed turns trigger motion. Pending realtime orders never change the public board.
-  $: acceptPosition(game, history);
-  $: mine = shown.sides[seat];
-  $: theirs = shown.sides[1 - seat];
-  $: finished = game.turn === 12 && !animating;
-  $: turn = Math.min(12, animating ? shown.turn : game.turn + 1);
-  $: phase = Math.ceil(turn / 4);
-  $: checkpoint = !finished && turn % 4 === 0;
-  $: nextCheckpoint = Math.ceil(turn / 4) * 4;
-  $: blocked = disabled || animating;
-  $: yourName = mode === 'local' ? `Player ${seat + 1}` : 'You';
-  $: origin = selected === null ? -1 : mine.board.findIndex(cards => cards.includes(selected!));
-  $: choosingFront = !blocked && selected !== null && kind !== 'recall';
-  $: lastTurn = history.at(-1);
-  $: payment = game.sides[seat].hand[0];
-  $: pending = locked[seat] || busy;
-  $: instruction = animating ? motionPhase
-    : locked[seat] ? 'Order locked. Waiting for your friend.'
-    : mode === 'online' && !joined.every(Boolean) ? 'Waiting for your friend to join.'
-    : busy ? 'Locking your order…'
-    : order ? orderText(order)
-    : kind === 'deploy' ? selected === null ? 'Choose a card, then a front.' : `${rank(selected)} selected. Choose Sea, Land or Air.`
-    : selected === null ? 'Choose one of your deployed cards.' : 'Choose a different front.';
-  $: detail = animating ? '' : pending && myLockedOrder ? orderText(myLockedOrder)
-    : order && kind === 'recall' ? `Spend ${rank(payment)}. ${rank(order.card)} returns after ${checkpoint ? 'scoring' : 'this turn'}.`
-    : order ? `${kind === 'shift' ? `Spend ${rank(payment)}. ` : ''}Preview excludes their secret move.`
-    : kind !== 'deploy' ? `Costs your lowest hand card: ${rank(payment)}.` : 'Both orders reveal together.';
-
-  function acceptPosition(next: State, records: TurnRecord[]) {
-    if (next.turn === observedTurn) return;
+  function accept(next: State, records: TurnRecord[]) {
+    if (next.turn === observed) {
+      if (phase === 'idle') shown = next;
+      return;
+    }
     const previous = shown;
     const record = records.at(-1);
-    const consecutive = next.turn === observedTurn + 1;
-    observedTurn = next.turn;
-    const id = ++animationId;
+    const consecutive = next.turn === observed + 1 && record?.turn === next.turn;
+    observed = next.turn;
+    pick = null; target = null; refusal = '';
+    const id = ++run;
     if (reduced || !consecutive || !record) {
-      shown = next; animating = false; motionPhase = ''; scoringRecord = null;
-      onAnimation(false); return;
+      shown = next; phase = 'idle'; scoring = null; onBusy(false);
+      return;
     }
     const frames = revealFrames(previous, next, record);
-    animating = true; onAnimation(true);
-    scoringRecord = null; motionPhase = `Turn ${record.turn}: orders revealed`;
-    shown = frames.revealed;
+    onBusy(true);
+    phase = 'reveal'; shown = frames.revealed; scoring = null;
     void (async () => {
-      await pause(520);
-      if (id !== animationId) return;
+      await wait(900);
+      if (id !== run) return;
       if (record.checkpoint) {
-        shown = frames.scored; scoringRecord = record; motionPhase = 'Scoring the fronts';
-        await pause(reduced ? 0 : 680);
-        if (id !== animationId) return;
+        phase = 'score'; shown = frames.scored; scoring = record;
+        await wait(1700);
+        if (id !== run) return;
       }
-      motionPhase = record.checkpoint ? 'Highest cards spent. Recalled cards return.' : 'Recalled cards return.';
-      shown = frames.settled;
-      await pause(reduced ? 0 : 320);
-      if (id !== animationId) return;
-      motionPhase = ''; scoringRecord = null; animating = false; onAnimation(false);
+      phase = 'settle'; shown = frames.settled;
+      await wait(450);
+      if (id !== run) return;
+      phase = 'idle'; scoring = null; onBusy(false);
     })();
   }
-  function scoredWinner(front: number, player: number) {
-    const values = scoringRecord?.checkpoint?.strengths;
-    return !!values && values[player][front] > values[1 - player][front];
+
+  const me = $derived(shown.sides[seat]);
+  const them = $derived(shown.sides[1 - seat]);
+  const interactive = $derived(canAct && phase === 'idle' && !locked && game.turn < 12);
+  const nextTurn = $derived(Math.min(12, game.turn + 1));
+  const stake = $derived(pointsAt(nextTurn));
+  const upcoming = $derived(scoringTurns().find(t => t >= nextTurn) ?? 12);
+  const scoringTurn = $derived(phase === 'idle' && game.turn < 12 && stake > 0);
+  const live = $derived(game.sides[seat]);
+  const payment = $derived(live.hand[0]);
+  const origin = $derived(pick?.from === 'board' ? live.board.findIndex(f => f.includes(pick!.card)) : -1);
+  const order = $derived.by((): Action | null => {
+    if (!pick || target === null) return null;
+    const candidate: Action = pick.from === 'hand'
+      ? { kind: 'deploy', card: pick.card, front: target as number }
+      : target === 'recall' ? { kind: 'recall', card: pick.card, front: -1 } : { kind: 'shift', card: pick.card, front: target as number };
+    return legalActions(live).some(a => sameAction(a, candidate)) ? candidate : null;
+  });
+  const staged = $derived(locked ?? order);
+  const projected = $derived(staged ? prepare(live, staged).side : null);
+  const myStrength = $derived(me.board.map(sum));
+  const theirStrength = $derived(them.board.map(sum));
+  /** Cards spent after this turn's scoring: my side reflects a staged Recall, which saves its card. */
+  const marks = $derived.by(() => {
+    if (!scoringTurn || nextTurn === 12) return null;
+    const result = [exhaustTargets(shown.sides[0]), exhaustTargets(shown.sides[1])];
+    if (staged?.kind === 'recall') {
+      const front = live.board.findIndex(f => f.includes(staged.card));
+      if (front >= 0 && result[seat][front] === staged.card) result[seat][front] = null;
+    }
+    return result;
+  });
+  /** On scoring turns: fronts whose lead no single order of the other side can overturn. */
+  const safe = $derived.by(() => {
+    if (!scoringTurn) return null;
+    const mine = projected ?? live;
+    const theirs = game.sides[1 - seat];
+    const reach = (side: typeof live, front: number) => Math.max(0, ...side.hand, ...side.board.flatMap((cards, f) => (f === front ? [] : cards)));
+    return [0, 1, 2].map(f => {
+      const a = sum(mine.board[f]), b = sum(theirs.board[f]);
+      return { mine: a > b + reach(theirs, f), theirs: b > a + reach(live, f) };
+    });
+  });
+  const last = $derived(history.at(-1));
+  const revealing = $derived(phase !== 'idle' && last && last.turn === shown.turn ? last : null);
+
+  function choose(from: 'hand' | 'board', card: number) {
+    if (!interactive) return;
+    refusal = '';
+    if (pick && pick.from === from && pick.card === card) { pick = null; target = null; return; }
+    pick = { from, card }; target = null;
+  }
+  function aim(front: number | 'recall') {
+    if (!interactive || !pick) return;
+    if (pick.from === 'board' && front === origin) { pick = null; target = null; return; }
+    target = front; refusal = '';
+    if (order && allowed && !allowed(order)) { refusal = 'Not this time. Follow the highlighted step.'; target = null; }
+  }
+  function lock() {
+    if (!order || !interactive) return;
+    if (allowed && !allowed(order)) { refusal = 'Not this time. Follow the highlighted step.'; return; }
+    const chosen = order;
+    pick = null; target = null;
+    onLock(chosen);
+  }
+  function clear() { pick = null; target = null; refusal = ''; }
+  function scored(front: number, side: number) {
+    const values = scoring?.checkpoint?.strengths;
+    return !!values && values[side][front] > values[1 - side][front];
+  }
+  function onKey(event: KeyboardEvent) {
+    if (event.key === 'Escape') clear();
+    if (event.key === 'Enter' && order && interactive && !(event.target instanceof HTMLButtonElement)) lock();
   }
   onMount(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    reduced = media.matches;
     const update = () => { reduced = media.matches; };
     media.addEventListener('change', update);
     return () => media.removeEventListener('change', update);
   });
-  onDestroy(() => { animationId++; onAnimation(false); });
+  onDestroy(() => { run++; onBusy(false); });
+
+  const instruction = $derived.by(() => {
+    if (phase === 'reveal') return 'Both orders revealed.';
+    if (phase === 'score') return `Scoring: ${scoring?.checkpoint?.points ?? ''} per front won.`;
+    if (phase === 'settle') return scoring || last?.checkpoint ? 'Highest cards are spent. Recalled cards return.' : 'Recalled cards return.';
+    if (game.turn >= 12) return 'Game over.';
+    if (locked) return status || 'Locked in. Waiting for the other order.';
+    if (!canAct) return status;
+    if (refusal) return refusal;
+    if (order) return orderText(order);
+    if (!pick) return live.board.flat().length ? 'Pick a card in your hand or on the board.' : 'Pick a card from your hand.';
+    if (pick.from === 'hand') return `Deploy ${rank(pick.card)}: tap a front.`;
+    return `Move ${rank(pick.card)}: tap another front, or recall it.`;
+  });
+  const detail = $derived.by(() => {
+    if (phase !== 'idle' || game.turn >= 12) return '';
+    const cost = rank(payment);
+    if (locked) return orderText(locked);
+    if (order && order.kind !== 'deploy') return `Pays your lowest card, ${cost}.${order.kind === 'recall' ? stake ? ' It still counts for this scoring.' : '' : ''}`;
+    if (pick?.from === 'board') return `Shift or recall pays your lowest card, ${cost}.`;
+    if (!pick && last) return `Last turn · ${names[seat]}: ${orderText(last.actions[seat])} · ${names[1 - seat]}: ${orderText(last.actions[1 - seat])}`;
+    return '';
+  });
 </script>
 
-<main class="cc-game" class:cc-revealing={animating}>
-  <section class="cc-match" aria-label="Match score and turn">
-    <div class="cc-player cc-you"><span>{yourName}</span>{#key shown.scores[seat]}<strong class="score-number">{shown.scores[seat]}</strong>{/key}<span class="sr-only">points</span></div>
-    <div class="cc-turn"><span>{finished ? 'FINAL' : mode === 'local' ? 'LOCAL TABLE' : mode === 'online' ? 'PRIVATE TABLE' : 'SOLO TABLE'}</span><strong>{finished ? '12 / 12' : `${turn} / 12`}</strong><small>{finished ? 'Game complete' : animating ? 'Revealing' : 'Turn'}</small></div>
-    <div class="cc-player cc-them">{#key shown.scores[1 - seat]}<strong class="score-number">{shown.scores[1 - seat]}</strong>{/key}<span>{opponentName}</span><span class="sr-only">points</span></div>
+<svelte:window onkeydown={onKey} />
+
+<div class="table" class:busy={phase !== 'idle'} style={`--mine: var(--seat${seat}); --theirs: var(--seat${1 - seat}); --mine-wash: var(--seat${seat}-wash); --theirs-wash: var(--seat${1 - seat}-wash);`}>
+  <section class="scoreline" aria-label="Score">
+    <div class="player me"><span class="name">{names[seat]}</span><strong>{shown.scores[seat]}</strong></div>
+    <div class="player them"><strong>{shown.scores[1 - seat]}</strong><span class="name">{names[1 - seat]}</span></div>
   </section>
-  <button class="cc-scoring" class:cc-scoring-now={checkpoint} on:click={() => scoringDialog.showModal()} aria-label="Scoring details">
-    <span>{finished ? 'All three checkpoints scored' : checkpoint ? 'Scoring this turn' : `Next score: turn ${nextCheckpoint}`}</span>
-    <span>{phase} {phase === 1 ? 'point' : 'points'} / front <span aria-hidden="true">↗</span></span>
-  </button>
-  <div class="cc-turn-track" aria-hidden="true">{#each Array(12) as _, index}<span class:done={index < game.turn} class:current={index === game.turn} class:checkpoint={(index + 1) % 4 === 0}></span>{/each}</div>
+  <ol class="track" aria-hidden="true">
+    {#each Array(12) as _, i}
+      {@const t = i + 1}
+      <li class:done={t <= shown.turn} class:now={phase === 'idle' && t === nextTurn && game.turn < 12} class:cp={pointsAt(t) > 0}></li>
+    {/each}
+  </ol>
+  <p class="stakes" class:hot={scoringTurn}>
+    {#if game.turn >= 12 && phase === 'idle'}<b>Final score</b>
+    {:else if phase !== 'idle'}<b>Turn {shown.turn} of 12</b> · revealing
+    {:else if scoringTurn}<b>Turn {nextTurn} of 12 · scores {stake} per front won</b>
+    {:else}<b>Turn {nextTurn} of 12</b> · next scoring on turn {upcoming}, {pointsAt(upcoming)} per front{/if}
+  </p>
 
-  {#if mode === 'online' && connectionStatus !== 'Live'}
-    <div class="cc-connection" role="status"><span>{connectionStatus === 'Connecting' ? 'Connecting to your table…' : 'Connection paused'}</span><button class="text-button" on:click={onReconnect}>Reconnect</button></div>
-  {/if}
-  {#if mode === 'online' && !joined[1 - seat]}
-    <section class="cc-invite" aria-label="Invite a friend">
-      <div><span class="eyebrow">YOUR TABLE IS OPEN</span><h2>Bring your opponent.</h2><p>Send this private invitation to play from another device.</p></div>
-      <div class="cc-invite-controls"><button class="primary" on:click={onCopy}>Copy invitation <Icon name="arrow" size={18} /></button><input aria-label="Invitation link" readonly value={inviteLink} on:focus={event => event.currentTarget.select()} />{#if toast}<small role="status">{toast}</small>{/if}</div>
-    </section>
-  {/if}
-  {#if finished}
-    <section class="cc-result" role="status">
-      <div><p class="eyebrow">TWELVE TURNS. ONE RESULT.</p><h1>{shown.scores[seat] === shown.scores[1 - seat] ? 'An even match.' : shown.scores[seat] > shown.scores[1 - seat] ? `${yourName === 'You' ? 'You win' : `${yourName} wins`}.` : `${mode === 'solo' ? 'The computer' : opponentName} wins.`}</h1></div>
-      <button class="primary" on:click={onAgain} disabled={busy}>{mode === 'online' ? 'Create a new table' : 'Play again'} <Icon name="arrow" size={20} /></button>
-    </section>
-  {/if}
+  {#if banner}{@render banner()}{/if}
 
-  <section class="cc-public-hand" aria-label="Opponent public hand">
-    <div class="cc-hand-heading"><h2>{mode === 'local' ? `${opponentName}’s hand` : 'Their hand'}</h2><span>{mode === 'online' && locked[1 - seat] && !finished ? 'Order locked' : 'Public'}</span></div>
-    <div class="cc-mini-hand">
-      {#each theirs.hand as card (card)}
-        <span in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }} aria-label={`${rankName(card)}, value ${card}`}>{rank(card)}</span>
+  <section class="side-row them-row" aria-label={`${names[1 - seat]}’s hand`}>
+    <span class="row-label">{names[1 - seat] === 'You' ? 'Your' : `${names[1 - seat]}’s`} hand</span>
+    <div class="mini-hand">
+      {#each them.hand as card (card)}
+        <span class="mini" in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }}><Card {card} seat={1 - seat} size="xs" /></span>
+      {/each}
+    </div>
+    <div class="spent" title="Spent cards" class:empty={!them.spent.length}>
+      {#if them.spent.length}<span class="row-label">Spent</span>{/if}
+      {#each them.spent as card (card)}
+        <span class="mini gone" in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }}><Card {card} seat={1 - seat} size="xs" /></span>
       {/each}
     </div>
   </section>
 
-  <section class="cc-board" aria-label="Sea, Land and Air fronts">
-    {#each fronts as front, index}
-      <section class={`cc-front ${front.theme}`} class:cc-destination={destination === index && !!order && !animating} aria-label={`${front.name} front`}>
-        <div class="cc-strength cc-enemy-strength" class:cc-scored={scoredWinner(index, 1 - seat)} aria-label={`${opponentName} strength at ${front.name}: ${sum(theirs.board[index])}`}>
-          {#key sum(theirs.board[index])}<strong>{sum(theirs.board[index])}</strong>{/key}
-        </div>
-        <div class="cc-pieces cc-enemy-zone" aria-label={`Opponent cards at ${front.name}`}>
-          {#each theirs.board[index] as card (card)}
-            <span class="cc-piece cc-enemy-piece" in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }} aria-label={`${rankName(card)}, value ${card}`}><b>{rank(card)}</b><small>{card}</small></span>
+  <section class="board" aria-label="Fronts">
+    {#each fronts as name, f}
+      {@const mine = myStrength[f]}
+      {@const theirs = theirStrength[f]}
+      {@const projectedHere = projected ? sum(projected.board[f]) : mine}
+      {@const canAim = interactive && !!pick && !(pick.from === 'board' && origin === f)}
+      <div class="front" class:target={canAim} class:chosen={staged && staged.kind !== 'recall' && staged.front === f}
+        class:lead-me={phase === 'idle' && mine > theirs} class:lead-them={phase === 'idle' && theirs > mine}>
+        <div class="pile theirs">
+          {#each them.board[f] as card (card)}
+            <span class="placed" class:doomed={marks?.[1 - seat][f] === card} in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }}><Card {card} seat={1 - seat} size="sm" /></span>
           {/each}
         </div>
-        <button class="cc-front-target" class:cc-available={choosingFront && !(kind === 'shift' && origin === index)} aria-label={`Choose front ${front.name}`} aria-pressed={destination === index && !!order && !animating} disabled={!choosingFront || (kind === 'shift' && origin === index)} on:click={() => onFront(index)}>
-          <Icon name={front.icon} size={24} /><strong>{front.name}</strong><span class="cc-target-status" aria-hidden="true">{destination === index && order && !animating ? '✓' : choosingFront && !(kind === 'shift' && origin === index) ? '+' : front.code}</span>
+        <div class="num theirs" class:won={scored(f, 1 - seat)}>{theirs}{#if scored(f, 1 - seat)}<em>+{scoring?.checkpoint?.points}</em>{/if}{#if safe?.[f].theirs}<span class="safe" title="No single order of yours can overturn this">safe</span>{/if}</div>
+        <button class="label" disabled={!canAim} onclick={() => aim(f)} aria-label={`${name} front${canAim ? `: ${pick?.from === 'hand' ? 'deploy' : 'shift'} here` : ''}`}>
+          <span>{name}</span>
         </button>
-        <div class="cc-pieces cc-own-zone" aria-label={`Your cards at ${front.name}`}>
-          {#each mine.board[index] as card (card)}
-            <button class="cc-piece cc-own-piece" class:cc-picked={selected === card && kind !== 'deploy' && !animating} in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }} disabled={blocked || kind === 'deploy'} on:click={() => onBoardCard(card)} aria-label={`Select your ${rankName(card)} at ${front.name}`} aria-pressed={selected === card && kind !== 'deploy' && !animating}><b>{rank(card)}</b><small>{card}</small></button>
+        <div class="num mine" class:won={scored(f, seat)}>
+          {mine}{#if projected && projectedHere !== mine}<i>→ {projectedHere}</i>{/if}{#if scored(f, seat)}<em>+{scoring?.checkpoint?.points}</em>{/if}{#if safe?.[f].mine}<span class="safe" title="No single order of theirs can overturn this">safe</span>{/if}
+        </div>
+        <div class="pile mine">
+          {#each me.board[f] as card (card)}
+            <button class="placed" class:picked={pick?.from === 'board' && pick.card === card} class:doomed={marks?.[seat][f] === card}
+              class:moving={staged && staged.kind !== 'deploy' && staged.card === card}
+              disabled={!interactive} onclick={() => choose('board', card)} aria-label={`Your ${rankName(card)} on ${name}`} aria-pressed={pick?.from === 'board' && pick.card === card}
+              in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }}><Card {card} {seat} size="sm" /></button>
           {/each}
+          {#if staged && staged.kind !== 'recall' && staged.front === f}
+            <span class="ghost" aria-hidden="true"><Card card={staged.card} {seat} size="sm" /></span>
+          {/if}
         </div>
-        <div class="cc-strength cc-own-strength" class:cc-scored={scoredWinner(index, seat)} aria-label={`${yourName} strength at ${front.name}: ${sum(mine.board[index])}`}>
-          {#key sum(mine.board[index])}<strong>{sum(mine.board[index])}</strong>{/key}
-          {#if order && !animating && projected[index] !== sum(mine.board[index])}<small class="cc-projection">→ {projected[index]}</small>{/if}
-        </div>
-      </section>
+      </div>
     {/each}
   </section>
-  <div class="cc-board-key"><span>↑ {opponentName}</span><span>{checkpoint && !finished ? 'Highest cards leave after scoring' : 'Strength = sum of card values'}</span><span>↓ {yourName}</span></div>
+  {#if marks}<p class="legend"><span class="swatch"></span> Dashed cards are spent after scoring unless recalled.</p>{/if}
 
-  <section class="cc-controls" aria-label="Choose your order">
-    {#if !finished && !localReview}
-      <div class="cc-action-tabs" aria-label="Action">
-        {#each ['deploy', 'shift', 'recall'] as action}
-          <button class:cc-active={kind === action} aria-pressed={kind === action} disabled={blocked || (action !== 'deploy' && mine.board.flat().length === 0)} on:click={() => onKind(action as ActionKind)}><Icon name={action} size={19} />{action === 'deploy' ? 'Deploy' : action === 'shift' ? 'Shift' : 'Recall'}</button>
-        {/each}
-      </div>
-    {/if}
-    <div class="cc-hand-heading"><h2>{mode === 'local' ? `${yourName}’s hand` : 'Your hand'}</h2><span>{!finished && kind !== 'deploy' && !localReview ? `Payment: ${rank(payment)}` : `${mine.hand.length} cards · Public`}</span></div>
-    <div class="cc-hand">
-      {#each mine.hand as card (card)}
-        <button class="cc-hand-card" class:cc-picked={selected === card && kind === 'deploy' && !animating} class:cc-payment={kind !== 'deploy' && card === payment && !animating && !localReview} in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }} disabled={blocked || kind !== 'deploy' || localReview || finished} on:click={() => onCard(card)} aria-label={`Play ${rankName(card)}`} aria-pressed={selected === card && kind === 'deploy' && !animating}><b>{rank(card)}</b><span class="cc-card-suit" aria-hidden="true">{seat === 0 ? '♠' : '♦'}</span><small>{card}</small></button>
+  <section class="side-row me-row" aria-label="Your spent cards" class:empty={!me.spent.length}>
+    <div class="spent mine-spent">
+      {#if me.spent.length}<span class="row-label">Your spent cards</span>{/if}
+      {#each me.spent as card (card)}
+        <span class="mini gone" in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }}><Card {card} {seat} size="xs" /></span>
       {/each}
     </div>
   </section>
 
-  {#if !finished}
-    <div class="cc-command" class:cc-command-ready={!!order || pending || localReview}>
-      <div class="cc-guidance" aria-live="polite">
-        {#if pending && !animating}<span class="cc-pending-icon"><Icon name="lock" size={18} /></span>{/if}
-        <div><p>{localReview && !animating ? 'Review both moves together.' : instruction}</p>{#if !localReview && detail}<small>{detail}</small>{/if}</div>
-      </div>
-      {#if localReview}<button class="primary cc-lock" disabled={animating} on:click={onNext}>Next turn <Icon name="arrow" size={18} /></button>
-      {:else}<button class="primary cc-lock" disabled={blocked || !order} on:click={onLock}><Icon name="lock" size={17} />{locked[seat] ? 'Locked' : busy ? 'Locking…' : animating ? 'Revealing…' : 'Lock order'}</button>{/if}
+  <section class="hand" aria-label="Your hand">
+    {#each me.hand as card (card)}
+      <button class="in-hand" class:picked={pick?.from === 'hand' && pick.card === card}
+        class:pays={(pick?.from === 'board' || (staged && staged.kind !== 'deploy')) && card === payment && phase === 'idle'}
+        class:leaving={staged?.kind === 'deploy' && staged.card === card}
+        disabled={!interactive} onclick={() => choose('hand', card)} aria-label={`${rankName(card)} in your hand`} aria-pressed={pick?.from === 'hand' && pick.card === card}
+        in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }}><Card {card} {seat} /></button>
+    {/each}
+  </section>
+
+  {#if coach || game.turn < 12 || phase !== 'idle' || footer}
+    <div class="dock">
+      {#if coach}<p class="coach" role="note">{coach}</p>{/if}
+      {#if footer && phase === 'idle'}
+        <div class="command">{@render footer()}</div>
+      {:else if game.turn < 12 || phase !== 'idle'}
+        <div class="command" class:stacked={pick?.from === 'board' && interactive} aria-live="polite">
+          <div class="say">
+            <p>{instruction}</p>
+            {#if revealing}
+              <small>{names[seat]}: {orderText(revealing.actions[seat])} · {names[1 - seat]}: {orderText(revealing.actions[1 - seat])}</small>
+            {:else if detail}<small>{detail}</small>{/if}
+          </div>
+          <div class="do">
+            {#if pick?.from === 'board' && interactive}
+              <button class="btn small recall" aria-pressed={target === 'recall'} onclick={() => aim('recall')}>{target === 'recall' ? '✓ Recall' : 'Recall'}</button>
+            {/if}
+            {#if pick && interactive}<button class="btn quiet small" onclick={clear}>Cancel</button>{/if}
+            {#if game.turn < 12 && !locked}
+              <button class="btn primary lock" disabled={!order || !interactive} onclick={lock}>{lockLabel}</button>
+            {/if}
+          </div>
+        </div>
+      {/if}
     </div>
   {/if}
-  {#if lastTurn}
-    <section class="cc-reveal" aria-label="Last revealed orders" aria-live="polite">
-      <h2>TURN {lastTurn.turn} <span>REVEALED</span></h2>
-      <p><span>{yourName}: {orderText(lastTurn.actions[seat])}</span><span>{opponentName}: {orderText(lastTurn.actions[1 - seat])}</span></p>
-      {#if lastTurn.checkpoint}<div class="cc-checkpoint-result">Checkpoint: {yourName.toLowerCase()} +{lastTurn.checkpoint.gained[seat]}, {opponentName.toLowerCase()} +{lastTurn.checkpoint.gained[1 - seat]}. Highest cards spent; recalled cards returned.</div>{/if}
-    </section>
-  {/if}
-  <details class="cc-details">
-    <summary>Game details <span>{history.length} turns revealed</span></summary>
-    <p>{mode === 'online' ? `Private table · ${connectionStatus}` : mode === 'local' ? 'Local table. Completed turns are saved on this device. Unrevealed local orders are not saved after leaving the table.' : `${opponentName}. Saved on this device.`}</p>
-    {#if mode === 'online'}<button class="text-button" on:click={onReconnect}>Reconnect</button>{/if}
-    <p>All hands are public. Only the current orders are secret. Ace = 1, Jack = 11, Queen = 12, King = 13.</p>
-    <button class="text-button" on:click={() => scoringDialog.showModal()}>Scoring & exhaustion ↗</button>
-    {#if history.length}
-      <table class="cc-history"><thead><tr><th>Turn</th><th>{yourName}</th><th>{opponentName}</th></tr></thead><tbody>{#each history as entry}<tr><td>{entry.turn}</td><td>{orderText(entry.actions[seat])}{#if entry.checkpoint}<small>+{entry.checkpoint.gained[seat]} points</small>{/if}</td><td>{orderText(entry.actions[1 - seat])}{#if entry.checkpoint}<small>+{entry.checkpoint.gained[1 - seat]} points</small>{/if}</td></tr>{/each}</tbody></table>
-    {/if}
-    <p>Your spent cards: {mine.spent.map(rank).join(' · ') || 'None'}<br />Their spent cards: {theirs.spent.map(rank).join(' · ') || 'None'}</p>
-  </details>
-</main>
 
-<dialog bind:this={scoringDialog} aria-labelledby="scoring-title">
-  <div class="dialog-top"><span class="eyebrow">FIELD GUIDE / SCORING</span><button class="close-button" on:click={() => scoringDialog.close()} aria-label="Close scoring details">×</button></div>
-  <h2 id="scoring-title">Three chances to score.</h2>
-  <p>At each checkpoint, more strength wins the front. A tied front awards nothing.</p>
-  <div class="rule-scoring">{#each [1, 2, 3] as stage}<span>TURN {stage * 4}<b>{stage} {stage === 1 ? 'point' : 'points'}</b>per front</span>{/each}</div>
-  <h3>After scoring</h3>
-  <p>Each player removes their own highest card at every occupied front, whether they win, lose or tie.</p>
-  <p>Recall keeps its card there for scoring, then returns it to your hand. If it was the highest, no replacement card is removed.</p>
-  <p>The higher total score after turn 12 wins. Equal scores are a draw.</p>
-  <button class="primary" on:click={() => scoringDialog.close()}>Back to game <Icon name="arrow" size={20} /></button>
-</dialog>
+  {#if history.length}
+    <details class="log">
+      <summary>Moves so far</summary>
+      <ol>
+        {#each history as entry}
+          <li><span class="t">{entry.turn}</span><span>{orderText(entry.actions[seat])}</span><span class="opp">{orderText(entry.actions[1 - seat])}</span>{#if entry.checkpoint}<span class="pts">+{entry.checkpoint.gained[seat]} / +{entry.checkpoint.gained[1 - seat]}</span>{/if}</li>
+        {/each}
+      </ol>
+    </details>
+  {/if}
+</div>
+
+<style>
+  .table { width: min(100%, 760px); margin: 0 auto; padding: 4px var(--gutter) max(16px, env(safe-area-inset-bottom)); display: grid; gap: 10px; }
+  .scoreline { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 8px; }
+  .player { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .player strong { font-family: var(--serif); font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .player .name { font-size: 15px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .player.them { justify-content: flex-end; }
+  .player.me strong { color: var(--mine); }
+  .player.them strong { color: var(--theirs); }
+  .track { list-style: none; display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin: 0; padding: 0; }
+  .track li { position: relative; height: 6px; border-radius: 3px; background: var(--paper-3); }
+  .track li.cp { background: var(--ink-3); opacity: .55; }
+  .track li.done { background: var(--ink-3); opacity: 1; }
+  .track li.now { background: var(--ink); opacity: 1; }
+  .stakes { font-size: 14px; color: var(--ink-2); min-height: 20px; }
+  .stakes b { color: var(--ink); }
+  .stakes.hot { color: var(--ink); }
+  .stakes b { font-weight: 650; }
+
+  .side-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-height: 32px; }
+  .row-label { font-size: 13px; color: var(--ink-2); margin-right: 4px; align-self: center; }
+  .them-row > .row-label { flex-basis: 100%; }
+  .mini-hand, .spent { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; min-width: 0; }
+  .spent.empty { display: none; }
+  .me-row.empty { min-height: 0; margin-top: -10px; }
+  .spent { justify-content: flex-end; }
+  .mini { display: inline-flex; }
+  .mini.gone { opacity: .45; }
+  .me-row { min-height: 30px; }
+  @media (min-width: 900px) {
+    .table { width: min(100%, 980px); gap: 12px; }
+    .player strong { font-size: 40px; }
+    .front { grid-template-rows: minmax(84px, auto) 34px 44px 34px minmax(84px, auto); }
+    .pile :global(.card.sm) { --cw: 52px; --ch: 72px; --rs: 23px; --ss: 14px; padding: 5px 0 0 6px; border-radius: 7px; }
+    .num { font-size: 26px; }
+    .label { font-size: 15px; }
+    .in-hand :global(.card) { max-width: 66px; --ch: 92px; --rs: 26px; --ss: 16px; --bs: 30px; }
+    .mini :global(.card.xs) { --cw: 26px; --ch: 36px; --rs: 14px; }
+  }
+  .mine-spent { margin-left: auto; }
+
+  .board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .front { display: grid; grid-template-rows: minmax(58px, auto) 30px 40px 30px minmax(58px, auto); border-radius: var(--radius); background: var(--paper-2); transition: box-shadow 140ms, background-color 200ms; min-width: 0; }
+  .front.lead-me { background: linear-gradient(to top, var(--mine-wash), transparent 70%), var(--paper-2); }
+  .front.lead-them { background: linear-gradient(to bottom, var(--theirs-wash), transparent 70%), var(--paper-2); }
+  .front.target { box-shadow: inset 0 0 0 2px var(--ink-3); }
+  .front.chosen { box-shadow: inset 0 0 0 2px var(--ink); }
+  .pile { display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 4px; padding: 6px 4px; min-width: 0; }
+  .pile.theirs { align-content: flex-end; }
+  .pile.mine { align-content: flex-start; }
+  .placed { display: inline-flex; border-radius: 6px; }
+  button.placed:not(:disabled):hover { transform: translateY(-2px); }
+  .placed.picked { outline: 2px solid var(--ink); outline-offset: 2px; transform: translateY(-2px); }
+  .placed.moving { opacity: .5; }
+  .placed.doomed :global(.card) { border-style: dashed; border-color: var(--heart); }
+  .ghost { display: inline-flex; opacity: .55; }
+  .num { display: flex; align-items: center; justify-content: center; gap: 6px; font-family: var(--serif); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .num.theirs { color: var(--theirs); }
+  .num.mine { color: var(--mine); }
+  .num i { font-style: normal; font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--ink-2); }
+  .num em { font-style: normal; font-family: var(--sans); font-size: 13px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--mine); color: var(--paper); }
+  .num.theirs em { background: var(--theirs); }
+  .num.won { animation: pop 500ms ease-out; }
+  .safe { font-family: var(--sans); font-size: 11px; font-weight: 650; letter-spacing: .02em; padding: 1px 6px; border-radius: 999px; border: 1px solid currentColor; opacity: .85; }
+  .label { display: flex; align-items: center; justify-content: center; border-block: 1px solid var(--line); font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--ink-2); text-transform: none; }
+  .label:not(:disabled) { color: var(--ink); background: var(--surface); }
+  .label:not(:disabled):hover { background: var(--paper); }
+  .legend { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); margin-top: -2px; }
+  .swatch { width: 14px; height: 18px; border: 1.5px dashed var(--heart); border-radius: 3px; flex-shrink: 0; }
+
+  .hand { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 6px; }
+  .in-hand { display: flex; justify-content: center; border-radius: 8px; transition: transform 120ms; }
+  .in-hand :global(.card) { --cw: 100%; max-width: 54px; --ch: 74px; }
+  .in-hand:not(:disabled):hover { transform: translateY(-3px); }
+  .in-hand.picked { transform: translateY(-8px); }
+  .in-hand.picked :global(.card) { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .in-hand.pays :global(.card) { outline: 2px dashed var(--heart); outline-offset: 2px; }
+  .in-hand.leaving { opacity: .4; }
+  .in-hand:disabled { cursor: default; }
+
+  .dock { position: sticky; bottom: 0; z-index: 3; display: grid; gap: 8px; padding: 10px 0 max(10px, env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line); }
+  .coach { padding: 10px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 15px; line-height: 1.4; }
+  @media (max-width: 640px) { .coach { font-size: 14px; padding: 8px 12px; } }
+  .command { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .say { min-width: 0; }
+  .say p { font-size: 16px; font-weight: 600; line-height: 1.3; }
+  .say small { display: block; margin-top: 2px; font-size: 13px; color: var(--ink-2); }
+  .do { display: flex; gap: 6px; align-items: center; flex-shrink: 0; margin-left: auto; }
+  .lock { min-width: 108px; }
+  .recall[aria-pressed='true'] { border-color: var(--ink); background: var(--paper-2); }
+  .command.stacked { flex-wrap: wrap; }
+  .command.stacked .say { flex-basis: 100%; }
+  .command.stacked .do { margin-left: auto; }
+
+  .log summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 15px; color: var(--ink-2); }
+  .log ol { list-style: none; margin: 0 0 8px; padding: 0; font-size: 14px; }
+  .log li { display: grid; grid-template-columns: 26px 1fr 1fr auto; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+  .log .t { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .log .opp { color: var(--theirs); }
+  .log .pts { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .busy .command { opacity: 1; }
+  @keyframes pop { 40% { transform: scale(1.25); } }
+
+  @media (max-width: 640px) {
+    .table { gap: 8px; }
+    .player strong { font-size: 30px; }
+    .hand { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .in-hand :global(.card) { --ch: 64px; }
+    .front { grid-template-rows: minmax(52px, auto) 26px 38px 26px minmax(52px, auto); }
+    .num { font-size: 20px; }
+    .board { gap: 6px; }
+    .log li { grid-template-columns: 22px 1fr 1fr; }
+    .log .pts { grid-column: 2 / -1; }
+    .lock { min-width: 96px; }
+  }
+  @media (max-width: 370px) {
+    .pile :global(.card.sm) { --cw: 30px; --ch: 42px; --rs: 14px; }
+  }
+</style>

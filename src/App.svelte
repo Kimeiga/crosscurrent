@@ -1,44 +1,43 @@
 <script lang="ts">
-  import { onMount, onDestroy, tick } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
+  import Home from './Home.svelte';
   import Table from './Table.svelte';
-  import Lobby from './Lobby.svelte';
-  import Icon from './Icon.svelte';
-  import './table-ux.css';
-  import { initial, resolve, replay, prepare, actions, sameAction, sum, type Action, type ActionKind, type State, type TurnRecord } from './engine';
-  import { chooseAction, type Difficulty } from './ai';
+  import Tutorial from './Tutorial.svelte';
+  import Rules from './Rules.svelte';
+  import { initial, resolve, replay, outcome, tiebreakStrength, type Action, type State, type TurnRecord } from './engine';
+  import { chooseAction, normalizeLevel, type Difficulty } from './ai';
   import { createRoom, joinRoom, getRoom, submitOrder, watchRoom, unwatchRoom, disconnect, invitation, networkError, type Session } from './network';
   import type { RoomView } from '../backend/rooms';
 
   type Mode = 'solo' | 'online' | 'local';
-  type Save = { version: number; difficulty?: Difficulty; pairs: [Action, Action][] };
-  let screen: 'home' | 'game' = 'home';
-  let mode: Mode = 'solo';
-  let game: State = initial();
-  let history: TurnRecord[] = [];
-  let seat: 0 | 1 = 0;
-  let difficulty: Difficulty = 'tactical';
-  let kind: ActionKind = 'deploy';
-  let selected: number | null = null;
-  let destination: number | null = null;
-  let busy = false;
-  let animationBusy = false;
-  let message = '';
-  let toast = '';
-  let connectionStatus = 'Connecting';
-  let joined: [boolean, boolean] = [true, true];
-  let locked: [boolean, boolean] = [false, false];
-  let myLockedOrder: Action | null = null;
-  let session: Session | null = null;
-  let savedSolo = false;
-  let savedRoom = false;
-  let savedLocal = false;
-  let joinLink = '';
-  let localStage: 'handoff' | 'choose' | 'sealed' | 'review' = 'handoff';
-  let localOrders: [Action | null, Action | null] = [null, null];
-  let rulesDialog: HTMLDialogElement;
-  let restartDialog: HTMLDialogElement;
+  type Save = { version: number; difficulty?: string; pairs: [Action, Action][] };
+
+  let screen = $state<'home' | 'learn' | 'game' | 'join'>('home');
+  let mode = $state<Mode>('solo');
+  let game = $state.raw<State>(initial());
+  let history = $state.raw<TurnRecord[]>([]);
+  let seat = $state<0 | 1>(0);
+  let difficulty = $state<Difficulty>('medium');
+  let busy = $state(false);
+  let animating = $state(false);
+  let message = $state('');
+  let toast = $state('');
+  let connectionStatus = $state('Connecting');
+  let joined = $state<[boolean, boolean]>([true, true]);
+  let locked = $state<[boolean, boolean]>([false, false]);
+  let myLockedOrder = $state.raw<Action | null>(null);
+  let session = $state.raw<Session | null>(null);
+  let savedSolo = $state<{ turn: number } | null>(null);
+  let savedLocal = $state<{ turn: number } | null>(null);
+  let savedRoom = $state(false);
+  let newcomer = $state(true);
+  let joinTarget = $state.raw<Session | null>(null);
+  let localStage = $state<'handoff' | 'choose' | 'sealed' | 'review'>('handoff');
+  let localOrders = $state.raw<[Action | null, Action | null]>([null, null]);
+  let rulesDialog = $state<HTMLDialogElement>();
+  let restartDialog = $state<HTMLDialogElement>();
   let pendingStart: (() => void) | null = null;
-  let replacement = 'solo';
+  let replacing = $state('');
   let worker: Worker | null = null;
   let workerSequence = 0;
   let aiPromise: Promise<Action> | null = null;
@@ -50,47 +49,61 @@
 
   function store(key: string, value: unknown) {
     try { localStorage.setItem(`crosscurrent:${key}`, JSON.stringify(value)); }
-    catch { message = 'Browser storage is unavailable. Keep this tab open to retain your game.'; }
+    catch { message = 'Browser storage is unavailable. Keep this tab open to keep your game.'; }
   }
   function read<T>(key: string): T | null {
     try { return JSON.parse(localStorage.getItem(`crosscurrent:${key}`) || 'null'); }
     catch { return null; }
   }
-  $: mine = game.sides[seat];
-  $: finished = game.turn === 12;
-  $: turn = Math.min(12, game.turn + 1);
-  $: disabled = busy || animationBusy || finished || locked[seat] || (mode === 'online' && !joined.every(Boolean)) || (mode === 'local' && localStage !== 'choose');
-  $: order = makeOrder(mine, kind, selected, destination);
-  $: projected = order ? prepare(mine, order).side.board.map(sum) : mine.board.map(sum);
-  $: opponentName = mode === 'local' ? `Player ${2 - seat}` : mode === 'online' ? 'Your friend' : difficulty === 'casual' ? 'Casual AI' : difficulty === 'expert' ? 'Deep AI' : 'Tactical AI';
+  function savedTurn(key: 'solo' | 'local') {
+    const saved = read<Save>(key);
+    return saved && Array.isArray(saved.pairs) && saved.pairs.length < 12 ? { turn: saved.pairs.length } : null;
+  }
+  function refreshSaved() {
+    savedSolo = savedTurn('solo'); savedLocal = savedTurn('local'); savedRoom = !!read('room');
+  }
 
-  function makeOrder(side: State['sides'][0], action: ActionKind, card: number | null, front: number | null): Action | null {
-    if (card === null || (action !== 'recall' && front === null)) return null;
-    const candidate: Action = { kind: action, card, front: action === 'recall' ? -1 : front! };
-    return actions(side).some(value => sameAction(value, candidate)) ? candidate : null;
-  }
-  function clearSelection() { kind = 'deploy'; selected = null; destination = null; }
-  function selectKind(value: ActionKind) { kind = value; selected = null; destination = null; }
-  function selectBoard(card: number) {
-    if (!disabled && kind !== 'deploy') { selected = card; destination = null; }
-  }
+  const finished = $derived(game.turn === 12);
+  const names = $derived.by((): [string, string] => {
+    if (mode === 'local') return ['Player 1', 'Player 2'];
+    if (mode === 'online') return seat === 0 ? ['You', 'Friend'] : ['Friend', 'You'];
+    return ['You', 'Computer'];
+  });
+  const canAct = $derived(
+    !busy && !finished && !locked[seat]
+    && !(mode === 'online' && !joined.every(Boolean))
+    && !(mode === 'local' && localStage !== 'choose'),
+  );
+  const status = $derived.by(() => {
+    if (mode === 'online') {
+      if (!joined[1 - seat]) return 'Waiting for your friend to open the link.';
+      if (locked[seat]) return 'Locked in. Waiting for your friend…';
+      if (connectionStatus !== 'Live') return connectionStatus === 'Connecting' ? 'Connecting…' : 'Connection lost. Reconnecting…';
+    }
+    if (busy) return mode === 'solo' ? 'The computer is choosing…' : 'Locking in…';
+    return '';
+  });
+
   function saveGame(key: 'solo' | 'local') {
     store(key, { version: 2, difficulty, pairs: history.map(entry => entry.actions) });
-    if (key === 'solo') savedSolo = true;
-    else savedLocal = true;
+    refreshSaved();
   }
   function prepareAi() {
     if (game.turn === 12) { aiPromise = null; return; }
-    const snapshot = structuredClone(game);
+    const snapshot = structuredClone($state.snapshot(game)) as State;
     const level = difficulty;
+    const strength = tiebreakStrength(history);
     if (worker) {
       const id = ++workerSequence;
       aiPromise = new Promise<Action>((resolve, reject) => {
         pendingAi.set(id, { resolve, reject });
-        worker!.postMessage({ id, state: snapshot, level });
+        worker!.postMessage({ id, state: snapshot, level, strength });
       });
       void aiPromise.catch(() => {});
-    } else aiPromise = Promise.resolve(chooseAction(snapshot, 1, level));
+    } else aiPromise = Promise.resolve(chooseAction(snapshot, 1, level, Math.random, strength));
+  }
+  function setHash(value: string) {
+    window.history.replaceState(null, '', `${location.pathname}${location.search}#/${value}`);
   }
   function enterOffline(value: 'solo' | 'local') {
     epoch++;
@@ -98,29 +111,30 @@
     mode = value; screen = 'game'; seat = 0;
     session = null; joined = [true, true]; locked = [false, false];
     myLockedOrder = null; localOrders = [null, null]; localStage = 'handoff';
-    busy = false; animationBusy = false; message = ''; clearSelection();
-    window.history.replaceState(null, '', `${location.pathname}${location.search}#/${value}`);
+    busy = false; animating = false; message = '';
+    setHash(value);
   }
   function startOffline(value: 'solo' | 'local') {
     game = initial(); history = [];
     enterOffline(value); saveGame(value);
     if (value === 'solo') prepareAi();
+    window.scrollTo(0, 0);
   }
   function requestStart(value: 'solo' | 'local') {
     const saved = read<Save>(value);
     if (saved && Array.isArray(saved.pairs) && saved.pairs.length > 0 && saved.pairs.length < 12) {
-      replacement = value === 'solo' ? 'solo' : 'local';
+      replacing = value === 'solo' ? 'your unfinished game against the computer' : 'your unfinished pass-and-play game';
       pendingStart = () => startOffline(value);
-      restartDialog.showModal();
+      restartDialog?.showModal();
     } else startOffline(value);
   }
   function resumeOffline(value: 'solo' | 'local') {
     try {
       const saved = read<Save>(value);
-      if (!saved || saved.version !== 2 || !Array.isArray(saved.pairs) || saved.pairs.length > 12) throw new Error('The saved game could not be read. Start a new game.');
+      if (!saved || saved.version !== 2 || !Array.isArray(saved.pairs) || saved.pairs.length > 12) throw new Error('That saved game could not be read. Start a new one.');
       const restored = replay(saved.pairs);
       game = restored.state; history = restored.history;
-      if (saved.difficulty && ['casual', 'tactical', 'expert'].includes(saved.difficulty)) difficulty = saved.difficulty;
+      if (saved.difficulty) difficulty = normalizeLevel(saved.difficulty);
       enterOffline(value);
       if (value === 'solo') prepareAi();
       else if (game.turn === 12) localStage = 'review';
@@ -128,8 +142,10 @@
   }
   function applyView(view: RoomView) {
     if (screen !== 'game' || mode !== 'online' || !session || view.id !== session.id || view.state.turn < game.turn) return;
-    if (view.state.turn !== game.turn) clearSelection();
-    game = view.state; history = view.history; seat = view.seat;
+    // The room service enforces hidden orders and legality; scoring is recomputed
+    // here from the revealed orders so a room service on older scoring rules agrees.
+    const match = replay(view.history.map(entry => entry.actions));
+    game = match.state; history = match.history; seat = view.seat;
     joined = view.joined; locked = view.locked; myLockedOrder = view.ownOrder;
   }
   async function refreshRoom() {
@@ -144,15 +160,16 @@
   async function openSession(value: Session, requestEpoch: number) {
     await unwatchRoom();
     if (epoch !== requestEpoch || !alive) return;
-    session = value; game = initial(); history = []; mode = 'online'; seat = 0;
-    screen = 'game'; animationBusy = false; joined = [true, false]; locked = [false, false];
-    myLockedOrder = null; clearSelection();
-    store('room', value); savedRoom = true;
-    window.history.replaceState(null, '', `${location.pathname}${location.search}#/table/${value.id}`);
+    // Join first: a missing or expired table never replaces the saved one.
     const view = await joinRoom(value);
     if (epoch !== requestEpoch || !alive) return;
+    session = value; game = initial(); history = []; mode = 'online'; seat = view.seat;
+    screen = 'game'; animating = false; joined = [true, false]; locked = [false, false];
+    myLockedOrder = null;
+    store('room', value); savedRoom = true;
+    setHash(`table/${value.id}`);
     applyView(view);
-    void watchRoom(value, () => { void refreshRoom(); }, status => { connectionStatus = status; })
+    void watchRoom(value, () => { void refreshRoom(); }, s => { connectionStatus = s; })
       .catch(error => { if (epoch === requestEpoch) { message = networkError(error); connectionStatus = 'Disconnected'; } });
   }
   async function runOnline(operation: () => Promise<Session>) {
@@ -169,27 +186,25 @@
     const value = read<Session>('room');
     if (value) void runOnline(async () => value);
   }
-  function joinInvitation() {
-    const match = joinLink.trim().match(/#\/join\/([\w-]+)\/([a-f0-9]{64})(?:$|\s)/);
-    if (!match) { message = 'Paste the complete invitation link from your friend.'; return; }
-    void runOnline(async () => ({ id: match[1], token: match[2] }));
+  function acceptInvitation() {
+    const target = joinTarget;
+    if (target) void runOnline(async () => target);
   }
   async function reconnect() {
     message = ''; disconnect();
     await refreshRoom();
     if (session && screen === 'game' && mode === 'online') {
-      void watchRoom(session, () => { void refreshRoom(); }, status => { connectionStatus = status; })
+      void watchRoom(session, () => { void refreshRoom(); }, s => { connectionStatus = s; })
         .catch(error => { message = networkError(error); });
     }
   }
-  async function lockOrder() {
-    if (!order || disabled) return;
-    const chosen = { ...order };
+  async function lockOrder(chosen: Action) {
+    if (!canAct) return;
     if (mode === 'local') {
-      localOrders[seat] = chosen;
-      localOrders = [...localOrders];
-      clearSelection();
-      if (localOrders.every(Boolean)) localStage = 'sealed';
+      const orders = [...localOrders] as [Action | null, Action | null];
+      orders[seat] = chosen;
+      localOrders = orders;
+      if (orders.every(Boolean)) localStage = 'sealed';
       else { seat = (1 - seat) as 0 | 1; localStage = 'handoff'; }
       return;
     }
@@ -198,17 +213,17 @@
     busy = true; message = ''; myLockedOrder = chosen;
     try {
       if (mode === 'solo') {
-        const computer = await (aiPromise || Promise.resolve(chooseAction(structuredClone(game), 1, difficulty)));
+        const computer = await (aiPromise || Promise.resolve(chooseAction($state.snapshot(game) as State, 1, difficulty, Math.random, tiebreakStrength(history))));
         if (epoch !== currentEpoch || game.turn !== oldTurn) return;
         const result = resolve(game, chosen, computer);
-        game = result.state; history = [...history, result.record]; clearSelection();
+        game = result.state; history = [...history, result.record];
         myLockedOrder = null; saveGame('solo'); prepareAi();
       } else if (session) {
         const view = await submitOrder(session, oldTurn + 1, chosen);
         if (epoch === currentEpoch) applyView(view);
       }
     } catch (error) {
-      if (epoch === currentEpoch) { message = networkError(error); if (mode === 'solo') prepareAi(); }
+      if (epoch === currentEpoch) { message = networkError(error); myLockedOrder = null; if (mode === 'solo') prepareAi(); }
     } finally { if (epoch === currentEpoch) busy = false; }
   }
   async function revealLocal() {
@@ -218,23 +233,53 @@
     await tick();
     const result = resolve(game, pair[0], pair[1]);
     game = result.state; history = [...history, result.record];
-    localOrders = [null, null]; clearSelection(); saveGame('local');
+    localOrders = [null, null]; saveGame('local');
   }
   function nextLocalTurn() {
-    if (animationBusy || finished) return;
-    seat = (game.turn % 2) as 0 | 1;
-    localStage = 'handoff'; clearSelection();
+    if (animating || finished) return;
+    seat = 0;
+    localStage = 'handoff';
   }
-  async function copyInvite() {
+  async function shareInvite() {
     if (!session) return;
-    try { await navigator.clipboard.writeText(invitation(session)); toast = 'Invitation copied'; }
-    catch { toast = 'Copy the invitation from the field below.'; }
+    const link = invitation(session);
+    try {
+      if (navigator.share && matchMedia('(pointer: coarse)').matches) { await navigator.share({ title: 'Crosscurrent', text: 'Play a game of Crosscurrent with me.', url: link }); return; }
+      await navigator.clipboard.writeText(link); toast = 'Link copied. Send it to your friend.';
+    } catch { toast = 'Copy the link from the box below.'; }
   }
   function home() {
-    epoch++; screen = 'home'; message = ''; busy = false; animationBusy = false;
-    clearSelection(); void unwatchRoom();
-    window.history.replaceState(null, '', `${location.pathname}${location.search}#/`);
+    epoch++; screen = 'home'; message = ''; busy = false; animating = false;
+    void unwatchRoom(); refreshSaved();
+    setHash('');
+    window.scrollTo(0, 0);
   }
+  function learn() {
+    epoch++; void unwatchRoom();
+    screen = 'learn'; message = '';
+    setHash('learn');
+    window.scrollTo(0, 0);
+  }
+  function finishTutorial(play: boolean) {
+    newcomer = false; store('learned', true);
+    if (play) { difficulty = 'easy'; requestStart('solo'); } else home();
+  }
+  function again() {
+    if (mode === 'online') createTable();
+    else requestStart(mode);
+  }
+  const verdict = $derived.by(() => {
+    if (!finished) return '';
+    const result = outcome(game, history);
+    const [a, b] = [game.scores[seat], game.scores[1 - seat]];
+    const score = `${a}–${b}`;
+    if (result.winner === null) return `Draw, ${score}.`;
+    const winner = names[result.winner];
+    const by = result.by === 'strength' ? ` on the tiebreak (${result.strength[result.winner]}–${result.strength[1 - result.winner]} total strength at the last scoring)` : '';
+    if (mode === 'local') return `${winner} wins ${result.winner === seat ? score : `${b}–${a}`}${by}.`;
+    return result.winner === seat ? `You win, ${score}${by}.` : `${winner} wins, ${b}–${a}${by}.`;
+  });
+
   onMount(() => {
     try {
       worker = new Worker(new URL('./ai.worker.ts', import.meta.url), { type: 'module' });
@@ -245,13 +290,18 @@
         if (event.data.error) pending.reject(new Error(event.data.error)); else pending.resolve(event.data.action);
       };
       worker.onerror = () => {
-        for (const pending of pendingAi.values()) pending.reject(new Error('The computer calculation stopped. Try locking your order again.'));
+        for (const pending of pendingAi.values()) pending.reject(new Error('The computer stopped calculating. Lock in again.'));
         pendingAi.clear(); worker?.terminate(); worker = null;
       };
     } catch { worker = null; }
-    savedSolo = !!read('solo'); savedRoom = !!read('room'); savedLocal = !!read('local');
-    // Navigation never silently resumes a saved match. Invitations require acceptance too.
-    if (location.hash.startsWith('#/join/')) joinLink = location.href;
+    refreshSaved();
+    newcomer = !read('learned');
+    const saved = read<string>('difficulty');
+    if (saved) difficulty = normalizeLevel(saved);
+    // Navigation never silently resumes a saved match. Invitations ask first.
+    const invite = location.hash.match(/^#\/join\/([\w-]+)\/([a-f0-9]{64})$/);
+    if (invite) { joinTarget = { id: invite[1], token: invite[2] }; screen = 'join'; }
+    else if (location.hash === '#/learn') screen = 'learn';
     const onVisible = () => { if (document.visibilityState === 'visible') void refreshRoom(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
@@ -260,71 +310,117 @@
 </script>
 
 <svelte:head>
-  <title>Crosscurrent · {screen === 'home' ? 'Sea. Land. Air.' : finished ? 'Final score' : `Turn ${turn} of 12`}</title>
-  <meta name="theme-color" content="#101214" />
-  <meta name="description" content="A tactical, balanced card game for two. Play against the computer, a friend online, or together on one device." />
+  <title>{screen === 'game' ? finished ? 'Game over · Crosscurrent' : `Turn ${Math.min(12, game.turn + 1)} · Crosscurrent` : screen === 'learn' ? 'Learn to play · Crosscurrent' : 'Crosscurrent · a card game for two'}</title>
 </svelte:head>
 
-<div class="shell" class:at-table={screen === 'game'}>
-  <header class="masthead">
-    <button class="brand" on:click={home} aria-label="Crosscurrent lobby"><Icon name="shift" size={25} /><span>CROSSCURRENT<small>SEA / LAND / AIR</small></span></button>
-    <nav class="header-right" aria-label="Game navigation">
-      {#if screen === 'game'}<button class="text-button" on:click={home}>Lobby</button>{/if}
-      <button class="help-button" on:click={() => rulesDialog.showModal()} aria-label="How to play">{screen === 'home' ? 'How to play' : 'Rules'} <span aria-hidden="true">↗</span></button>
-    </nav>
-  </header>
-  {#if message}<div class="error-banner" role="alert"><span>{message}</span><button on:click={() => message = ''} aria-label="Dismiss message">×</button></div>{/if}
+<header class="bar">
   {#if screen === 'home'}
-    <Lobby bind:difficulty bind:joinLink {busy} {savedSolo} {savedLocal} {savedRoom}
-      onSolo={() => requestStart('solo')} onLocal={() => requestStart('local')} onOnline={createTable}
-      onResumeSolo={() => resumeOffline('solo')} onResumeLocal={() => resumeOffline('local')}
-      onResumeRoom={resumeTable} onJoin={joinInvitation} onRules={() => rulesDialog.showModal()} />
-  {:else if mode === 'local' && (localStage === 'handoff' || localStage === 'sealed')}
-    <main class="handoff">
-      <div class="handoff-symbol"><Icon name="lock" size={40} /></div>
-      <p class="eyebrow">LOCAL TWO-PLAYER · TURN {turn} / 12</p>
-      <h1>{localStage === 'sealed' ? 'Both orders locked.' : `Player ${seat + 1}, your move.`}</h1>
-      <p>{localStage === 'sealed' ? 'Bring the screen back into view for both players.' : 'Pass the device. The other player should look away while you choose your order.'}</p>
-      {#if localStage === 'sealed'}
-        <button class="primary" on:click={revealLocal}>Reveal together <Icon name="arrow" size={20} /></button>
-      {:else}
-        <button class="primary" on:click={() => localStage = 'choose'}>I’m ready <Icon name="arrow" size={20} /></button>
-      {/if}
-      <small>Cards and hands are public. Only this turn’s orders stay secret.</small>
-    </main>
+    <span></span>
   {:else}
-    {#key `${mode}:${session?.id || ''}`}
-      <Table {game} {history} {seat} {mode} {opponentName} {busy} {disabled} {joined} {locked} {myLockedOrder}
-        {connectionStatus} {toast} {kind} {selected} {destination} {order} {projected}
-        localReview={mode === 'local' && localStage === 'review'} inviteLink={session ? invitation(session) : ''}
-        onKind={selectKind} onCard={card => { selected = card; }} onBoardCard={selectBoard}
-        onFront={front => { destination = front; }} onLock={lockOrder} onCopy={copyInvite}
-        onReconnect={reconnect} onAnimation={value => { animationBusy = value; }} onNext={nextLocalTurn}
-        onAgain={() => mode === 'online' ? createTable() : requestStart(mode)} />
-    {/key}
+    <button class="back" onclick={home} aria-label="Back to the start screen"><span aria-hidden="true">←</span> Crosscurrent</button>
   {/if}
-</div>
+  <nav>
+    {#if screen === 'game' && mode === 'online'}<button class="link" onclick={reconnect}>Reconnect</button>{/if}
+    <button class="link" onclick={() => rulesDialog?.showModal()}>Rules</button>
+  </nav>
+</header>
+{#if message}<div class="notice" role="alert"><span>{message}</span><button onclick={() => (message = '')} aria-label="Dismiss">×</button></div>{/if}
 
-<dialog bind:this={rulesDialog} class="rules-dialog" aria-labelledby="rules-title">
-  <div class="dialog-top"><span class="eyebrow">FIELD GUIDE / CROSSCURRENT V0.2</span><button class="close-button" on:click={() => rulesDialog.close()} aria-label="Close rules">×</button></div>
-  <h2 id="rules-title">Same cards.<br />Different decisions.</h2>
-  <p>Both players begin with Ace through King. Secretly choose one complete order, then reveal together. Hands, deployed cards and spent cards are public.</p>
-  <div class="rule-actions">
-    <section><Icon name="deploy" /><h3>Deploy</h3><p>Play a card from your hand to Sea, Land or Air. Its rank adds to your strength there.</p></section>
-    <section><Icon name="shift" /><h3>Shift</h3><p>Spend your lowest hand card to move a deployed card to a different front.</p></section>
-    <section><Icon name="recall" /><h3>Recall</h3><p>Spend your lowest hand card to recover a deployed card. It still scores this turn, then returns to your hand.</p></section>
+{#if screen === 'home'}
+  <Home {difficulty} {busy} {newcomer} {savedSolo} {savedLocal} {savedRoom}
+    onDifficulty={value => { difficulty = value; store('difficulty', value); }}
+    onSolo={() => requestStart('solo')} onLocal={() => requestStart('local')} onOnline={createTable}
+    onLearn={learn} onRules={() => rulesDialog?.showModal()}
+    onResumeSolo={() => resumeOffline('solo')} onResumeLocal={() => resumeOffline('local')} onResumeRoom={resumeTable} />
+{:else if screen === 'learn'}
+  <Tutorial onDone={finishTutorial} />
+{:else if screen === 'join'}
+  <main class="center">
+    <h1>You’re invited to a game</h1>
+    <p>Your friend opened a table and is waiting. Crosscurrent takes about fifteen minutes; you can learn as you go.</p>
+    <button class="btn primary big" onclick={acceptInvitation} disabled={busy}>{busy ? 'Joining…' : 'Join the game'}</button>
+    <button class="link" onclick={() => rulesDialog?.showModal()}>How to play</button>
+  </main>
+{:else if mode === 'local' && (localStage === 'handoff' || localStage === 'sealed')}
+  <main class="center">
+    {#if localStage === 'sealed'}
+      <h1>Both orders are in</h1>
+      <p>Put the device where you can both see it, then reveal.</p>
+      <button class="btn primary big" onclick={revealLocal}>Reveal both orders</button>
+    {:else}
+      <p class="turn-note">Turn {Math.min(12, game.turn + 1)} of 12</p>
+      <h1>Player {seat + 1} <span class="pip" class:heart={seat === 1}>{seat === 0 ? '♠' : '♥'}</span>, your move</h1>
+      <p>Pass the device. The other player looks away until you lock in.</p>
+      <button class="btn primary big" onclick={() => (localStage = 'choose')}>I’m Player {seat + 1}, show my move</button>
+    {/if}
+  </main>
+{:else}
+  {#key `${mode}:${session?.id || ''}`}
+    {#snippet review()}
+      <p class="review-note">Both players: check what happened, then pass to Player 1.</p>
+      <button class="btn primary" onclick={nextLocalTurn}>Next turn</button>
+    {/snippet}
+    <Table {game} {history} {seat} {names} {canAct} {status} locked={myLockedOrder}
+      footer={mode === 'local' && localStage === 'review' && !finished ? review : undefined}
+      onLock={lockOrder} onBusy={value => { animating = value; }}>
+      {#snippet banner()}
+        {#if mode === 'online' && !joined[1 - seat]}
+          <section class="panel">
+            <h2>Send this link to your friend</h2>
+            <p>The game starts when they open it. Only they can use it, so share it with one person.</p>
+            <div class="invite">
+              <input aria-label="Invitation link" readonly value={session ? invitation(session) : ''} onfocus={event => event.currentTarget.select()} />
+              <button class="btn primary" onclick={shareInvite}>Share link</button>
+            </div>
+            {#if toast}<p class="toast" role="status">{toast}</p>{/if}
+          </section>
+        {:else if finished && !animating}
+          <section class="panel result" role="status">
+            <h2>{verdict}</h2>
+            <div class="row">
+              <button class="btn primary" onclick={again} disabled={busy}>{mode === 'online' ? 'New table' : 'Play again'}</button>
+              <button class="btn" onclick={home}>Back to start</button>
+            </div>
+          </section>
+        {/if}
+      {/snippet}
+    </Table>
+  {/key}
+{/if}
+
+<dialog bind:this={rulesDialog} aria-labelledby="rules-title">
+  <Rules onClose={() => rulesDialog?.close()} onLearn={() => { rulesDialog?.close(); learn(); }} />
+</dialog>
+<dialog bind:this={restartDialog} aria-labelledby="restart-title">
+  <div class="sheet">
+    <h2 id="restart-title">Start a new game?</h2>
+    <p>This replaces {replacing}.</p>
+    <div class="sheet-actions">
+      <button class="btn" onclick={() => restartDialog?.close()}>Keep it</button>
+      <button class="btn primary" onclick={() => { restartDialog?.close(); pendingStart?.(); }}>Start new game</button>
+    </div>
   </div>
-  <h3>Score three times</h3>
-  <div class="rule-scoring"><span>TURN 4<b>1 point</b></span><span>TURN 8<b>2 points</b></span><span>TURN 12<b>3 points</b></span></div>
-  <p>At each checkpoint, the higher strength at each front wins its points. A tied front awards nothing. Then <strong>each player removes their own highest card from every occupied front</strong>, whether they won, lost or tied.</p>
-  <p>Recall saves its target. If that card was the highest, no replacement is removed. Recalling a lower card does not protect the highest card.</p>
-  <h3>Twelve turns. One game.</h3>
-  <p>The higher total score wins. Equal scores are a draw. No passes or redeals. Ace is 1, Jack 11, Queen 12 and King 13. Sea, Land and Air have identical rules.</p>
-  <div class="strategy-note"><b>Win efficiently.</b><p>Winning by ten earns no more than winning by one. Shift excess strength, or Recall a valuable card before it is spent.</p></div>
-  <p class="fine-print">The computer only receives the public position, never your selected order. Its play is not proven optimal. Private invitations grant access to one seat. Local mode relies on players looking away, not security against inspecting this device.</p>
-  <button class="primary" on:click={() => rulesDialog.close()}>Got it <Icon name="arrow" size={20} /></button>
 </dialog>
-<dialog bind:this={restartDialog} class="confirm-dialog" aria-labelledby="restart-title">
-  <h2 id="restart-title">Start a new game?</h2><p>This replaces your unfinished saved {replacement} game.</p>
-  <div class="dialog-actions"><button class="secondary" on:click={() => restartDialog.close()}>Keep saved game</button><button class="primary" on:click={() => { restartDialog.close(); pendingStart?.(); }}>Start new game</button></div>
-</dialog>
+
+<style>
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 0 var(--gutter); padding-top: env(safe-area-inset-top); }
+  .back { min-height: 44px; font-family: var(--serif); font-size: 18px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .back span { font-family: var(--sans); font-weight: 400; color: var(--ink-2); }
+  nav { display: flex; gap: 18px; align-items: center; }
+  .center { min-height: calc(100dvh - 120px); display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px var(--gutter); text-align: center; }
+  .center h1 { font-family: var(--serif); font-size: clamp(30px, 6vw, 44px); line-height: 1.1; }
+  .center p { color: var(--ink-2); max-width: 26em; font-size: 17px; }
+  .center .big { min-width: min(320px, 100%); min-height: 54px; font-size: 17px; }
+  .turn-note { font-size: 15px !important; }
+  .pip { color: var(--spade); }
+  .pip.heart { color: var(--heart); }
+  .panel { display: grid; gap: 10px; padding: 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
+  .panel h2 { font-family: var(--serif); font-size: 22px; line-height: 1.2; }
+  .panel p { color: var(--ink-2); font-size: 15px; }
+  .invite { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .invite input { min-width: 0; min-height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper); font-size: 15px; }
+  .toast { color: var(--ink) !important; }
+  .review-note { flex: 1 1 200px; font-size: 15px; color: var(--ink-2); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  @media (max-width: 480px) { .invite { grid-template-columns: 1fr; } }
+</style>

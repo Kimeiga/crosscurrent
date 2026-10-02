@@ -707,3 +707,60 @@ Examples:
 - "Crosscurrent's full optimal draw rate is low" is **not established**.
 
 That distinction is essential to the project.
+
+## 2026-10 audit of v0.2
+
+This section records a full audit made before the v0.3 rule change. The question was the project's original one, sharpened by a product requirement: a player who will only ever play **one game** should still be able to treat its result as evidence of who played better. That asks for three things at once: structural fairness (unchanged), a steep skill gradient, and as little of the result as possible decided by draws or by pure guesses.
+
+### Tooling
+
+`research/sim` is a dependency-free Rust simulator (see `research/README.md`). Every number below can be regenerated from the scripts and logs in `research/results/`.
+
+- **Engine equivalence (construction/validation).** The Rust engine reproduced the TypeScript engine on 3,060 games and 36,720 transitions: all 60 original Python-reference transcripts plus 3,000 seeded random games biased toward Shift and Recall. For every rule variant used below, 20,000 random games preserved label-swap symmetry and card conservation.
+- **Research bot.** Simultaneous-move Monte Carlo tree search with regret matching (outcome sampling, after Lanctot et al.), written `mctsx:N` for N iterations per decision, with the final turn solved exactly as a matrix game by linear programming. Rollouts deploy a random card 90% of the time. Exploration γ = 0.2 and a final-move purification threshold of 0.1 were tuned head-to-head on v0.2 (γ 0.2 vs 0.1: 60.8%; purification 0.1 vs 0.03: 66.5%; 0.2 and 0.3 vs 0.1: 36.3% and 30.3%, n = 300 each). The last result is itself informative: a bot that plays too predictably is punished, so mixed strategies matter in this game.
+- **Final-turn analysis (exact on sampled positions).** Positions after turn 11 are sampled from bot self-play and turn 12 is solved exactly. A position has a *saddle point* when the best pure order of each player is optimal even if revealed; then the result is decided by calculation, not by guessing. The *guess width* is (min–max minus max–min) of the pure-strategy payoffs in result units: 0 for a saddle point, 1 when whoever guesses right wins outright.
+
+All match results are bot-specific simulations: 400 games per pairing unless stated, seats alternating, draws counted as one half, ± values are 95% intervals.
+
+### Reproduced historical measurements (simulation)
+
+| Matchup | Then | Now |
+| --- | ---: | ---: |
+| Random vs random | 48.1%, 11.6% draws (1,000) | 50.0% ±0.7, 11.4% draws (20,000) |
+| Tactical vs random | 96.8% (2,000) | 96.7% ±1.0 (1,000) |
+| Tactical self-play | 51.2%, 7.2% draws (1,000) | 49.0% ±3.0, 7.3% draws (1,000) |
+
+### The shipped computer levels (simulation)
+
+- "Deep" (1,800 fictitious-play iterations) against "Tactical" (280): **48.9% ±3.0** over 1,000 games. Deep was not stronger. Both levels solve the same one-turn heuristic matrix; more iterations only refine an equilibrium of the heuristic, not of the game.
+- Casual vs random 85.9%; Tactical vs Casual 81.1% (1,000 each).
+- `mctsx:16000` against Tactical **91.6%** (350/33/17), against Deep 91.2%, Casual 97.1%, random 99.8%. In 83% of its wins against Tactical it was *behind after turn 4*: the strong bot routinely gives up the first scoring to keep high cards, which the one-turn heuristic cannot see.
+
+### Skill gradient and draws (simulation)
+
+| Pairing | Result | W/D/L | Draws |
+| --- | ---: | ---: | ---: |
+| mctsx 4,000 vs 1,000 | 71.9% ±4.0 | 260/55/85 | 13.8% |
+| mctsx 16,000 vs 4,000 | 74.3% ±3.8 | 266/62/72 | 15.5% |
+| mctsx 64,000 vs 16,000 | 69.9% ±4.0 | 244/71/85 | 17.8% |
+| mctsx 16,000 self-play | 49.5% ±4.5 (seat 0: 48.7%) | 165/66/169 | 16.5% |
+
+Each fourfold increase in search wins about 70–74% and the gradient had not flattened at 64,000 iterations, so this game rewards deeper reasoning well beyond the shipped AI. The weakness is draws: they *rise* as play gets stronger (13.8% → 15.5% → 17.8%), consistent with the all-draw equilibria found in the solved reduced variants. A drawn single game says nothing about who is better.
+
+### How often one guess decides the game (exact solutions of bot positions)
+
+| Positions from | Saddle point | Pure win/loss guess (width 1) | Width 0.5 | Mean width |
+| --- | ---: | ---: | ---: | ---: |
+| Tactical self-play | 60.0% | 32.0% | 8.0% | 0.360 |
+| mctsx 4,000 self-play | 61.5% | 25.0% | 13.5% | 0.318 |
+| mctsx 16,000 self-play | 42.2% | **42.5%** | 15.2% | 0.501 |
+
+Under the strongest play measured, 42.5% of games reached a final turn where the result flipped between a win and a loss on a simultaneous guess, and another 15% flipped between a draw and a decisive result. Equilibrium play there mixes over only about 2.7 of 25 legal orders, and playing uniformly at random instead costs a third of a game (0.333 expected result), so the final turn is not trivial; but the closer two strong players are, the more often v0.2 hands the result to a guess. Because the last scoring is worth half of all points (9 of 18), that guess carries a lot of weight.
+
+### Comebacks and order mix (simulation)
+
+In `mctsx:16000` self-play, the eventual winner trailed after turn 4 in 36.8% of decided games and after turn 8 in 26.0%. Strong bots chose Deploy about 90% of the time, Shift about 9% and Recall about 1%; the v0.2 Tactical heuristic used Shift 20–23% and Recall 2–4%. Recall is rare in strong play but not useless: the tutorial position in this repository and the certified endgame both use it or depend on it.
+
+### Looking for dominant simple strategies (simulation)
+
+Against `mctsx:4000` under the tiebreak rule described below: one-front stacking lost 98.5%, high-card-first 95.5%, piling onto a front already won 99.8%, mirroring the opponent's previous card 94.0%, random deploys 96.5%, v0.2 Casual 95.0%. The strongest simple rule found was **lowfirst**, play your lowest card where you are furthest behind: it lost 84.5% to `mctsx:4000` and 97% to `mctsx:16000`, beat v0.2 Casual 78.5%, and lost to v0.2 Tactical 84.8%. No simple rule approached strong play. That lowfirst is the best of them supports the reading that conserving high cards is central.

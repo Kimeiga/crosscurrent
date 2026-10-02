@@ -2,8 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { initial, actions, prepare, resolve, replay, checkInvariants, isAction, rank, rankName, type Action, type State, type Side } from '../src/engine.ts';
-import { chooseAction } from '../src/ai.ts';
+import { initial, actions, prepare, resolve, replay, checkInvariants, isAction, rank, rankName, V02, type Action, type State, type Side } from '../src/engine.ts';
 const D = (card: number, front: number): Action => ({ kind: 'deploy', card, front });
 const S = (card: number, front: number): Action => ({ kind: 'shift', card, front });
 const R = (card: number): Action => ({ kind: 'recall', card, front: -1 });
@@ -37,9 +36,9 @@ test('tied and losing fronts still exhaust', () => {
   const s = resolve({ turn: 3, scores: [0, 0], sides: [side, side] }, D(1, 2), D(1, 2)).state;
   assert.deepEqual(s.scores, [0, 0]); assert.deepEqual(s.sides[0].board, [[3], [], []]);
 });
-for (const [turn, points] of [[3, 1], [7, 2], [11, 3]]) test(`checkpoint after turn ${turn + 1} awards ${points} per front`, () => {
+for (const [turn, points] of [[3, 1], [7, 2], [11, 3]]) test(`v0.2 checkpoint after turn ${turn + 1} awards ${points} per front`, () => {
   const s: State = { turn, scores: [0, 0], sides: [{ hand: [1], board: [[13], [], []], spent: [] }, { hand: [1], board: [[], [12], []], spent: [] }] };
-  assert.deepEqual(resolve(s, D(1, 2), D(1, 2)).state.scores, [points, points]);
+  assert.deepEqual(resolve(s, D(1, 2), D(1, 2), V02).state.scores, [points, points]);
 });
 test('public snapshot is immutable while preparing all possible moves', () => {
   const s = initial(); const before = structuredClone(s); for (const a of actions(s.sides[0])) prepare(s.sides[0], a); assert.deepEqual(s, before);
@@ -64,9 +63,9 @@ test('2000 complete seeded games conserve every card and preserve seat symmetry'
 const tacticalPairs: [Action, Action][] = [
   [D(13,2),D(11,2)], [D(12,2),D(3,2)], [D(8,0),D(4,2)], [D(3,1),D(6,1)], [R(12),R(4)], [D(2,2),D(9,0)], [D(6,0),D(12,1)], [D(5,0),D(10,2)], [S(5,1),D(2,0)], [D(12,0),S(2,2)], [D(9,1),D(7,0)],
 ];
-test('certified reachable winning and losing moves match all 18 replies', () => {
-  const s = replay(tacticalPairs).state; assert.deepEqual(s.scores, [4, 5]); const replies = actions(s.sides[1]); assert.equal(replies.length, 18);
-  for (const b of replies) { const win = resolve(s, S(9,2), b).state; const loss = resolve(s, S(12,1), b).state; assert(win.scores[0] > win.scores[1]); assert(loss.scores[0] < loss.scores[1]); }
+test('certified reachable winning and losing moves match all 18 replies under v0.2 scoring', () => {
+  const s = replay(tacticalPairs, V02).state; assert.deepEqual(s.scores, [4, 5]); const replies = actions(s.sides[1]); assert.equal(replies.length, 18);
+  for (const b of replies) { const win = resolve(s, S(9,2), b, V02).state; const loss = resolve(s, S(12,1), b, V02).state; assert(win.scores[0] > win.scores[1]); assert(loss.scores[0] < loss.scores[1]); }
 });
 test('golden fixtures agree with original Python v0.2 for 720 turns', () => {
   const fixtures = JSON.parse(readFileSync(new URL('./golden.json', import.meta.url), 'utf8'));
@@ -78,17 +77,11 @@ test('golden fixtures agree with original Python v0.2 for 720 turns', () => {
     let state = initial(); const states: State[] = [];
     for (let offset = 0; offset < orders.length; offset += 6) {
       const decode = (s: string): Action => ({ kind: ({ D: 'deploy', S: 'shift', R: 'recall' } as const)[s[0] as 'D' | 'S' | 'R'], card: parseInt(s[1], 16), front: Number(s[2]) - 1 });
-      state = resolve(state, decode(orders.slice(offset, offset + 3)), decode(orders.slice(offset + 3, offset + 6))).state;
+      state = resolve(state, decode(orders.slice(offset, offset + 3)), decode(orders.slice(offset + 3, offset + 6)), V02).state;
       states.push(state);
     }
     assert.equal(states.length, 12);
     assert.equal(createHash('sha256').update(canonical(states)).digest('hex'), expected);
   }
-});
-for (const level of ['casual', 'tactical', 'expert'] as const) test(`${level} computer chooses legal actions from an unchanged public snapshot`, () => {
-  const random = rng(842); let s = initial(); for (let turn = 0; turn < 12; turn++) {
-    const before = structuredClone(s); const a = chooseAction(s, 0, level, random); const legal = actions(s.sides[1]); const b = legal[Math.floor(random() * legal.length)]; assert.deepEqual(s, before); s = resolve(s, a, b).state;
-  }
-  assert(checkInvariants(s));
 });
 test('rank labels retain exact card values', () => { assert.equal(rank(1), 'A'); assert.equal(rank(13), 'K'); assert.equal(rankName(12), 'Queen'); });

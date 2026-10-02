@@ -1,0 +1,10 @@
+    opening orders guaranteeing at least the value: 6 of 18
+base+ranks6+turns5+cp:3=1,5=2            exact value=0.500000 equilibrium W/D/L=0.0000/1.0000/0.0000 nodes=6752618 mixed nodes=29.9% time=110.3s
+    opening orders guaranteeing at least the value: 6 of 18
+base+ranks6+turns5+cp:3=1,5=2+tbfinal    exact value=0.500000 equilibrium W/D/L=0.0000/1.0000/0.0000 nodes=6752618 mixed nodes=18.4% time=113.0s
+    opening orders guaranteeing at least the value: 6 of 18
+base+ranks6+turns5+cp:3=1,5=1+tbfinal    exact value=0.500000 equilibrium W/D/L=0.0000/1.0000/0.0000 nodes=6752618 mixed nodes=14.3% time=113.4s
+    opening orders guaranteeing at least the value: 9 of 18
+base+ranks6+turns5+cp:3=1,5=1+tbstr      exact value=0.500000 equilibrium W/D/L=0.0000/1.0000/0.0000 nodes=22905646 mixed nodes=13.4% time=364.8s
+    opening orders guaranteeing at least the value: 0 of 18
+base+ranks6+turns5+cp:3=1,5=1            exact value=0.500000 equilibrium W/D/L=0.1354/0.7293/0.1354 nodes=6752618 mixed nodes=29.0% time=112.3s
