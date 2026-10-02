@@ -1,64 +1,76 @@
 [
   {
-    "name": "Homepage motion, visible play action and saved solo turn",
+    "name": "Start screen, example game and a saved game against the computer",
     "sanity": true,
     "viewport": "desktop",
-    "covers": ["full twelve-turn demo", "automatic loop", "transform-only card motion", "clip", "pause and restart", "above-fold Play vs AI", "AI difficulty", "solo turn", "saved game recovery"],
-    "description": "The demo completes a match without blocking the primary action.",
+    "covers": ["full twelve-turn demo", "automatic loop", "transform-only card motion", "clip", "pause and restart", "above-fold Play the computer", "computer strength", "solo turn", "saved game recovery"],
+    "description": "The example game completes without blocking the primary action.",
     "steps": [
-      "Verify Play vs AI is visible before scrolling. Observe cards entering from opposite edges and moving between fronts. Pause the demo, verify it stops, then restart and play it.",
-      "Observe turns 1 through 12, checkpoint scoring and a 10–8 finish followed by an automatic fresh game.",
-      "Choose Casual, click the first Play vs AI, deploy King to Sea and lock. After turn 2, reload, then explicitly Continue saved solo game."
+      "Verify Play the computer is visible before scrolling. Observe cards entering from opposite edges and moving between fronts. Pause the example, verify it stops, then restart and play it.",
+      "Observe turns 1 through 12, scoring on turns 4, 8 and 12 and a 15–12 finish followed by an automatic fresh game.",
+      "Choose Easy, click Play the computer, tap King in your hand, tap the Left front and Lock in. After turn 2, reload, then choose Continue your game against the computer."
     ],
-    "expected": "Cards move inside the clipped board without fading. The loop restarts, and the saved solo turn survives reload."
+    "expected": "Cards move inside the clipped board without fading. The loop restarts, and the saved turn survives reload."
   },
   {
-    "name": "Mobile actions, scoring and motion controls",
+    "name": "Phone orders, scoring and spent cards",
     "viewport": "mobile",
-    "covers": ["mobile above-fold action", "no horizontal overflow", "manual demo step", "deploy", "shift", "recall", "payment", "checkpoint exhaustion", "rules and history"],
-    "description": "The mobile home stays compact and all actions retain v0.2 behavior.",
+    "covers": ["mobile above-fold action", "no horizontal overflow", "manual demo step", "deploy", "shift", "recall", "payment", "scoring and exhaustion", "safe-lead markers", "rules and move log"],
+    "description": "The phone layout keeps the hand and Lock in on screen and every order behaves as in the rules.",
     "steps": [
-      "Verify Play vs AI is visible before scrolling. Pause the demo and use Next demo turn repeatedly through twelve turns; restart. Verify no page overflow.",
-      "Start solo. Turn 1 deploy King to Sea. Turn 2 Shift King to Land. Turn 3 Recall King. Turn 4 deploy King to Air. Lock each order and wait for the reveal.",
-      "Verify turn 5: Ace, 2 and King are spent. Open Game details, Scoring details and Rules, then close each."
+      "Verify Play the computer is visible before scrolling. Pause the example and use Next demo turn through twelve turns; restart. Verify no page overflow.",
+      "Start a game. Turn 1 deploy King to Left. Turn 2 tap the King on Left, then Middle (Shift). Turn 3 tap the King on Middle, then Recall. Turn 4 deploy King to Right. Lock in each order and wait for the reveal.",
+      "Verify turn 5: Ace and 2 are spent as payments and the dashed King was spent after the turn-4 scoring. Open Moves so far and Rules, then close them."
     ],
-    "expected": "The action stays accessible and movement, payment, scoring, recall and exhaustion are correct."
+    "expected": "Hand and Lock in stay visible; movement, payment, scoring, recall and exhaustion are correct."
   },
   {
-    "name": "Private online table across two actors",
+    "name": "Online table across two players",
     "viewport": "desktop",
-    "covers": ["POST /api/rooms", "POST /api/rooms/:id/join", "POST /api/rooms/:id/view", "POST /api/rooms/:id/order", "POST /api/subscriptions", "POST /api/subscriptions/remove", "invitation acceptance", "pending-order privacy", "realtime updates", "reconnect"],
-    "description": "Two separate browser contexts reveal only after both orders lock.",
+    "covers": ["POST /api/rooms", "POST /api/rooms/:id/join", "POST /api/rooms/:id/view", "POST /api/rooms/:id/order", "POST /api/subscriptions", "POST /api/subscriptions/remove", "one-tap join", "pending-order privacy", "opponent locked-in indicator", "realtime updates", "reconnect"],
+    "description": "Two separate browser contexts reveal only after both orders are locked in.",
     "steps": [
-      "Actor A clicks Invite a friend and copies the invitation. Actor B opens it in a separate context and clicks Join table.",
-      "A deploys King to Sea and locks. B must see an empty board and no opposing order details. B deploys Queen to Land and locks. Both advance to turn 2.",
-      "Reload both, explicitly Rejoin private table, then open Game details and Reconnect. Each deploys another legal card and locks."
+      "Player A clicks Play a friend online and shares the link. Player B opens it in a separate context and clicks Join the game.",
+      "A deploys King to Left and locks in. B sees an empty board, no opposing order and a locked-in marker by A's name. B deploys Queen to Middle and locks in. Both advance to turn 2.",
+      "Reload both, choose Rejoin your online table, then Reconnect. Each deploys another legal card and locks in."
     ],
-    "expected": "Both recover their correct seat, see the same resolved board, and advance live without leaking pending orders."
+    "expected": "Both recover their correct seat, see the same resolved board and scores, and advance live without leaking pending orders."
   },
   {
-    "name": "Local complete game with private handoffs",
+    "name": "Pass and play with private handoffs",
     "viewport": "mobile",
-    "covers": ["local two-player", "handoff concealment", "explicit reveal", "local persistence", "complete twelve-turn game", "play again"],
-    "description": "Local players retain simultaneous orders and can finish a match.",
+    "covers": ["pass and play", "handoff concealment", "joint reveal", "local persistence", "complete twelve-turn game", "tiebreak display", "play again"],
+    "description": "Local players keep simultaneous orders private and can finish a game.",
     "steps": [
-      "Choose Local 2-player. Player 1 clicks I’m ready, deploys King to Sea and locks. Player 2 sees only a handoff, then an unchanged empty board after clicking I’m ready.",
-      "Player 2 deploys Queen to Land and locks. Click Reveal together, then Next turn. Reload and explicitly Continue local game.",
-      "Complete the remaining eleven turns by selecting legal deployments at each handoff, revealing together and choosing Next turn. At the final result choose Play again."
+      "Choose Pass and play on this device. Player 1 taps I’m Player 1, deploys King to Left and locks in. Player 2 sees only a handoff, then an empty board after tapping I’m Player 2.",
+      "Player 2 deploys Queen to Middle and locks in. Tap Reveal both orders, then Next turn. Reload and choose Continue your pass-and-play game.",
+      "Finish the remaining turns, revealing together each time. At the result choose Play again."
     ],
-    "expected": "Selections remain concealed until shared reveal, completed turns persist, and play again starts a new twelve-turn game."
+    "expected": "Orders stay concealed until the shared reveal, completed turns persist, and Play again starts a new game."
   },
   {
-    "name": "Invalid input and room failure keep solo available",
+    "name": "Guided lessons",
+    "viewport": "mobile",
+    "covers": ["tutorial", "constrained orders", "scoring explanation", "shift", "recall", "final-turn puzzle", "retry"],
+    "description": "Five lessons teach each order and end with a puzzle that has one winning order.",
+    "steps": [
+      "Choose Learn by playing. Try a disallowed card and verify the refusal, then follow each lesson's instruction and choose Next lesson.",
+      "In lesson 5, shift the 6 to Left first and verify the reply beats it and the explanation names the answer. Choose Try again, shift the Jack from Right to Left and verify the win.",
+      "Finish and choose Play the computer (Easy)."
+    ],
+    "expected": "Each lesson accepts only its order, explains the result, and the puzzle accepts exactly one winning order."
+  },
+  {
+    "name": "Invalid invitations and room failures keep solo play available",
     "viewport": "desktop",
-    "covers": ["invalid invitation", "incomplete order", "unavailable opening actions", "saved-game replacement confirmation", "POST /api/rooms failure", "error recovery"],
-    "description": "Invalid or failed online actions do not block solo play.",
+    "covers": ["missing table", "incomplete order", "unavailable orders on an empty board", "saved-game replacement confirmation", "POST /api/rooms failure", "error recovery"],
+    "description": "Failed online actions never block a game against the computer.",
     "qa_faults": [{"method": "POST", "path": "/api/rooms", "status": 503, "body_json": {"error": "Table service unavailable"}}],
     "steps": [
-      "Open Already have an invitation, paste invalid-link and join. Confirm validation. Invite a friend and confirm the injected visible error.",
-      "Start solo. Lock order, Shift and Recall should be disabled on an empty board. Select King only and verify an incomplete order still cannot lock.",
-      "Deploy King to Sea and lock. Return to Lobby, start solo again and choose Keep saved game. Continue saved solo game."
+      "Open an invitation link for a table that does not exist and choose Join the game; confirm the visible error. Return to the start screen, choose Play a friend online and confirm the injected error.",
+      "Start a game against the computer. Lock in is disabled until a card and a front are chosen.",
+      "Deploy King to Left and lock in. Return to the start screen, start again and choose Keep it. Continue the saved game."
     ],
-    "expected": "The original turn is retained, validation is visible, and online failure does not prevent solo play."
+    "expected": "The saved turn is kept, errors are visible, and online failures do not prevent solo play."
   }
 ]

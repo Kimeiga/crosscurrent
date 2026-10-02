@@ -27,6 +27,10 @@ Use this checklist when evaluating rule or AI changes.
 10. Comeback rate after turns 4 and 8.
 11. Reduced-game exact equilibrium results when computationally feasible.
 12. Human playtest data on clarity, planning, tension, and perceived agency.
+13. Single-game decisiveness: outright win, draw and upset rates of a stronger policy against a weaker one (for example a 4x search budget), not only the expected result. A draw counts as half a win in the expected result but tells a one-game player nothing.
+14. Final-turn guess share: on positions sampled from strong play, how often the last turn has a saddle point (decided by calculation) versus a pure win/loss guess, solved exactly.
+15. Simple-rule probes: fixed scripted strategies (stack one front, play high where behind, play low where behind, pile onto a won front, mirror the opponent) against a search bot. A variant whose steep search ladder coexists with a scripted rule matching the search bot is shallow, not deep.
+16. Comeback structure under equal-strength play: how often the eventual winner trailed after each scoring, and lead changes per game.
 
 ## Benchmark facts retained for comparison
 
@@ -43,5 +47,6 @@ Use this checklist when evaluating rule or AI changes.
 - Early Crosscurrent tactical versus random: 96.8% over 2,000.
 - Early Crosscurrent tactical versus deployment-only builder: 66.0% over 2,000.
 - Early Crosscurrent tactical self-play: 476-452-72 over 1,000, expected result 51.2%, draw rate 7.2%.
+- 2026 audit of v0.2 (simulation): each 4x search budget won 70–74% (`mctsx` 1k→4k→16k→64k); draws rose with strength (13.8% → 17.8%); in strong self-play 42.5% of games reached a final turn decided by a pure win/loss guess; the shipped "Deep" level was no stronger than "Tactical" (48.9%).
 
 Every benchmark must retain its original caveat: these full-game bots were not proven optimal unless explicitly described as an exact reduced-game result.

@@ -764,3 +764,73 @@ In `mctsx:16000` self-play, the eventual winner trailed after turn 4 in 36.8% of
 ### Looking for dominant simple strategies (simulation)
 
 Against `mctsx:4000` under the tiebreak rule described below: one-front stacking lost 98.5%, high-card-first 95.5%, piling onto a front already won 99.8%, mirroring the opponent's previous card 94.0%, random deploys 96.5%, v0.2 Casual 95.0%. The strongest simple rule found was **lowfirst**, play your lowest card where you are furthest behind: it lost 84.5% to `mctsx:4000` and 97% to `mctsx:16000`, beat v0.2 Casual 78.5%, and lost to v0.2 Tactical 84.8%. No simple rule approached strong play. That lowfirst is the best of them supports the reading that conserving high cards is central.
+
+
+## 2026 rule-variant study and v0.3
+
+### Question and protocol
+
+Which changes make a single game more decisive for the better player without adding luck, breaking symmetry, or making the game shallow? About thirty variants were screened with one protocol (simulation, `research/results/`): `mctsx:4000` against `mctsx:1000` (400 or 600 games), `mctsx:4000` self-play for draws and comeback structure (400 games), and exact final-turn analysis of 400 self-play positions. Finalists were then rerun with larger samples and a second search family (below). Every variant passed the 20,000-game symmetry and conservation check.
+
+"Strong wins / draws / upsets" are the outright results of the bot with four times the search. For a player who will play one game, these matter more than the expected result: a draw counts as half a win in the average but is no evidence of who played better.
+
+### Screening results (simulation)
+
+Variant names are explained in `research/README.md`; `base` is v0.2. Final-turn figures for the initiative variants (in parentheses) cover only the few final turns that were simultaneous.
+
+| Variant | 4k vs 1k: strong wins / draws / upsets | Self-play draws | Final turn saddle | Final turn pure guess | Winner behind after turn 8 | Lead changes |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `base` | 65.0% / 13.8% / 21.2% (n=400) | 17.0% | 61.5% | 25.0% | 36.1% | 0.82 |
+| `base+tbfinal` | 71.8% / 0.0% / 28.2% (n=400) | 0.5% | 52.2% | 46.0% | 44.0% | 0.69 |
+| `base+tbstr` | 76.8% / 0.2% / 23.0% (n=400) | 1.0% | 65.0% | 34.5% | 36.6% | 0.63 |
+| `base+s111` | 65.8% / 15.8% / 18.5% (n=400) | 20.8% | 62.2% | 15.2% | 0.3% | 0.25 |
+| `base+s111+tbfinal` | 80.5% / 0.5% / 19.0% (n=400) | 1.0% | 72.5% | 26.2% | 12.4% | 0.20 |
+| `base+s234` | 78.2% / 1.0% / 20.8% (n=400) | 2.5% | 67.0% | 31.8% | 31.8% | 0.67 |
+| `base+s124` | 70.2% / 2.2% / 27.5% (n=400) | 3.0% | 52.2% | 43.8% | 46.6% | 0.77 |
+| `base+s4x3` | 70.0% / 7.5% / 22.5% (n=400) | 9.2% | 64.8% | 27.8% | 35.3% | 0.86 |
+| `base+s6x2` | 66.8% / 17.0% / 16.2% (n=400) | 23.5% | 69.5% | 3.8% | 20.9% | 0.40 |
+| `base+s6x2+exnone` | 78.5% / 11.8% / 9.8% (n=400) | 23.2% | 57.8% | 11.8% | 27.0% | 0.57 |
+| `base+s6inc` | 72.2% / 4.2% / 23.5% (n=400) | 8.0% | 70.2% | 22.2% | 37.5% | 1.01 |
+| `base+s12inc+exnone` | 84.0% / 1.5% / 14.5% (n=400) | 4.5% | 82.2% | 10.2% | 35.1% | 1.30 |
+| `base+exnone` | 65.8% / 17.2% / 17.0% (n=400) | 17.0% | 41.2% | 38.5% | 28.9% | 0.77 |
+| `base+exwin` | 62.5% / 15.0% / 22.5% (n=400) | 22.2% | 53.0% | 36.8% | 51.4% | 1.13 |
+| `base+exall` | 63.8% / 15.0% / 21.2% (n=400) | 19.0% | 49.5% | 36.8% | 38.6% | 0.89 |
+| `base+noshift` | 63.5% / 14.5% / 22.0% (n=400) | 14.8% | 76.8% | 17.0% | 37.5% | 0.84 |
+| `base+norecall` | 68.2% / 12.2% / 19.5% (n=400) | 16.0% | 49.8% | 35.8% | 30.1% | 0.73 |
+| `base+initlow` | 70.8% / 14.0% / 15.2% (n=400) | 13.8% | (59%, n=44) | (32%) | 28.4% | 0.74 |
+| `base+initlow+tbfinal` | 77.5% / 0.2% / 22.2% (n=400) | 1.5% | (59%, n=32) | (41%) | 38.8% | 0.63 |
+| `base+inithigh` | 66.2% / 12.0% / 21.8% (n=400) | 13.5% | (41%, n=49) | (33%) | 35.3% | 0.82 |
+| `base+initbehind` | 64.2% / 8.8% / 27.0% (n=400) | 6.5% | (44%, n=36) | (42%) | 62.3% | 1.18 |
+| `base+initahead` | 68.5% / 12.2% / 19.2% (n=400) | 17.0% | (22%, n=18) | (50%) | 6.6% | 0.23 |
+| `base+s111+tbstr` | 79.7% / 0.2% / 20.2% (n=600) | 0.5% | 72.8% | 26.0% | 6.8% | 0.27 |
+| `base+s111+tbearly` | 77.0% / 0.3% / 22.7% (n=600) | 0.2% | 78.5% | 21.2% | 1.0% | 0.23 |
+| `base+tbearly` | 75.8% / 0.2% / 24.0% (n=600) | 0.0% | 60.0% | 39.0% | 27.8% | 0.65 |
+| `base+s234+tbfinal` | 76.2% / 0.0% / 23.8% (n=600) | 0.0% | 64.5% | 35.2% | 26.0% | 0.63 |
+| `base+s234+tbstr` | 76.8% / 0.0% / 23.2% (n=600) | 0.0% | 66.2% | 33.8% | 32.5% | 0.78 |
+
+### What the screening showed
+
+1. **A symmetric tiebreak removes draws.** Settling equal points by strength cut self-play draws from 17% to 0–1% in every schedule tested, with no change to symmetry.
+2. **The scoring schedule is the main lever.** The more the last scoring dominates, the more often one guess decides the game and the weaker the skill signal: 1/2/4 (70.2% strong wins) and 1/2/3 (65.0%) trail 2/3/4 (78.2% even without a tiebreak) and 1/1/1 with a tiebreak (77–81%).
+3. **2/3/4 has an arithmetic advantage.** Under 1/2/3 the commonest close pattern, winning 2–1, winning 2–1 and losing 1–2, scores +1 +2 −3 = 0: a draw. Under 2/3/4 no combination of single-front splits cancels (+2 +3 −4 = +1), and self-play draws fell from 17.0% to 2.5% without any tiebreak.
+4. **Flat schedules end games early.** With 1/1/1 the eventual winner was behind after turn 8 in 0.3–12% of games and leads changed 0.2 times per game, against 36% and 0.82 under 1/2/3 and 26–32% and 0.63–0.67 under 2/3/4. Many flat-schedule games would be settled with a third still to play.
+5. **Without exhaustion the game becomes shallow.** Scoring every turn or every second turn with no exhaustion gave the steepest search ladders (84%), but the scripted rule "deploy your highest card where you are furthest behind" then played as well as `mctsx:4000` (48.5% and 54.0% for the search bot over 200 games each). Under v0.2 and every adopted candidate the same rule lost 93–97%. The steep ladders measured weak search catching up with a simple rule. Highest-card exhaustion (D6) is what keeps big cards from simply being played early.
+6. **Other mechanics.** Winner-only exhaustion (62.5%), spending the whole board (63.8%) and removing Shift (63.5%) lowered the skill signal. Removing Recall (68.2%) was within noise of v0.2.
+7. **Earned initiative.** Letting the player whose last order named the lower card choose second, after seeing the other order, reached 77.5% with a tiebreak: no better than scoring-only changes, while turning about 90% of final turns into sequential play and requiring a room-service change. The catch-up form, where the trailing player chooses second, was the weakest variant measured (64.2% strong wins, 27.0% upsets).
+
+### Exact reduced games
+
+Small variants were solved exactly by backward induction, solving every simultaneous decision as a matrix game (`crosscurrent-sim exact`). Values are exact for these reduced games only.
+
+| Reduced game | Scoring | Tiebreak | Value | Computed equilibrium W/D/L | Openings guaranteeing at least the value |
+| --- | --- | --- | ---: | ---: | ---: |
+| 4 ranks, 3 turns | 1 then 2 | none or final strength | 0.5 | 0 / 100 / 0% | 3 of 12 |
+| 5 ranks, 4 turns | 1 then 2 | none or final strength | 0.5 | 0 / 100 / 0% | 0 of 15 |
+| 5 ranks, 4 turns | 1 then 1 | none | 0.5 | 11.4 / 77.1 / 11.4% | 0 of 15 |
+| 5 ranks, 4 turns | 1 then 1 | final or total strength | 0.5 | 0 / 100 / 0% | 0 of 15 |
+| 6 ranks, 5 turns | 1 then 2 | none or final strength | 0.5 | 0 / 100 / 0% | 6 of 18 |
+| 6 ranks, 5 turns | 1 then 1 | final strength | 0.5 | 0 / 100 / 0% | 6 of 18 |
+| 6 ranks, 5 turns | 1 then 1 | total strength | 0.5 | 0 / 100 / 0% | 9 of 18 |
+| 6 ranks, 5 turns | 1 then 1 | none | 0.5 | 13.5 / 72.9 / 13.5% | 0 of 18 |
+
+The value of every symmetric game is 0.5 by construction; what the solver adds is how that value is reached. In every reduced game with a tiebreak, and under 1-then-2 scoring even without one, the computed equilibrium draws every game. The tiebreak did not change that: it removes draws from imperfect play, not from perfect play in these small games. The last column counts pure opening orders that secure at least the value against every reply. Some games have several (3 of 12, 6 of 18, 9 of 18). The 5-rank games, and the 6-rank game with 1-then-1 scoring and no tiebreak, have none, so there even the first order must be mixed. These confirm and sharpen the historical warning. Whether the full thirteen-rank game has drawing equilibria of this kind is unknown; the strongest bots measured drew 0–1% of v0.3 games.

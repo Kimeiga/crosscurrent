@@ -134,3 +134,23 @@ base+s111+tbfinal            final turn via mctsx:4000 n=400 saddle=71.5% (alrea
 === base+tbearly
 base+tbearly                     mctsx:4000 vs mctsx:1000     n=600   A=0.759±0.034  W/D/L 455/1/144  draw=0.2%  seat0=0.458  margin=+1.72  tA=0.44s tB=0.09s
     decided=599 winner behind after cp1=31.4% cp2=22.0%  lead changes/game=0.58  final cp could decide=100.0%  A kinds D/S/R=89/10/1%  B kinds=89/10/1%
+base+tbearly                     mctsx:4000 vs mctsx:4000     n=400   A=0.495±0.049  W/D/L 198/0/202  draw=0.0%  seat0=0.480  margin=+0.06  tA=0.46s tB=0.46s
+    decided=400 winner behind after cp1=34.5% cp2=27.8%  lead changes/game=0.65  final cp could decide=100.0%  A kinds D/S/R=90/9/1%  B kinds=89/10/1%
+    final turns that were sequential: 0 of 400
+base+tbearly                 final turn via mctsx:4000 n=400 saddle=60.0% (already decided 60.0%)  mean guess width=0.395  mixed support=2.49 of 22.9 actions  NE-minus-random=0.317  width hist [("0.0", 240), ("0.5", 4), ("1.0", 156)]
+=== base+s234+tbfinal
+base+s234+tbfinal                mctsx:4000 vs mctsx:1000     n=600   A=0.762±0.034  W/D/L 457/0/143  draw=0.0%  seat0=0.495  margin=+2.81  tA=0.17s tB=0.04s
+    decided=600 winner behind after cp1=29.7% cp2=24.0%  lead changes/game=0.62  final cp could decide=100.0%  A kinds D/S/R=89/10/1%  B kinds=89/9/2%
+base+s234+tbfinal                mctsx:4000 vs mctsx:4000     n=400   A=0.510±0.049  W/D/L 204/0/196  draw=0.0%  seat0=0.520  margin=-0.14  tA=0.18s tB=0.18s
+    decided=400 winner behind after cp1=32.8% cp2=26.0%  lead changes/game=0.63  final cp could decide=100.0%  A kinds D/S/R=89/10/1%  B kinds=90/9/1%
+    final turns that were sequential: 0 of 400
+base+s234+tbfinal            final turn via mctsx:4000 n=400 saddle=64.5% (already decided 64.2%)  mean guess width=0.354  mixed support=2.49 of 22.9 actions  NE-minus-random=0.339  width hist [("0.0", 258), ("0.5", 1), ("1.0", 141)]
+=== base+s234+tbstr
+base+s234+tbstr                  mctsx:4000 vs mctsx:1000     n=600   A=0.768±0.034  W/D/L 461/0/139  draw=0.0%  seat0=0.478  margin=+2.67  tA=0.17s tB=0.04s
+    decided=600 winner behind after cp1=27.8% cp2=22.2%  lead changes/game=0.56  final cp could decide=100.0%  A kinds D/S/R=89/10/1%  B kinds=89/9/2%
+base+s234+tbstr                  mctsx:4000 vs mctsx:4000     n=400   A=0.507±0.049  W/D/L 203/0/197  draw=0.0%  seat0=0.512  margin=-0.09  tA=0.17s tB=0.17s
+    decided=400 winner behind after cp1=34.2% cp2=32.5%  lead changes/game=0.78  final cp could decide=100.0%  A kinds D/S/R=90/9/1%  B kinds=90/9/1%
+    final turns that were sequential: 0 of 400
+base+s234+tbstr              final turn via mctsx:4000 n=400 saddle=66.2% (already decided 66.0%)  mean guess width=0.338  mixed support=2.59 of 22.9 actions  NE-minus-random=0.331  width hist [("0.0", 265), ("1.0", 135)]
+=== base+s4x3flat+tbfinal
+(note) Sweep 2 was stopped here by hand to free the machine for sweep 3. Not measured: base+s4x3flat+tbfinal, base+s4x3flat+tbstr, base+s111+tbstr+norecall, base+s111+tbstr+noshift. Flat schedules had already been ruled out on comeback structure (RESEARCH.md, finding 4).

@@ -32,6 +32,8 @@ This file is a compact decision log. See `RESEARCH.md` for the full evidence and
 
 **Reason:** Later resources should matter more without making early play irrelevant. This also helps avoid the all-draw behavior seen in an earlier scoring prototype.
 
+**Amended by D21 (v0.3):** the escalation is kept but the values are now 2 / 3 / 4.
+
 ## D6: Highest-card checkpoint exhaustion
 
 **Decision:** After scoring, each occupied front loses that player's highest card.
@@ -121,3 +123,25 @@ This file is a compact decision log. See `RESEARCH.md` for the full evidence and
 **Decision:** On scoring turns the table marks a front "safe" when no single order of the other player can overturn its leader.
 
 **Reason:** The central tactic is building leads the opponent's one order cannot reach. The marker uses only public information and makes that idea visible while players learn; it does not suggest moves.
+
+## D21: Scoring turns are worth 2, 3 and 4 points per front (v0.3)
+
+**Decision:** Turns 4, 8 and 12 score 2, 3 and 4 points per front won, replacing 1, 2 and 3.
+
+**Reason:** Under 1/2/3 the last scoring was half of all points. In strong self-play 42.5% of games reached a final turn decided by a pure win-or-lose guess, and the most common close pattern (+1 +2 −3) cancelled into a draw, so 14–17% of games between search bots were drawn. With 2/3/4 the last scoring is 44% of the points and no combination of single-front splits cancels (+2 +3 −4 = +1). Against a bot with a quarter of its search, the stronger bot won outright 76–78% of games instead of 65%. A flat 1/1/1 schedule measured a similar or slightly higher skill signal with a tiebreak, but the eventual winner was behind after turn 8 in only 1–12% of games (36% under 1/2/3, about 24–32% under 2/3/4): most games would be settled with a third still to play. D5's intent, that later resources matter more without making early play irrelevant, is unchanged. Evidence: simulations in RESEARCH.md ("Rule-variant study").
+
+## D22: Equal points are decided by strength at the last scoring
+
+**Decision:** If the points are equal after turn 12, the player with more total strength across all three fronts at the turn-12 scoring wins. Only equal strength as well is a draw.
+
+**Reason:** A drawn single game tells a one-game player nothing about who played better. The tiebreak is symmetric, uses information already on the table at the end, and changes no other rule. With 2/3/4 scoring it decides only a few percent of games, so its effect on play is small; the draw rate between search bots fell to 0–1%. Margin still does not score points (D4); strength only separates equal points.
+
+## D23: Alternatives studied and not adopted (2026)
+
+**Decision:** v0.3 keeps simultaneous orders, Shift, Recall and highest-card exhaustion exactly as in v0.2.
+
+**Reason:** Each alternative was measured with the same protocol (RESEARCH.md):
+
+- Earned initiative, where the player whose last order named the lower card chooses second, reached about the same skill signal as 2/3/4 with a tiebreak but turns most reveals into sequential play, adds a rule, and requires a room-service change. A catch-up form (the trailing player chooses second) was the worst variant measured.
+- Scoring every turn or every second turn without exhaustion produced the steepest search ladders but was shallow: "deploy your highest card where you are furthest behind" played as well as the 4,000-iteration search bot. Exhaustion is what prevents that.
+- Removing Shift, making only the front winner exhaust, or spending the whole board at each scoring all lowered the skill signal; removing Recall was within noise and would have removed the game's main save mechanic.

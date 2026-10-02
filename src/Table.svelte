@@ -16,6 +16,8 @@
     status?: string;
     /** My committed order while the other player is still choosing. */
     locked?: Action | null;
+    /** The other player has committed this turn's order (online). */
+    theirsLocked?: boolean;
     /** Tutorial constraint. */
     allowed?: ((a: Action) => boolean) | null;
     /** Coaching line shown above the command bar (tutorial and hints). */
@@ -27,7 +29,7 @@
     /** Replaces the command buttons (tutorial navigation). */
     footer?: Snippet;
   };
-  let { game, history, seat, names, canAct, status = '', locked = null, allowed = null, coach = '', lockLabel = 'Lock in', onLock, onBusy = () => {}, banner, footer }: Props = $props();
+  let { game, history, seat, names, canAct, status = '', locked = null, theirsLocked = false, allowed = null, coach = '', lockLabel = 'Lock in', onLock, onBusy = () => {}, banner, footer }: Props = $props();
 
   type Phase = 'idle' | 'reveal' | 'score' | 'settle';
   let shown = $state.raw<State>(untrack(() => game));
@@ -204,7 +206,7 @@
 <div class="table" class:busy={phase !== 'idle'} style={`--mine: var(--seat${seat}); --theirs: var(--seat${1 - seat}); --mine-wash: var(--seat${seat}-wash); --theirs-wash: var(--seat${1 - seat}-wash);`}>
   <section class="scoreline" aria-label="Score">
     <div class="player me"><span class="name">{names[seat]}</span><strong>{shown.scores[seat]}</strong></div>
-    <div class="player them"><strong>{shown.scores[1 - seat]}</strong><span class="name">{names[1 - seat]}</span></div>
+    <div class="player them"><strong>{shown.scores[1 - seat]}</strong><span class="name">{names[1 - seat]}{#if theirsLocked && phase === 'idle' && game.turn < 12}<em class="ready">locked in</em>{/if}</span></div>
     {#if tiebreak}
       <p class="tiebreak" title={RULES.tiebreak === 'total-strength' ? 'Equal points are decided by total strength summed over every scoring' : 'Equal points are decided by total strength at the last scoring'}>
         Level on points. Tiebreak strength: {names[seat]} {tiebreak[seat]}, {names[1 - seat]} {tiebreak[1 - seat]}
@@ -341,6 +343,7 @@
   .player .name { font-size: 15px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .player.them { justify-content: flex-end; }
   .tiebreak { grid-column: 1 / -1; font-size: 13px; color: var(--ink-2); }
+  .ready { display: block; font-style: normal; font-size: 12px; font-weight: 650; color: var(--theirs); text-align: right; }
   .player.me strong { color: var(--mine); }
   .player.them strong { color: var(--theirs); }
   .track { list-style: none; display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin: 0; padding: 0; }
@@ -424,9 +427,9 @@
   .do { display: flex; gap: 6px; align-items: center; flex-shrink: 0; margin-left: auto; }
   .lock { min-width: 108px; }
   .recall[aria-pressed='true'] { border-color: var(--ink); background: var(--paper-2); }
-  .command.stacked { flex-wrap: wrap; }
-  .command.stacked .say { flex-basis: 100%; }
-  .command.stacked .do { margin-left: auto; }
+  @media (max-width: 640px) {
+    .command.stacked .say { flex-basis: 100%; }
+  }
 
   .log summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-size: 15px; color: var(--ink-2); }
   .log ol { list-style: none; margin: 0 0 8px; padding: 0; font-size: 14px; }

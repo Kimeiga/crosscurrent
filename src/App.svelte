@@ -360,7 +360,7 @@
       <p class="review-note">Both players: check what happened, then pass to Player 1.</p>
       <button class="btn primary" onclick={nextLocalTurn}>Next turn</button>
     {/snippet}
-    <Table {game} {history} {seat} {names} {canAct} {status} locked={myLockedOrder}
+    <Table {game} {history} {seat} {names} {canAct} {status} locked={myLockedOrder} theirsLocked={mode === 'online' && locked[1 - seat]}
       footer={mode === 'local' && localStage === 'review' && !finished ? review : undefined}
       onLock={lockOrder} onBusy={value => { animating = value; }}>
       {#snippet banner()}
