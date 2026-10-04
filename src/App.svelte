@@ -78,8 +78,8 @@
   }
 
   const finished = $derived(game.turn === 12);
-  /** An online table keeps the rules it was started under. */
-  const rules = $derived(mode === 'online' ? roomRules : RULES);
+  /** The rules of the game on screen: an online table keeps the rules it was started under. */
+  const rules = $derived(screen === 'game' && mode === 'online' ? roomRules : RULES);
   /** Short tips through the first game of a player who has not taken the lesson. */
   let tips = $state(false);
   const tip = $derived(tips && !finished ? firstGameTip(game.turn, rules) : '');
@@ -364,7 +364,7 @@
 {/if}
 
 <dialog bind:this={rulesDialog} aria-labelledby="rules-title" onclick={event => { if (event.target === event.currentTarget) rulesDialog?.close(); }}>
-  <Rules onClose={() => rulesDialog?.close()} onLearn={() => { rulesDialog?.close(); learn(); }} />
+  <Rules {rules} onClose={() => rulesDialog?.close()} onLearn={() => { rulesDialog?.close(); learn(); }} />
 </dialog>
 <dialog bind:this={restartDialog} aria-labelledby="restart-title" onclick={event => { if (event.target === event.currentTarget) restartDialog?.close(); }}>
   <div class="sheet">
