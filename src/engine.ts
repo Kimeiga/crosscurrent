@@ -15,6 +15,8 @@ export type Rules = { name: string; points: readonly number[]; tiebreak: Tiebrea
 export const V02: Rules = { name: 'v0.2', points: [0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3], tiebreak: 'none' };
 /** Current rules. */
 export const RULES: Rules = { name: 'v0.3', points: [0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4], tiebreak: 'total-strength' };
+/** The rule set with this name, or `fallback` when the name is missing or unknown. */
+export const rulesNamed = (name: unknown, fallback: Rules) => [V02, RULES].find(rules => rules.name === name) ?? fallback;
 /** Points per front won if `turn` is a scoring turn, otherwise 0. */
 export const pointsAt = (turn: number, rules: Rules = RULES) => rules.points[turn] ?? 0;
 export const scoringTurns = (rules: Rules = RULES) => rules.points.flatMap((p, t) => (p > 0 ? [t] : []));

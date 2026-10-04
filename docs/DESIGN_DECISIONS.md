@@ -114,9 +114,9 @@ This file is a compact decision log. See `RESEARCH.md` for the full evidence and
 
 ## D19: The client recomputes online scoring
 
-**Decision:** The online room service enforces hidden orders, turn order and legality. Clients rebuild the game, including scores and the tiebreak, from the revealed orders.
+**Decision:** The online room service enforces hidden orders, turn order and legality, and reports the rules each table was started under. Clients rebuild the game, including scores and the tiebreak, from the revealed orders under those rules. A table started under v0.2 keeps v0.2 scoring; a room service that reports no rules is treated as current.
 
-**Reason:** The room service is deployed separately. Rule sets that keep board evolution identical (all v0.3 changes) then work with an older room service, and both players always compute the same result from the same public history.
+**Reason:** The room service is deployed separately. Rule sets that keep board evolution identical (all v0.3 changes) then work with an older room service, and both players always compute the same result from the same public history. Tables last up to 30 days, so a game in progress during a rules change must not be rescored under the new values. The Val Town service was not redeployed with the v0.3 website, so it classifies tables by creation time rather than by a stored label.
 
 ## D20: Mark safe leads on scoring turns
 

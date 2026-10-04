@@ -1,6 +1,8 @@
-/** Writes TypeScript-engine transcripts and states for the Rust harness `validate` command. */
+/** Writes TypeScript-engine transcripts and states for the Rust harness `validate` command.
+ * That command checks against `Rules::base()`, the v0.2 scoring, so the states are written under V02.
+ * Board evolution is the same under every rule set. */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { initial, actions, resolve, type Action, type State, type Side } from '../../src/engine.ts';
+import { initial, actions, resolve, V02, type Action, type State, type Side } from '../../src/engine.ts';
 
 const mask = (cards: number[]) => cards.reduce((m, c) => m | (1 << (c - 1)), 0);
 const side = (s: Side) => [mask(s.hand), ...s.board.map(mask), mask(s.spent)].join(',');
@@ -14,7 +16,7 @@ const lines: string[] = [];
 const replayLine = (pairs: [Action, Action][]) => {
   let state = initial();
   const states: string[] = [];
-  for (const [a, b] of pairs) { state = resolve(state, a, b).state; states.push(encodeState(state)); }
+  for (const [a, b] of pairs) { state = resolve(state, a, b, V02).state; states.push(encodeState(state)); }
   lines.push(`${pairs.map(([a, b]) => encodeAction(a) + encodeAction(b)).join('')} ${states.join(';')}`);
 };
 // Original Python reference transcripts first.
@@ -36,7 +38,7 @@ for (let g = 0; g < 3000; g++) {
     };
     const pair: [Action, Action] = [pick(state.sides[0]), pick(state.sides[1])];
     pairs.push(pair);
-    state = resolve(state, ...pair).state;
+    state = resolve(state, ...pair, V02).state;
   }
   replayLine(pairs);
 }

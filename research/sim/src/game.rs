@@ -312,21 +312,22 @@ impl Rules {
                         s.board[f] &= !bit(h);
                         if self.recall_protects && recall == Some(h) {
                             s.hand |= bit(h);
-                            recall = None;
                         } else {
                             s.spent |= bit(h);
+                        }
+                        // Returned or spent, the recalled card has left the board.
+                        if recall == Some(h) {
+                            recall = None;
                         }
                     }
                     Exhaust::All => {
                         let mut m = s.board[f];
-                        if self.recall_protects {
-                            if let Some(r) = recall {
-                                if m & bit(r) != 0 {
-                                    m &= !bit(r);
-                                    s.board[f] &= !bit(r);
-                                    s.hand |= bit(r);
-                                    recall = None;
-                                }
+                        if let Some(r) = recall.filter(|&r| m & bit(r) != 0) {
+                            recall = None;
+                            if self.recall_protects {
+                                m &= !bit(r);
+                                s.board[f] &= !bit(r);
+                                s.hand |= bit(r);
                             }
                         }
                         s.spent |= m;

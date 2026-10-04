@@ -2,13 +2,15 @@
   import { onDestroy, onMount, untrack, type Snippet } from 'svelte';
   import { crossfade } from 'svelte/transition';
   import Card from './Card.svelte';
-  import { prepare, sum, rank, rankName, pointsAt, scoringTurns, RULES, type Action, type State, type TurnRecord } from './engine';
+  import { prepare, sum, rank, rankName, pointsAt, scoringTurns, RULES, type Action, type Rules, type State, type TurnRecord } from './engine';
   import { fronts, orderText, revealFrames } from './ui';
   import { orderFor, samePick, exhaustionMarks, safeLeads, levelTiebreak, revealSteps, animates, instructionText, detailText, type Phase, type Pick, type Target } from './table';
 
   type Props = {
     game: State;
     history: TurnRecord[];
+    /** The rules this game is played under (an online table keeps the rules it was started with). */
+    rules?: Rules;
     seat: 0 | 1;
     /** Display names indexed by seat. */
     names: [string, string];
@@ -32,7 +34,7 @@
     /** Replaces the command buttons (tutorial navigation). */
     footer?: Snippet;
   };
-  let { game, history, seat, names, canAct, status = '', locked = null, theirsLocked = false, allowed = null, coach = '', onDismissCoach, lockLabel = 'Lock in', onLock, onBusy = () => {}, banner, footer }: Props = $props();
+  let { game, history, rules = RULES, seat, names, canAct, status = '', locked = null, theirsLocked = false, allowed = null, coach = '', onDismissCoach, lockLabel = 'Lock in', onLock, onBusy = () => {}, banner, footer }: Props = $props();
 
   let shown = $state.raw<State>(untrack(() => game));
   let phase = $state<Phase>('idle');
@@ -82,8 +84,8 @@
   const them = $derived(shown.sides[1 - seat]);
   const interactive = $derived(canAct && phase === 'idle' && !locked && game.turn < 12);
   const nextTurn = $derived(Math.min(12, game.turn + 1));
-  const stake = $derived(pointsAt(nextTurn));
-  const upcoming = $derived(scoringTurns().find(t => t >= nextTurn) ?? 12);
+  const stake = $derived(pointsAt(nextTurn, rules));
+  const upcoming = $derived(scoringTurns(rules).find(t => t >= nextTurn) ?? 12);
   const scoringTurn = $derived(phase === 'idle' && game.turn < 12 && stake > 0);
   const live = $derived(game.sides[seat]);
   const payment = $derived(live.hand[0]);
@@ -99,7 +101,7 @@
   const safe = $derived(scoringTurn ? safeLeads(projected ?? live, game.sides[1 - seat], live) : null);
   const last = $derived(history.at(-1));
   /** Shown only while points are level and the tiebreak could decide the game. */
-  const tiebreak = $derived(phase === 'idle' ? levelTiebreak(shown.scores, shown.turn, history) : null);
+  const tiebreak = $derived(phase === 'idle' ? levelTiebreak(shown.scores, shown.turn, history, rules) : null);
   const revealing = $derived(phase !== 'idle' && last && last.turn === shown.turn ? last : null);
 
   const aiming = $derived(interactive && pick !== null);
@@ -159,21 +161,21 @@
     <div class="player them"><strong>{shown.scores[1 - seat]}</strong><span class="name">{names[1 - seat]}{#if theirsLocked && phase === 'idle' && game.turn < 12}<em class="ready">locked in</em>{/if}</span></div>
     {#if tiebreak}
       <p class="tiebreak">
-        Level on points. Tiebreak strength{RULES.tiebreak === 'total-strength' ? ' so far' : ''}: {names[seat]} {tiebreak[seat]}, {names[1 - seat]} {tiebreak[1 - seat]}
+        Level on points. Tiebreak strength{rules.tiebreak === 'total-strength' ? ' so far' : ''}: {names[seat]} {tiebreak[seat]}, {names[1 - seat]} {tiebreak[1 - seat]}
       </p>
     {/if}
   </section>
   <ol class="track" aria-hidden="true">
     {#each Array(12) as _, i}
       {@const t = i + 1}
-      <li class:done={t <= shown.turn} class:now={phase === 'idle' && t === nextTurn && game.turn < 12} class:cp={pointsAt(t) > 0}></li>
+      <li class:done={t <= shown.turn} class:now={phase === 'idle' && t === nextTurn && game.turn < 12} class:cp={pointsAt(t, rules) > 0}></li>
     {/each}
   </ol>
   <p class="stakes" class:hot={scoringTurn}>
     {#if game.turn >= 12 && phase === 'idle'}<b>Final score</b>
     {:else if phase !== 'idle'}<b>Turn {shown.turn} of 12</b> · revealing
     {:else if scoringTurn}<b>Turn {nextTurn} of 12 · scores {stake} per front won</b>
-    {:else}<b>Turn {nextTurn} of 12</b> · next scoring on turn {upcoming}, {pointsAt(upcoming)} per front{/if}
+    {:else}<b>Turn {nextTurn} of 12</b> · next scoring on turn {upcoming}, {pointsAt(upcoming, rules)} per front{/if}
   </p>
 
   {#if coach}<div class="coach" role="note"><p>{coach}</p>{#if onDismissCoach}<button class="hide" onclick={onDismissCoach} aria-label="Hide tips" title="Hide tips">×</button>{/if}</div>{/if}

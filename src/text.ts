@@ -1,13 +1,13 @@
 /** Player-facing sentences that depend on the game state, kept out of the components so they can be tested. */
-import { RULES, type Outcome, type Rules } from './engine.ts';
+import { pointsAt, RULES, type Outcome, type Rules } from './engine.ts';
 
 /** One tip per stage of a newcomer's first game, by the number of turns already played. */
-export function firstGameTip(turn: number): string {
+export function firstGameTip(turn: number, rules: Rules = RULES): string {
   if (turn === 0) return 'Both players choose one order in secret, then both orders are revealed together. Tap a card in your hand, then a front.';
-  if (turn < 3) return 'Turn 4 scores 2 points for each front where your cards add up to more. You can also tap one of your cards on a front to shift or recall it, paid with your lowest card.';
+  if (turn < 3) return `Turn 4 scores ${pointsAt(4, rules)} per front where your cards add up to more. You can also tap one of your cards on a front to shift or recall it, paid with your lowest card.`;
   return turn === 3
     ? 'This turn scores. Afterwards each player loses their highest card on every front they occupy, shown dashed.'
-    : 'Turn 8 scores 3 points per front and turn 12 scores 4. Most points after turn 12 wins.';
+    : `Turn 8 scores ${pointsAt(8, rules)} per front and turn 12 scores ${pointsAt(12, rules)}. Most points after turn 12 wins.`;
 }
 
 export type Waiting = { online: boolean; solo: boolean; friendHere: boolean; lockedIn: boolean; connection: string; busy: boolean };

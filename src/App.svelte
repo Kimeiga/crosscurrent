@@ -8,7 +8,7 @@
   import Join from './Join.svelte';
   import Handoff from './Handoff.svelte';
   import TableBanner from './TableBanner.svelte';
-  import { initial, resolve, replay, outcome, tiebreakStrength, type Action, type State, type TurnRecord } from './engine';
+  import { initial, resolve, replay, outcome, tiebreakStrength, rulesNamed, RULES, type Action, type Rules as RuleSet, type State, type TurnRecord } from './engine';
   import { chooseAction, normalizeLevel, type Difficulty } from './ai';
   import { createRoom, joinRoom, getRoom, submitOrder, watchRoom, unwatchRoom, disconnect, invitation, offerInvitation, networkError, type Session } from './network';
   import { firstGameTip, statusText, verdictText, pageTitle, type Screen } from './text';
@@ -34,6 +34,7 @@
   let locked = $state<[boolean, boolean]>([false, false]);
   let myLockedOrder = $state.raw<Action | null>(null);
   let session = $state.raw<Session | null>(null);
+  let roomRules = $state.raw<RuleSet>(RULES);
   let savedSolo = $state<{ turn: number } | null>(null);
   let savedLocal = $state<{ turn: number } | null>(null);
   let savedRoom = $state(false);
@@ -77,9 +78,11 @@
   }
 
   const finished = $derived(game.turn === 12);
+  /** An online table keeps the rules it was started under. */
+  const rules = $derived(mode === 'online' ? roomRules : RULES);
   /** Short tips through the first game of a player who has not taken the lesson. */
   let tips = $state(false);
-  const tip = $derived(tips && !finished ? firstGameTip(game.turn) : '');
+  const tip = $derived(tips && !finished ? firstGameTip(game.turn, rules) : '');
   function hideTips() { tips = false; store('tips', 'off'); }
   $effect(() => { if (finished && tips) hideTips(); });
   const names = $derived.by((): [string, string] => {
@@ -158,9 +161,11 @@
   }
   function applyView(view: RoomView) {
     if (screen !== 'game' || mode !== 'online' || !session || view.id !== session.id || view.state.turn < game.turn) return;
-    // The room service enforces hidden orders and legality; scoring is recomputed
-    // here from the revealed orders so a room service on older scoring rules agrees.
-    const match = replay(view.history.map(entry => entry.actions));
+    // The room service enforces hidden orders and legality. The score is rebuilt here from the
+    // revealed orders under the table's rules; a room service that does not report them yet
+    // sends none, and its tables are played under the current rules.
+    roomRules = rulesNamed(view.rules, RULES);
+    const match = replay(view.history.map(entry => entry.actions), roomRules);
     game = match.state; history = match.history; seat = view.seat;
     joined = view.joined; locked = view.locked; myLockedOrder = view.ownOrder;
   }
@@ -280,7 +285,7 @@
     if (mode === 'online') createTable();
     else requestStart(mode);
   }
-  const verdict = $derived(finished ? verdictText(outcome(game, history), game.scores, names) : '');
+  const verdict = $derived(finished ? verdictText(outcome(game, history, rules), game.scores, names, rules) : '');
 
   function startWorker() {
     try { worker = new Worker(new URL('./ai.worker.ts', import.meta.url), { type: 'module' }); }
@@ -348,7 +353,7 @@
       <p class="review-note">Both players: check what happened, then pass to Player 1.</p>
       <button class="btn primary" onclick={nextLocalTurn}>Next turn</button>
     {/snippet}
-    <Table {game} {history} {seat} {names} {canAct} {status} locked={myLockedOrder} theirsLocked={mode === 'online' && locked[1 - seat]}
+    <Table {game} {history} {rules} {seat} {names} {canAct} {status} locked={myLockedOrder} theirsLocked={mode === 'online' && locked[1 - seat]}
       footer={reviewing ? review : undefined} coach={tip} onDismissCoach={hideTips}
       onLock={lockOrder} onBusy={value => { animating = value; }}>
       {#snippet banner()}

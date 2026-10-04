@@ -1,15 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RULES, type Outcome, type Rules } from '../src/engine.ts';
+import { RULES, V02, type Outcome, type Rules } from '../src/engine.ts';
 import { firstGameTip, statusText, verdictText, pageTitle, type Waiting } from '../src/text.ts';
 
 test('first-game tips follow the turns', () => {
   assert.match(firstGameTip(0), /in secret/);
-  assert.match(firstGameTip(1), /Turn 4 scores 2 points/);
+  assert.match(firstGameTip(1), /Turn 4 scores 2 per front/);
   assert.equal(firstGameTip(2), firstGameTip(1));
   assert.match(firstGameTip(3), /This turn scores/);
   assert.match(firstGameTip(4), /turn 12 scores 4/);
   assert.match(firstGameTip(11), /Most points after turn 12 wins/);
+  assert.match(firstGameTip(1, V02), /Turn 4 scores 1 per front/, 'an online table started under v0.2 keeps its values');
+  assert.match(firstGameTip(4, V02), /Turn 8 scores 2 per front and turn 12 scores 3/);
 });
 
 test('the status line says why the player is waiting', () => {
