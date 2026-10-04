@@ -342,7 +342,7 @@
     onLearn={learn} onRules={openRules}
     onResumeSolo={() => resumeOffline('solo')} onResumeLocal={() => resumeOffline('local')} onResumeRoom={resumeTable} />
 {:else if screen === 'learn'}
-  <Tutorial onDone={finishTutorial} />
+  <Tutorial onDone={finishTutorial} onSkip={home} />
 {:else if screen === 'join'}
   <Join {busy} onJoin={acceptInvitation} onRules={openRules} />
 {:else if handingOff}

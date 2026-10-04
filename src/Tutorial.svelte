@@ -4,7 +4,8 @@
   import { lessons, bestReply } from './lessons';
   import { resolve, sameAction, type Action, type State, type TurnRecord } from './engine';
 
-  let { onDone }: { onDone: (play: boolean) => void } = $props();
+  /** `onDone` follows the last lesson; `onSkip` leaves early, so the first-game tips stay on. */
+  let { onDone, onSkip }: { onDone: (play: boolean) => void; onSkip: () => void } = $props();
 
   let index = $state(0);
   let game = $state.raw<State>(lessons[0].start().game);
@@ -53,7 +54,7 @@
 {:else}
   <div class="lesson-head">
     <p><span class="step">Lesson {index + 1} of {lessons.length}</span> {lesson.title}</p>
-    <button class="link" onclick={() => onDone(false)}>Skip</button>
+    <button class="link" onclick={() => onSkip()}>Skip</button>
   </div>
   {#key index}
     {#snippet navigation()}<LessonNav {won} last={index + 1 === lessons.length} onNext={next} onRetry={retry} />{/snippet}

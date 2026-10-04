@@ -1,8 +1,8 @@
 #!/bin/sh
 # Sweep 6: controls missing from the finalist comparison (2/3/4 without a tiebreak; 1/2/3 with the
-# total-strength tiebreak) and an independent second batch for the tiebreak candidates. Uses the
-# target4 build, which also reports how many games ended level on points and who won them.
-S=./target4/release/crosscurrent-sim
+# total-strength tiebreak) and an independent second batch for the tiebreak candidates. The simulator
+# also reports how many games ended level on points and who won them.
+S=./target/release/crosscurrent-sim
 while pgrep -f run-sweep5.sh > /dev/null; do sleep 30; done
 for v in base+s234 base+tbstr; do
   echo "=== $v"

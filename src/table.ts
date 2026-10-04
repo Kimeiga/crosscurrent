@@ -1,5 +1,5 @@
 /** The decisions behind the game table (Table.svelte), kept as plain functions so they can be unit tested. */
-import { actions, rank, sameAction, sum, tiebreakStrength, RULES, type Action, type Rules, type Side, type State, type TurnRecord } from './engine.ts';
+import { actions, rank, sameAction, sum, tiebreakStrength, RULES, type Action, type Checkpoint, type Rules, type Side, type State, type TurnRecord } from './engine.ts';
 import { exhaustTargets, orderText, type revealFrames } from './ui.ts';
 
 export type Pick = { from: 'hand' | 'board'; card: number };
@@ -34,11 +34,12 @@ export function exhaustionMarks(mine: Side, theirs: Side, seat: 0 | 1, staged: A
 /** The most strength one order can add to a front: a card from hand, or one shifted from another front. */
 const reach = (side: Side, front: number) => Math.max(0, ...side.hand, ...side.board.flatMap((cards, f) => (f === front ? [] : cards)));
 
-/** Fronts whose lead no single order of the other side can overturn. `mine` may include my staged order; `current` does not. */
+/** Fronts whose lead no single order of the other side can overturn. `mine` may include my staged order, which
+ * counts toward my lead; `current` does not, and their lead is measured against my one order from `current`. */
 export function safeLeads(mine: Side, theirs: Side, current: Side) {
   return [0, 1, 2].map(f => {
     const a = sum(mine.board[f]), b = sum(theirs.board[f]);
-    return { mine: a > b + reach(theirs, f), theirs: b > a + reach(current, f) };
+    return { mine: a > b + reach(theirs, f), theirs: b > sum(current.board[f]) + reach(current, f) };
   });
 }
 
@@ -48,6 +49,17 @@ export function levelTiebreak(scores: readonly number[], turn: number, history: 
   const recorded = history.filter(entry => entry.turn <= turn);
   const counts = rules.tiebreak === 'total-strength' ? recorded.some(entry => entry.checkpoint) : turn >= 12;
   return counts ? tiebreakStrength(recorded, rules) : null;
+}
+
+/** A scoring in the move list: the points each side gained and the strength it had, which the tiebreak adds up. */
+export function scoringText(checkpoint: Checkpoint, names: [string, string], seat: 0 | 1) {
+  const side = (p: number) => `${names[p]} +${checkpoint.gained[p]} (strength ${sum(checkpoint.strengths[p])})`;
+  return `Scoring: ${side(seat)}, ${side(1 - seat)}`;
+}
+
+/** Tiebreak totals for the move list, whatever the points: strength summed over the scorings so far. */
+export function tiebreakTotals(history: TurnRecord[], rules: Rules = RULES): [number, number] | null {
+  return rules.tiebreak === 'total-strength' && history.some(entry => entry.checkpoint) ? tiebreakStrength(history, rules) : null;
 }
 
 type Frames = ReturnType<typeof revealFrames>;

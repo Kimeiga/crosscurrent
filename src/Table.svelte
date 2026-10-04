@@ -4,7 +4,7 @@
   import Card from './Card.svelte';
   import { prepare, sum, rank, rankName, pointsAt, scoringTurns, RULES, type Action, type Rules, type State, type TurnRecord } from './engine';
   import { fronts, orderText, revealFrames } from './ui';
-  import { orderFor, samePick, exhaustionMarks, safeLeads, levelTiebreak, revealSteps, animates, instructionText, detailText, type Phase, type Pick, type Target } from './table';
+  import { orderFor, samePick, exhaustionMarks, safeLeads, levelTiebreak, scoringText, tiebreakTotals, revealSteps, animates, instructionText, detailText, type Phase, type Pick, type Target } from './table';
 
   type Props = {
     game: State;
@@ -102,6 +102,9 @@
   const last = $derived(history.at(-1));
   /** Shown only while points are level and the tiebreak could decide the game. */
   const tiebreak = $derived(phase === 'idle' ? levelTiebreak(shown.scores, shown.turn, history, rules) : null);
+  const totals = $derived(tiebreakTotals(history, rules));
+  /** A card dashed as spent after this scoring is described by the legend, so screen readers hear it too. */
+  const spentNote = (doomed: boolean) => (doomed ? 'spent-legend' : undefined);
   const revealing = $derived(phase !== 'idle' && last && last.turn === shown.turn ? last : null);
 
   const aiming = $derived(interactive && pick !== null);
@@ -185,13 +188,13 @@
     <span class="row-label">{names[1 - seat] === 'You' ? 'Your' : `${names[1 - seat]}’s`} hand</span>
     <div class="mini-hand">
       {#each them.hand as card (card)}
-        <span class="mini" in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }}><Card {card} seat={1 - seat} size="xs" /></span>
+        <span class="mini" role="img" aria-label={rankName(card)} in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }}><Card {card} seat={1 - seat} size="xs" /></span>
       {/each}
     </div>
     <div class="spent" title="Spent cards" class:empty={!them.spent.length}>
       {#if them.spent.length}<span class="row-label">Spent</span>{/if}
       {#each them.spent as card (card)}
-        <span class="mini gone" in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }}><Card {card} seat={1 - seat} size="xs" /></span>
+        <span class="mini gone" role="img" aria-label={`${rankName(card)}, spent`} in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }}><Card {card} seat={1 - seat} size="xs" /></span>
       {/each}
     </div>
   </section>
@@ -206,7 +209,8 @@
         class:lead-me={phase === 'idle' && mine > theirs} class:lead-them={phase === 'idle' && theirs > mine}>
         <div class="pile theirs">
           {#each them.board[f] as card (card)}
-            <span class="placed" class:doomed={marks?.[1 - seat][f] === card} in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }}><Card {card} seat={1 - seat} size="sm" /></span>
+            <span class="placed" class:doomed={marks?.[1 - seat][f] === card} role="img" aria-label={`${names[1 - seat]}’s ${rankName(card)} on ${name}`} aria-describedby={spentNote(marks?.[1 - seat][f] === card)}
+              in:receive={{ key: `${1 - seat}:${card}` }} out:send={{ key: `${1 - seat}:${card}` }}><Card {card} seat={1 - seat} size="sm" /></span>
           {/each}
         </div>
         <div class="num theirs" class:won={scored(f, 1 - seat)}>{theirs}{#if scored(f, 1 - seat)}<em>+{scoring?.checkpoint?.points}</em>{/if}{#if safe?.[f].theirs}<span class="safe" title="No single order of yours can overturn this">safe</span>{/if}</div>
@@ -220,7 +224,7 @@
           {#each me.board[f] as card (card)}
             <button class="placed" class:picked={pick?.from === 'board' && pick.card === card} class:doomed={marks?.[seat][f] === card}
               class:moving={staged && staged.kind !== 'deploy' && staged.card === card}
-              disabled={!interactive} onclick={() => choose('board', card)} aria-label={`Your ${rankName(card)} on ${name}`} aria-pressed={pick?.from === 'board' && pick.card === card}
+              disabled={!interactive} onclick={() => choose('board', card)} aria-label={`Your ${rankName(card)} on ${name}`} aria-describedby={spentNote(marks?.[seat][f] === card)} aria-pressed={pick?.from === 'board' && pick.card === card}
               in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }}><Card {card} {seat} size="sm" /></button>
           {/each}
           {#if staged && staged.kind !== 'recall' && staged.front === f}
@@ -230,14 +234,14 @@
       </div>
     {/each}
   </section>
-  {#if marks}<p class="legend"><span class="swatch"></span> Dashed cards are spent after scoring unless recalled.</p>{/if}
+  {#if marks}<p class="legend" id="spent-legend"><span class="swatch"></span> Dashed cards are spent after scoring unless recalled.</p>{/if}
 
   <div class="side-row me-row" class:empty={!me.spent.length && !history.length}>
     {#if history.length}<button class="link moves" onclick={() => movesDialog?.showModal()}>Moves so far</button>{/if}
     <section class="spent mine-spent" aria-label="Your spent cards">
       {#if me.spent.length}<span class="row-label">Your spent cards</span>{/if}
       {#each me.spent as card (card)}
-        <span class="mini gone" in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }}><Card {card} {seat} size="xs" /></span>
+        <span class="mini gone" role="img" aria-label={rankName(card)} in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }}><Card {card} {seat} size="xs" /></span>
       {/each}
     </section>
   </div>
@@ -287,10 +291,11 @@
       {#each history as entry}
         <li>
           <span class="t">{entry.turn}</span><span>{orderText(entry.actions[seat])}</span><span class="opp">{orderText(entry.actions[1 - seat])}</span>
-          {#if entry.checkpoint}<span class="pts">Scoring: {names[seat]} +{entry.checkpoint.gained[seat]}, {names[1 - seat]} +{entry.checkpoint.gained[1 - seat]}</span>{/if}
+          {#if entry.checkpoint}<span class="pts">{scoringText(entry.checkpoint, names, seat)}</span>{/if}
         </li>
       {/each}
     </ol>
+    {#if totals}<p class="totals">Tiebreak strength{game.turn < 12 ? ' so far' : ''}: {names[seat]} {totals[seat]}, {names[1 - seat]} {totals[1 - seat]}. It decides the game if the points end level.</p>{/if}
   </div>
 </dialog>
 </div>
@@ -391,6 +396,7 @@
   .log li.head { padding-top: 0; border-top: 0; font-size: 13px; font-weight: 600; color: var(--ink-2); }
   .log .t { color: var(--ink-3); font-variant-numeric: tabular-nums; }
   .log .opp { color: var(--theirs); }
+  .totals { margin: 12px 0 0; font-size: 14px; color: var(--ink-2); }
   .log .pts { grid-column: 2 / -1; font-size: 13px; color: var(--ink-2); }
   .busy .command { opacity: 1; }
   @keyframes pop { 40% { transform: scale(1.25); } }

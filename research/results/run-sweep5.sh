@@ -1,7 +1,7 @@
 #!/bin/sh
 # Sweep 5: product difficulty calibration under the adopted rules (Easy, Medium and Hard are
 # mctsx:300, mctsx:3000 and mctsx:24000). Usage: sh run-sweep5.sh <rules>, run from research/sim.
-S=./target4/release/crosscurrent-sim
+S=./target/release/crosscurrent-sim
 R=${1:-base+s234+tbstr}
 echo "=== calibration $R"
 $S match rules=$R a=mctsx:300 b=random games=400 seed=701

@@ -19,7 +19,7 @@ $S match rules=base+s111+tbstr a=mctsx:16000 b=mctsx:4000 games=400 seed=1
 $S final rules=base+s111+tbstr policy=mctsx:4000 games=400 seed=1
 ```
 
-`results/` holds the raw logs (`*.log`) and the scripts that produced them (`run-*.sh`). `table.py` turns the screening logs into the markdown table in RESEARCH.md, `finalists.py` pools the finalist runs (sweeps 3, 4 and 6), `to_json.py` exports every measurement for `docs/BENCHMARKS.json`, and `summarize.py` condenses a sweep log into one row per variant.
+`results/` holds the raw logs (`*.log`) and the scripts that produced them (`run-*.sh`). Run a script from `research/sim` after `cargo build --release`, for example `sh ../results/run-sweep6.sh`. During the study each new build went into its own target directory so that running sweeps were not disturbed. The current build reproduces the logs: re-running the first match of sweep 1 gave the same 260/55/85 record and statistics, and later builds only add the line counting games level on points. `table.py` turns the screening logs into the markdown table in RESEARCH.md, `finalists.py` pools the finalist runs (sweeps 3, 4 and 6), `to_json.py` exports every measurement for `docs/BENCHMARKS.json`, and `summarize.py` condenses a sweep log into one row per variant.
 
 Each `match` prints the result line, a line on comebacks and order mix, and (from the `target4` build on) how many games ended level on points and how the tiebreak settled them for policy A.
 

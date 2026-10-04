@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sweep 3: finalists with larger samples and a second search family.
-S=./target3/release/crosscurrent-sim
+S=./target/release/crosscurrent-sim
 while pgrep -f run-sweep1b.sh > /dev/null; do sleep 30; done
 for v in base base+tbfinal base+s111+tbfinal base+s111+tbstr base+s234+tbfinal base+s234+tbstr; do
   echo "=== $v"

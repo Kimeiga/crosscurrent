@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initial, prepare, replay, resolve, V02, RULES, type Action, type Rules, type Side } from '../src/engine.ts';
 import { revealFrames } from '../src/ui.ts';
-import { orderFor, samePick, exhaustionMarks, safeLeads, levelTiebreak, revealSteps, animates, instructionText, detailText, lastTurnText, type Prompt, type Detail } from '../src/table.ts';
+import { orderFor, samePick, exhaustionMarks, safeLeads, levelTiebreak, scoringText, tiebreakTotals, revealSteps, animates, instructionText, detailText, lastTurnText, type Prompt, type Detail } from '../src/table.ts';
 
 const D = (card: number, front: number): Action => ({ kind: 'deploy', card, front });
 const S = (card: number, front: number): Action => ({ kind: 'shift', card, front });
@@ -44,6 +44,9 @@ test('a lead is safe only when no single order of the other side can overturn it
   assert.equal(safe[1].theirs, false, 'shifting my 13 to Middle makes 16 against 10');
   assert.equal(safeLeads(mine, side([4], [[], [13, 10], []]), mine)[1].theirs, true, '23 holds against at most 3 + 13');
   assert.equal(safeLeads(side([2], [[], [3, 13], []]), theirs, mine)[1].mine, true, 'a staged shift counts toward my lead: 16 against at most 10 + 4');
+  const current = side([2, 13], [[], [], []]);
+  const ahead = side([1], [[12, 8], [], []]);
+  assert.equal(safeLeads(prepare(current, D(13, 0)).side, ahead, current)[0].theirs, true, 'a staged King is my one order: 13 cannot overturn 20');
 });
 
 test('the tiebreak line appears only while points are level and the tiebreak can count', () => {
@@ -57,6 +60,17 @@ test('the tiebreak line appears only while points are level and the tiebreak can
   assert.equal(levelTiebreak([4, 4], state.turn, history, final), null, 'final strength counts only after turn 12');
   assert.equal(levelTiebreak([4, 4], 3, history, total), null, 'before any scoring');
   assert.equal(levelTiebreak([4, 4], state.turn, history, V02), null, 'v0.2 had no tiebreak');
+});
+
+test('the move list keeps the strength at each scoring and the tiebreak totals whatever the points', () => {
+  const pairs: [Action, Action][] = [[D(13, 0), D(12, 0)], [D(1, 1), D(2, 1)], [D(3, 2), D(4, 2)], [D(5, 1), D(6, 2)]];
+  const { state, history } = replay(pairs);
+  assert.deepEqual(state.scores, [4, 2]);
+  assert.equal(scoringText(history[3].checkpoint!, ['You', 'Computer'], 0), 'Scoring: You +4 (strength 22), Computer +2 (strength 24)');
+  assert.equal(scoringText(history[3].checkpoint!, ['Friend', 'You'], 1), 'Scoring: You +2 (strength 24), Friend +4 (strength 22)');
+  assert.deepEqual(tiebreakTotals(history), [22, 24], 'shown although the points differ');
+  assert.equal(tiebreakTotals(history.slice(0, 3)), null, 'nothing has scored yet');
+  assert.equal(tiebreakTotals(history, V02), null, 'v0.2 has no tiebreak');
 });
 
 test('a resolved turn is revealed, scored when it is a scoring turn, then settled', () => {

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Variant sweep 1. Same protocol for every variant; uses the initiative-aware build.
-S=./target2/release/crosscurrent-sim
+S=./target/release/crosscurrent-sim
 while pgrep -f run-base-audit.sh > /dev/null; do sleep 20; done
 for v in base base+tbfinal base+tbstr base+s111 base+s111+tbfinal base+s234 base+s124 \
          base+s4x3 base+s6x2 base+s6x2+exnone base+s6inc base+s12inc+exnone \

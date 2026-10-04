@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sweep 4: 3/4/5 schedule for comparison with 2/3/4.
-S=./target3/release/crosscurrent-sim
+S=./target/release/crosscurrent-sim
 while pgrep -f run-sweep3.sh > /dev/null; do sleep 30; done
 for v in base+cp:4=3,8=4,12=5+tbfinal base+cp:4=3,8=4,12=5+tbstr; do
   echo "=== $v"
