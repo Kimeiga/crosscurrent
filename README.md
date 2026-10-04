@@ -62,6 +62,12 @@ The Vercel build calls the room service in `services/rooms/` (deployed on Val To
 
 Private invitation links grant one seat, so share them only with your opponent. These are casual private tables, not a ranked anti-cheat system. Pass and play relies on players looking away.
 
+To publish:
+
+- **Production (hakanalpay.com/crosscurrent/):** build the Vercel variant with `VERCEL=1 npm run build`, replace `static/crosscurrent/` in the site repository `Kimeiga/kimeiga.github.io` with the contents of `dist/`, and merge to `master`. Cloudflare Pages publishes the site, and pull requests there get a preview at `pr-<number>.hakanalpay.pages.dev/crosscurrent/`.
+- **Vercel mirror (crosscurrent-delta.vercel.app):** the Vercel project is not connected to GitHub. Run `vercel deploy --prod` from this repository; Vercel sets `VERCEL=1` during its build.
+- **Room service:** deploy `services/rooms/main.ts` to Val Town. Clients do not depend on its score fields.
+
 ## Verification
 
 `npm test` replays the 60 original Python reference transcripts (720 transitions, SHA-256 digests of the expected states; see `tests/GOLDEN.md`) under the v0.2 values, checks the AI's bitmask engine against the reference engine on 2,000 random games, checks the exact final-turn solver against full resolution, and verifies every tutorial position, including that the final puzzle has exactly one winning order. The browser suite covers a full solo game with Shift, Recall and resuming, online tables that hide pending orders, pass and play, failure handling, the lessons and the start-screen animation.
