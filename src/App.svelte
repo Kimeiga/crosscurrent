@@ -178,16 +178,22 @@
       if (alive && current === session && sequence > lastView) { lastView = sequence; applyView(view); }
     } catch (error) { if (alive && current === session) message = networkError(error); }
   }
+  /** The seat is taken once a join succeeds, so the session is kept for Rejoin even if the player has
+   * moved on in the meantime (`current` is false), unless another online table is open by then. */
+  function keepSession(value: Session, current: boolean) {
+    if (!current && screen === 'game' && mode === 'online') return;
+    store('room', value); savedRoom = true;
+  }
   async function openSession(value: Session, requestEpoch: number) {
     await unwatchRoom();
     if (epoch !== requestEpoch || !alive) return;
     // Join first: a missing or expired table never replaces the saved one.
     const view = await joinRoom(value);
+    keepSession(value, epoch === requestEpoch);
     if (epoch !== requestEpoch || !alive) return;
     session = value; game = initial(); history = []; mode = 'online'; seat = view.seat;
     screen = 'game'; animating = false; joined = [true, false]; locked = [false, false];
     myLockedOrder = null;
-    store('room', value); savedRoom = true;
     setHash(`table/${value.id}`);
     applyView(view);
     void watchRoom(value, () => { void refreshRoom(); }, s => { connectionStatus = s; })
