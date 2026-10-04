@@ -16,6 +16,8 @@
 
   type Mode = 'solo' | 'online' | 'local';
   type Save = { version: number; difficulty?: string; pairs: [Action, Action][] };
+  /** Version 3 saves are v0.3 games. Version 2 saves were played under v0.2 scoring and are not resumed under the new rules. */
+  const SAVE_VERSION = 3;
 
   let screen = $state<Screen>('home');
   let mode = $state<Mode>('solo');
@@ -60,9 +62,15 @@
     try { return JSON.parse(localStorage.getItem(`crosscurrent:${key}`) || 'null'); }
     catch { return null; }
   }
-  function savedTurn(key: 'solo' | 'local') {
+  const current = (saved: Save | null): saved is Save => saved?.version === SAVE_VERSION && Array.isArray(saved.pairs);
+  /** The saved game for a mode, if it was saved under the current rules and is still in progress. */
+  function unfinished(key: 'solo' | 'local') {
     const saved = read<Save>(key);
-    return saved && Array.isArray(saved.pairs) && saved.pairs.length < 12 ? { turn: saved.pairs.length } : null;
+    return current(saved) && saved.pairs.length < 12 ? saved : null;
+  }
+  function savedTurn(key: 'solo' | 'local') {
+    const saved = unfinished(key);
+    return saved ? { turn: saved.pairs.length } : null;
   }
   function refreshSaved() {
     savedSolo = savedTurn('solo'); savedLocal = savedTurn('local'); savedRoom = !!read('room');
@@ -93,7 +101,7 @@
   const inviteLink = $derived(mode === 'online' && !joined[1 - seat] ? (session ? invitation(session) : '') : null);
 
   function saveGame(key: 'solo' | 'local') {
-    store(key, { version: 2, difficulty, pairs: history.map(entry => entry.actions) });
+    store(key, { version: SAVE_VERSION, difficulty, pairs: history.map(entry => entry.actions) });
     refreshSaved();
   }
   function prepareAi() {
@@ -129,8 +137,8 @@
     window.scrollTo(0, 0);
   }
   function requestStart(value: 'solo' | 'local') {
-    const saved = read<Save>(value);
-    if (saved && Array.isArray(saved.pairs) && saved.pairs.length > 0 && saved.pairs.length < 12) {
+    const saved = unfinished(value);
+    if (saved && saved.pairs.length > 0) {
       replacing = value === 'solo' ? 'your unfinished game against the computer' : 'your unfinished pass-and-play game';
       pendingStart = () => startOffline(value);
       restartDialog?.showModal();
@@ -139,7 +147,7 @@
   function resumeOffline(value: 'solo' | 'local') {
     try {
       const saved = read<Save>(value);
-      if (!saved || saved.version !== 2 || !Array.isArray(saved.pairs) || saved.pairs.length > 12) throw new Error('That saved game could not be read. Start a new one.');
+      if (!current(saved) || saved.pairs.length > 12) throw new Error('That saved game could not be read. Start a new one.');
       const restored = replay(saved.pairs);
       game = restored.state; history = restored.history;
       if (saved.difficulty) difficulty = normalizeLevel(saved.difficulty);
@@ -299,7 +307,7 @@
   /** Opens an invitation or the lesson from the address. Navigation never silently resumes a saved match; invitations ask first. */
   function route() {
     const invite = location.hash.match(/^#\/join\/([\w-]+)\/([a-f0-9]{64})$/);
-    if (invite) { epoch++; void unwatchRoom(); message = ''; joinTarget = { id: invite[1], token: invite[2] }; screen = 'join'; }
+    if (invite) { epoch++; void unwatchRoom(); message = ''; busy = false; animating = false; joinTarget = { id: invite[1], token: invite[2] }; screen = 'join'; }
     else if (location.hash === '#/learn') learn();
   }
   onMount(() => {

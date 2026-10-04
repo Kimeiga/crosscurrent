@@ -20,11 +20,13 @@ export function orderFor(side: Side, pick: Pick | null, target: Target | null): 
 
 export const samePick = (pick: Pick | null, from: Pick['from'], card: number) => pick?.from === from && pick.card === card;
 
-/** The card each side loses on every front after this scoring. A staged Recall of the highest card saves it. */
-export function exhaustionMarks(sides: State['sides'], seat: 0 | 1, staged: Action | null) {
-  const marks = [exhaustTargets(sides[0]), exhaustTargets(sides[1])];
+/** The card each side loses on every front after this scoring, indexed by seat. `mine` should already include my
+ * staged order (see engine.prepare): a deployed or shifted card can become the one spent, and a staged Recall of
+ * the highest card saves it. The other side's order is unknown, so theirs follow the board. */
+export function exhaustionMarks(mine: Side, theirs: Side, seat: 0 | 1, staged: Action | null) {
+  const marks = seat === 0 ? [exhaustTargets(mine), exhaustTargets(theirs)] : [exhaustTargets(theirs), exhaustTargets(mine)];
   if (staged?.kind !== 'recall') return marks;
-  const front = sides[seat].board.findIndex(cards => cards.includes(staged.card));
+  const front = mine.board.findIndex(cards => cards.includes(staged.card));
   if (front >= 0 && marks[seat][front] === staged.card) marks[seat][front] = null;
   return marks;
 }

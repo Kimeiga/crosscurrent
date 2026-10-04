@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initial, replay, resolve, V02, RULES, type Action, type Rules, type Side } from '../src/engine.ts';
+import { initial, prepare, replay, resolve, V02, RULES, type Action, type Rules, type Side } from '../src/engine.ts';
 import { revealFrames } from '../src/ui.ts';
 import { orderFor, samePick, exhaustionMarks, safeLeads, levelTiebreak, revealSteps, animates, instructionText, detailText, lastTurnText, type Prompt, type Detail } from '../src/table.ts';
 
@@ -24,12 +24,16 @@ test('a pick and a target become a legal order or nothing', () => {
   assert.equal(samePick(null, 'hand', 9), false);
 });
 
-test('exhaustion marks the highest card per occupied front, and a staged Recall of it saves it', () => {
-  const sides: [Side, Side] = [side([1, 2], [[13, 5], [7], []]), side([3], [[], [12, 4], [6]])];
-  assert.deepEqual(exhaustionMarks(sides, 0, null), [[13, 7, null], [null, 12, 6]]);
-  assert.deepEqual(exhaustionMarks(sides, 0, R(13)), [[null, 7, null], [null, 12, 6]]);
-  assert.deepEqual(exhaustionMarks(sides, 0, R(5)), [[13, 7, null], [null, 12, 6]], 'recalling a lower card still spends the highest');
-  assert.deepEqual(exhaustionMarks(sides, 1, R(12)), [[13, 7, null], [null, null, 6]]);
+test('exhaustion marks the highest card per occupied front after my staged order', () => {
+  const mine = side([1, 2, 9], [[13, 5], [7], []]);
+  const theirs = side([3], [[], [12, 4], [6]]);
+  const after = (order: Action) => prepare(mine, order).side;
+  assert.deepEqual(exhaustionMarks(mine, theirs, 0, null), [[13, 7, null], [null, 12, 6]]);
+  assert.deepEqual(exhaustionMarks(after(D(9, 1)), theirs, 0, D(9, 1)), [[13, 9, null], [null, 12, 6]], 'a deployed card can become the one spent');
+  assert.deepEqual(exhaustionMarks(after(S(13, 2)), theirs, 0, S(13, 2)), [[5, 7, 13], [null, 12, 6]], 'a shift changes both fronts');
+  assert.deepEqual(exhaustionMarks(after(R(13)), theirs, 0, R(13)), [[null, 7, null], [null, 12, 6]], 'recalling the highest card saves it');
+  assert.deepEqual(exhaustionMarks(after(R(5)), theirs, 0, R(5)), [[13, 7, null], [null, 12, 6]], 'recalling a lower card still spends the highest');
+  assert.deepEqual(exhaustionMarks(theirs, mine, 1, R(12)), [[13, 7, null], [null, null, 6]], 'seat 1 marks are indexed by seat');
 });
 
 test('a lead is safe only when no single order of the other side can overturn it', () => {

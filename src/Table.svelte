@@ -94,7 +94,7 @@
   const myStrength = $derived(me.board.map(sum));
   const theirStrength = $derived(them.board.map(sum));
   /** Cards spent after this turn's scoring: my side reflects a staged Recall, which saves its card. */
-  const marks = $derived(scoringTurn && nextTurn < 12 ? exhaustionMarks(shown.sides, seat, staged) : null);
+  const marks = $derived(scoringTurn && nextTurn < 12 ? exhaustionMarks(projected ?? live, shown.sides[1 - seat], seat, staged) : null);
   /** On scoring turns: fronts whose lead no single order of the other side can overturn. */
   const safe = $derived(scoringTurn ? safeLeads(projected ?? live, game.sides[1 - seat], live) : null);
   const last = $derived(history.at(-1));
@@ -222,7 +222,7 @@
               in:receive={{ key: `${seat}:${card}` }} out:send={{ key: `${seat}:${card}` }}><Card {card} {seat} size="sm" /></button>
           {/each}
           {#if staged && staged.kind !== 'recall' && staged.front === f}
-            <span class="ghost" aria-hidden="true"><Card card={staged.card} {seat} size="sm" /></span>
+            <span class="ghost" class:doomed={marks?.[seat][f] === staged.card} aria-hidden="true"><Card card={staged.card} {seat} size="sm" /></span>
           {/if}
         </div>
       </div>
@@ -341,7 +341,7 @@
   button.placed:not(:disabled):hover { transform: translateY(-2px); }
   .placed.picked { outline: 2px solid var(--ink); outline-offset: 2px; transform: translateY(-2px); }
   .placed.moving { opacity: .5; }
-  .placed.doomed :global(.card) { border-style: dashed; border-color: var(--heart); }
+  .placed.doomed :global(.card), .ghost.doomed :global(.card) { border-style: dashed; border-color: var(--heart); }
   .ghost { display: inline-flex; opacity: .55; }
   .num { display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; font-family: var(--serif); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .num.theirs { color: var(--theirs); }

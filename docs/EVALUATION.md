@@ -48,6 +48,6 @@ Use this checklist when evaluating rule or AI changes.
 - Early Crosscurrent tactical versus deployment-only builder: 66.0% over 2,000.
 - Early Crosscurrent tactical self-play: 476-452-72 over 1,000, expected result 51.2%, draw rate 7.2%.
 - 2026 audit of v0.2 (simulation): each 4x search budget won 70–74% (`mctsx` 1k→4k→16k→64k); draws rose with strength (13.8% → 17.8%); in strong self-play 42.5% of games reached a final turn decided by a pure win/loss guess; the shipped "Deep" level was no stronger than "Tactical" (48.9%).
-- 2026 rule-variant study (simulation, pooled over three pairings with a 4x search gap): the stronger bot's expected result was 73.5% under v0.2 with 13.8% draws, 73.5% under v0.2 with a last-scoring strength tiebreak, and 76.5% under v0.3 (2/3/4 points, total-strength tiebreak) with one draw in 6,600 games.
+- 2026 rule-variant study (simulation, pooled over three pairings with a 4x search gap): the stronger bot's expected result was 73.5% under v0.2 with 13.8% draws, 73.7% under v0.2 with a last-scoring strength tiebreak, and 76.5% under v0.3 (2/3/4 points, total-strength tiebreak) with one draw in 6,600 games.
 
 Every benchmark must retain its original caveat: these full-game bots were not proven optimal unless explicitly described as an exact reduced-game result.
