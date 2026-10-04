@@ -1,4 +1,6 @@
-/** Crosscurrent v0.2. Pure rules shared by UI, bots, and authoritative server. */
+/** Crosscurrent. Pure rules shared by UI, bots, and authoritative server.
+ * Board evolution (orders, costs, exhaustion, recall) is identical in every rule set;
+ * rule sets differ only in how scoring turns are valued and how equal points are settled. */
 export type ActionKind = 'deploy' | 'shift' | 'recall';
 export type Action = { kind: ActionKind; card: number; front: number };
 export type Side = { hand: number[]; board: number[][]; spent: number[] };
@@ -7,13 +9,24 @@ export type Checkpoint = { turn: number; points: number; strengths: [number[], n
 export type TurnRecord = { turn: number; actions: [Action, Action]; checkpoint: Checkpoint | null };
 export type Match = { state: State; history: TurnRecord[] };
 
+export type Tiebreak = 'none' | 'final-strength' | 'total-strength';
+export type Rules = { name: string; points: readonly number[]; tiebreak: Tiebreak };
+/** The original rules, kept for the Python reference fixtures and old saved games. */
+export const V02: Rules = { name: 'v0.2', points: [0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3], tiebreak: 'none' };
+/** Current rules. */
+export const RULES: Rules = { name: 'v0.3', points: [0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4], tiebreak: 'total-strength' };
+/** The rule set with this name, or `fallback` when the name is missing or unknown. */
+export const rulesNamed = (name: unknown, fallback: Rules) => [V02, RULES].find(rules => rules.name === name) ?? fallback;
+/** Points per front won if `turn` is a scoring turn, otherwise 0. */
+export const pointsAt = (turn: number, rules: Rules = RULES) => rules.points[turn] ?? 0;
+export const scoringTurns = (rules: Rules = RULES) => rules.points.flatMap((p, t) => (p > 0 ? [t] : []));
 export const ranks = Array.from({ length: 13 }, (_, i) => i + 1);
-export const labels = ['A', 'B', 'C'];
+const labels = ['A', 'B', 'C'];
 export const rank = (n: number) => (({ 1: 'A', 11: 'J', 12: 'Q', 13: 'K' } as Record<number, string>)[n] || String(n));
 export const rankName = (n: number) => (({ 1: 'Ace', 11: 'Jack', 12: 'Queen', 13: 'King' } as Record<number, string>)[n] || String(n));
 export const sum = (ns: number[]) => ns.reduce((a, b) => a + b, 0);
 const sorted = (ns: number[]) => ns.sort((a, b) => a - b);
-export const cloneSide = (s: Side): Side => ({ hand: [...s.hand], board: s.board.map(f => [...f]), spent: [...s.spent] });
+const cloneSide = (s: Side): Side => ({ hand: [...s.hand], board: s.board.map(f => [...f]), spent: [...s.spent] });
 export function initial(): State {
   const side = (): Side => ({ hand: [...ranks], board: [[], [], []], spent: [] });
   return { turn: 0, sides: [side(), side()], scores: [0, 0] };
@@ -52,7 +65,7 @@ export function prepare(source: Side, a: Action): { side: Side; recall: number |
   sorted(side.spent);
   return { side, recall };
 }
-export function finish(source: Side, recall: number | null, checkpoint: boolean): Side {
+function finish(source: Side, recall: number | null, checkpoint: boolean): Side {
   const side = cloneSide(source);
   if (checkpoint) side.board.forEach(front => {
     if (!front.length) return;
@@ -69,12 +82,12 @@ export function finish(source: Side, recall: number | null, checkpoint: boolean)
   sorted(side.hand); sorted(side.spent);
   return side;
 }
-export function resolve(state: State, a: Action, b: Action): { state: State; record: TurnRecord } {
+export function resolve(state: State, a: Action, b: Action, rules: Rules = RULES): { state: State; record: TurnRecord } {
   if (state.turn >= 12) throw new Error('This game is already complete.');
   const next = state.turn + 1;
   const prepared = [prepare(state.sides[0], a), prepare(state.sides[1], b)] as const;
-  const scored = next % 4 === 0;
-  const points = next / 4;
+  const points = pointsAt(next, rules);
+  const scored = points > 0;
   const strengths = prepared.map(p => p.side.board.map(sum)) as [number[], number[]];
   const gained: [number, number] = [0, 0];
   if (scored) for (let f = 0; f < 3; f++) {
@@ -88,14 +101,25 @@ export function resolve(state: State, a: Action, b: Action): { state: State; rec
     record: { turn: next, actions: [a, b], checkpoint: scored ? { turn: next, points, strengths, gained, exhausted } : null },
   };
 }
-export function replay(pairs: [Action, Action][]): Match {
+export function replay(pairs: [Action, Action][], rules: Rules = RULES): Match {
   let state = initial();
   const history: TurnRecord[] = [];
-  for (const pair of pairs) { const out = resolve(state, ...pair); state = out.state; history.push(out.record); }
+  for (const [a, b] of pairs) { const out = resolve(state, a, b, rules); state = out.state; history.push(out.record); }
   return { state, history };
 }
-export function description(a: Action): string {
-  return a.kind === 'recall' ? `Recall ${rank(a.card)}` : `${a.kind === 'shift' ? 'Shift' : 'Deploy'} ${rank(a.card)} → ${labels[a.front]}`;
+export type Outcome = { winner: 0 | 1 | null; by: 'score' | 'strength' | 'draw'; strength: [number, number] };
+/** Tiebreak strength: the turn-12 total, or the total over every scoring, by rule set. */
+export function tiebreakStrength(history: TurnRecord[], rules: Rules = RULES): [number, number] {
+  const scorings = history.filter(entry => entry.checkpoint && (rules.tiebreak === 'total-strength' || entry.turn === 12));
+  return [0, 1].map(p => scorings.reduce((total, entry) => total + sum(entry.checkpoint!.strengths[p]), 0)) as [number, number];
+}
+/** Final result. Equal points fall back to the rule set's strength tiebreak. */
+export function outcome(state: State, history: TurnRecord[] = [], rules: Rules = RULES): Outcome {
+  const strength = tiebreakStrength(history, rules);
+  if (state.scores[0] !== state.scores[1]) return { winner: state.scores[0] > state.scores[1] ? 0 : 1, by: 'score', strength };
+  const complete = history.some(entry => entry.turn === 12);
+  if (rules.tiebreak !== 'none' && complete && strength[0] !== strength[1]) return { winner: strength[0] > strength[1] ? 0 : 1, by: 'strength', strength };
+  return { winner: null, by: 'draw', strength };
 }
 export function checkInvariants(s: State): boolean {
   return s.turn >= 0 && s.turn <= 12 && s.sides.every(side => {

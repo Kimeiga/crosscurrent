@@ -61,3 +61,10 @@ test('subscriptions require a valid seat and can only be removed by that seat', 
   const sub=await f.rooms.subscribe(f.id,f.token,'connection'); await f.rooms.unsubscribe(f.id,f.invite,sub.subscription);
   assert.equal((await f.db.list(`subs_${f.id}`)).items.length,1); await f.rooms.unsubscribe(f.id,f.token,sub.subscription); assert.equal((await f.db.list(`subs_${f.id}`)).items.length,0);
 });
+test('a table keeps the rules it was created under', async () => {
+  const f=await fixture(); await f.rooms.join(f.id,f.invite);
+  for(let turn=1;turn<=4;turn++) await Promise.all([f.rooms.order(f.id,f.token,turn,D(14-turn,0)),f.rooms.order(f.id,f.invite,turn,D(turn,1))]);
+  const current=await f.rooms.view(f.id,f.token); assert.equal(current.rules,'v0.3'); assert.deepEqual(current.state.scores,[2,2]);
+  delete f.db.table('rooms').get(f.id)!.rules;
+  const legacy=await f.rooms.view(f.id,f.invite); assert.equal(legacy.rules,'v0.2'); assert.deepEqual(legacy.state.scores,[1,1],'tables saved before rooms recorded their rules were v0.2 tables');
+});

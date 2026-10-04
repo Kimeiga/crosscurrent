@@ -1,44 +1,51 @@
 <script lang="ts">
-  import { onMount, onDestroy, tick } from 'svelte';
+  import { onDestroy, onMount, tick } from 'svelte';
+  import Home from './Home.svelte';
   import Table from './Table.svelte';
-  import Lobby from './Lobby.svelte';
-  import Icon from './Icon.svelte';
-  import './table-ux.css';
-  import { initial, resolve, replay, prepare, actions, sameAction, sum, type Action, type ActionKind, type State, type TurnRecord } from './engine';
-  import { chooseAction, type Difficulty } from './ai';
-  import { createRoom, joinRoom, getRoom, submitOrder, watchRoom, unwatchRoom, disconnect, invitation, networkError, type Session } from './network';
+  import Tutorial from './Tutorial.svelte';
+  import Rules from './Rules.svelte';
+  import TopBar from './TopBar.svelte';
+  import Join from './Join.svelte';
+  import Handoff from './Handoff.svelte';
+  import TableBanner from './TableBanner.svelte';
+  import { initial, resolve, replay, outcome, tiebreakStrength, rulesNamed, RULES, type Action, type Rules as RuleSet, type State, type TurnRecord } from './engine';
+  import { chooseAction, normalizeLevel, type Difficulty } from './ai';
+  import { createRoom, joinRoom, getRoom, submitOrder, watchRoom, unwatchRoom, disconnect, invitation, offerInvitation, networkError, type Session } from './network';
+  import { firstGameTip, statusText, verdictText, pageTitle, type Screen } from './text';
   import type { RoomView } from '../backend/rooms';
 
   type Mode = 'solo' | 'online' | 'local';
-  type Save = { version: number; difficulty?: Difficulty; pairs: [Action, Action][] };
-  let screen: 'home' | 'game' = 'home';
-  let mode: Mode = 'solo';
-  let game: State = initial();
-  let history: TurnRecord[] = [];
-  let seat: 0 | 1 = 0;
-  let difficulty: Difficulty = 'tactical';
-  let kind: ActionKind = 'deploy';
-  let selected: number | null = null;
-  let destination: number | null = null;
-  let busy = false;
-  let animationBusy = false;
-  let message = '';
-  let toast = '';
-  let connectionStatus = 'Connecting';
-  let joined: [boolean, boolean] = [true, true];
-  let locked: [boolean, boolean] = [false, false];
-  let myLockedOrder: Action | null = null;
-  let session: Session | null = null;
-  let savedSolo = false;
-  let savedRoom = false;
-  let savedLocal = false;
-  let joinLink = '';
-  let localStage: 'handoff' | 'choose' | 'sealed' | 'review' = 'handoff';
-  let localOrders: [Action | null, Action | null] = [null, null];
-  let rulesDialog: HTMLDialogElement;
-  let restartDialog: HTMLDialogElement;
+  type Save = { version: number; difficulty?: string; pairs: [Action, Action][] };
+  /** Version 3 saves are v0.3 games. Version 2 saves were played under v0.2 scoring and are not resumed under the new rules. */
+  const SAVE_VERSION = 3;
+
+  let screen = $state<Screen>('home');
+  let mode = $state<Mode>('solo');
+  let game = $state.raw<State>(initial());
+  let history = $state.raw<TurnRecord[]>([]);
+  let seat = $state<0 | 1>(0);
+  let difficulty = $state<Difficulty>('medium');
+  let busy = $state(false);
+  let animating = $state(false);
+  let message = $state('');
+  let toast = $state('');
+  let connectionStatus = $state('Connecting');
+  let joined = $state<[boolean, boolean]>([true, true]);
+  let locked = $state<[boolean, boolean]>([false, false]);
+  let myLockedOrder = $state.raw<Action | null>(null);
+  let session = $state.raw<Session | null>(null);
+  let roomRules = $state.raw<RuleSet>(RULES);
+  let savedSolo = $state<{ turn: number } | null>(null);
+  let savedLocal = $state<{ turn: number } | null>(null);
+  let savedRoom = $state(false);
+  let newcomer = $state(true);
+  let joinTarget = $state.raw<Session | null>(null);
+  let localStage = $state<'handoff' | 'choose' | 'sealed' | 'review'>('handoff');
+  let localOrders = $state.raw<[Action | null, Action | null]>([null, null]);
+  let rulesDialog = $state<HTMLDialogElement>();
+  let restartDialog = $state<HTMLDialogElement>();
   let pendingStart: (() => void) | null = null;
-  let replacement = 'solo';
+  let replacing = $state('');
   let worker: Worker | null = null;
   let workerSequence = 0;
   let aiPromise: Promise<Action> | null = null;
@@ -50,47 +57,72 @@
 
   function store(key: string, value: unknown) {
     try { localStorage.setItem(`crosscurrent:${key}`, JSON.stringify(value)); }
-    catch { message = 'Browser storage is unavailable. Keep this tab open to retain your game.'; }
+    catch { message = 'Browser storage is unavailable. Keep this tab open to keep your game.'; }
   }
   function read<T>(key: string): T | null {
     try { return JSON.parse(localStorage.getItem(`crosscurrent:${key}`) || 'null'); }
     catch { return null; }
   }
-  $: mine = game.sides[seat];
-  $: finished = game.turn === 12;
-  $: turn = Math.min(12, game.turn + 1);
-  $: disabled = busy || animationBusy || finished || locked[seat] || (mode === 'online' && !joined.every(Boolean)) || (mode === 'local' && localStage !== 'choose');
-  $: order = makeOrder(mine, kind, selected, destination);
-  $: projected = order ? prepare(mine, order).side.board.map(sum) : mine.board.map(sum);
-  $: opponentName = mode === 'local' ? `Player ${2 - seat}` : mode === 'online' ? 'Your friend' : difficulty === 'casual' ? 'Casual AI' : difficulty === 'expert' ? 'Deep AI' : 'Tactical AI';
+  const current = (saved: Save | null): saved is Save => saved?.version === SAVE_VERSION && Array.isArray(saved.pairs);
+  /** The saved game for a mode, if it was saved under the current rules and is still in progress. */
+  function unfinished(key: 'solo' | 'local') {
+    const saved = read<Save>(key);
+    return current(saved) && saved.pairs.length < 12 ? saved : null;
+  }
+  function savedTurn(key: 'solo' | 'local') {
+    const saved = unfinished(key);
+    return saved ? { turn: saved.pairs.length } : null;
+  }
+  function refreshSaved() {
+    savedSolo = savedTurn('solo'); savedLocal = savedTurn('local'); savedRoom = !!read('room');
+  }
 
-  function makeOrder(side: State['sides'][0], action: ActionKind, card: number | null, front: number | null): Action | null {
-    if (card === null || (action !== 'recall' && front === null)) return null;
-    const candidate: Action = { kind: action, card, front: action === 'recall' ? -1 : front! };
-    return actions(side).some(value => sameAction(value, candidate)) ? candidate : null;
-  }
-  function clearSelection() { kind = 'deploy'; selected = null; destination = null; }
-  function selectKind(value: ActionKind) { kind = value; selected = null; destination = null; }
-  function selectBoard(card: number) {
-    if (!disabled && kind !== 'deploy') { selected = card; destination = null; }
-  }
+  const finished = $derived(game.turn === 12);
+  /** The rules of the game on screen: an online table keeps the rules it was started under. */
+  const rules = $derived(screen === 'game' && mode === 'online' ? roomRules : RULES);
+  /** Short tips through the first game of a player who has not taken the lesson. */
+  let tips = $state(false);
+  const tip = $derived(tips && !finished ? firstGameTip(game.turn, rules) : '');
+  function hideTips() { tips = false; store('tips', 'off'); }
+  $effect(() => { if (finished && tips) hideTips(); });
+  const names = $derived.by((): [string, string] => {
+    if (mode === 'local') return ['Player 1', 'Player 2'];
+    if (mode === 'online') return seat === 0 ? ['You', 'Friend'] : ['Friend', 'You'];
+    return ['You', 'Computer'];
+  });
+  const canAct = $derived(
+    !busy && !finished && !locked[seat]
+    && !(mode === 'online' && !joined.every(Boolean))
+    && !(mode === 'local' && localStage !== 'choose'),
+  );
+  const status = $derived(statusText({
+    online: mode === 'online', solo: mode === 'solo', friendHere: joined[1 - seat], lockedIn: locked[seat], connection: connectionStatus, busy,
+  }));
+  const handingOff = $derived(mode === 'local' && (localStage === 'handoff' || localStage === 'sealed'));
+  const reviewing = $derived(mode === 'local' && localStage === 'review' && !finished);
+  /** The invitation link while the friend has not opened it yet. */
+  const inviteLink = $derived(mode === 'online' && !joined[1 - seat] ? (session ? invitation(session) : '') : null);
+
   function saveGame(key: 'solo' | 'local') {
-    store(key, { version: 2, difficulty, pairs: history.map(entry => entry.actions) });
-    if (key === 'solo') savedSolo = true;
-    else savedLocal = true;
+    store(key, { version: SAVE_VERSION, difficulty, pairs: history.map(entry => entry.actions) });
+    refreshSaved();
   }
   function prepareAi() {
     if (game.turn === 12) { aiPromise = null; return; }
-    const snapshot = structuredClone(game);
+    const snapshot = structuredClone($state.snapshot(game)) as State;
     const level = difficulty;
+    const strength = tiebreakStrength(history);
     if (worker) {
       const id = ++workerSequence;
       aiPromise = new Promise<Action>((resolve, reject) => {
         pendingAi.set(id, { resolve, reject });
-        worker!.postMessage({ id, state: snapshot, level });
+        worker!.postMessage({ id, state: snapshot, level, strength });
       });
       void aiPromise.catch(() => {});
-    } else aiPromise = Promise.resolve(chooseAction(snapshot, 1, level));
+    } else aiPromise = Promise.resolve(chooseAction(snapshot, 1, level, Math.random, strength));
+  }
+  function setHash(value: string) {
+    window.history.replaceState(null, '', `${location.pathname}${location.search}#/${value}`);
   }
   function enterOffline(value: 'solo' | 'local') {
     epoch++;
@@ -98,29 +130,30 @@
     mode = value; screen = 'game'; seat = 0;
     session = null; joined = [true, true]; locked = [false, false];
     myLockedOrder = null; localOrders = [null, null]; localStage = 'handoff';
-    busy = false; animationBusy = false; message = ''; clearSelection();
-    window.history.replaceState(null, '', `${location.pathname}${location.search}#/${value}`);
+    busy = false; animating = false; message = '';
+    setHash(value);
   }
   function startOffline(value: 'solo' | 'local') {
     game = initial(); history = [];
     enterOffline(value); saveGame(value);
     if (value === 'solo') prepareAi();
+    window.scrollTo(0, 0);
   }
   function requestStart(value: 'solo' | 'local') {
-    const saved = read<Save>(value);
-    if (saved && Array.isArray(saved.pairs) && saved.pairs.length > 0 && saved.pairs.length < 12) {
-      replacement = value === 'solo' ? 'solo' : 'local';
+    const saved = unfinished(value);
+    if (saved && saved.pairs.length > 0) {
+      replacing = value === 'solo' ? 'your unfinished game against the computer' : 'your unfinished pass-and-play game';
       pendingStart = () => startOffline(value);
-      restartDialog.showModal();
+      restartDialog?.showModal();
     } else startOffline(value);
   }
   function resumeOffline(value: 'solo' | 'local') {
     try {
       const saved = read<Save>(value);
-      if (!saved || saved.version !== 2 || !Array.isArray(saved.pairs) || saved.pairs.length > 12) throw new Error('The saved game could not be read. Start a new game.');
+      if (!current(saved) || saved.pairs.length > 12) throw new Error('That saved game could not be read. Start a new one.');
       const restored = replay(saved.pairs);
       game = restored.state; history = restored.history;
-      if (saved.difficulty && ['casual', 'tactical', 'expert'].includes(saved.difficulty)) difficulty = saved.difficulty;
+      if (saved.difficulty) difficulty = normalizeLevel(saved.difficulty);
       enterOffline(value);
       if (value === 'solo') prepareAi();
       else if (game.turn === 12) localStage = 'review';
@@ -128,8 +161,12 @@
   }
   function applyView(view: RoomView) {
     if (screen !== 'game' || mode !== 'online' || !session || view.id !== session.id || view.state.turn < game.turn) return;
-    if (view.state.turn !== game.turn) clearSelection();
-    game = view.state; history = view.history; seat = view.seat;
+    // The room service enforces hidden orders and legality. The score is rebuilt here from the
+    // revealed orders under the table's rules; a room service that does not report them yet
+    // sends none, and its tables are played under the current rules.
+    roomRules = rulesNamed(view.rules, RULES);
+    const match = replay(view.history.map(entry => entry.actions), roomRules);
+    game = match.state; history = match.history; seat = view.seat;
     joined = view.joined; locked = view.locked; myLockedOrder = view.ownOrder;
   }
   async function refreshRoom() {
@@ -141,18 +178,25 @@
       if (alive && current === session && sequence > lastView) { lastView = sequence; applyView(view); }
     } catch (error) { if (alive && current === session) message = networkError(error); }
   }
+  /** The seat is taken once a join succeeds, so the session is kept for Rejoin even if the player has
+   * moved on in the meantime (`current` is false), unless another online table is open by then. */
+  function keepSession(value: Session, current: boolean) {
+    if (!current && screen === 'game' && mode === 'online') return;
+    store('room', value); savedRoom = true;
+  }
   async function openSession(value: Session, requestEpoch: number) {
     await unwatchRoom();
     if (epoch !== requestEpoch || !alive) return;
-    session = value; game = initial(); history = []; mode = 'online'; seat = 0;
-    screen = 'game'; animationBusy = false; joined = [true, false]; locked = [false, false];
-    myLockedOrder = null; clearSelection();
-    store('room', value); savedRoom = true;
-    window.history.replaceState(null, '', `${location.pathname}${location.search}#/table/${value.id}`);
+    // Join first: a missing or expired table never replaces the saved one.
     const view = await joinRoom(value);
+    keepSession(value, epoch === requestEpoch);
     if (epoch !== requestEpoch || !alive) return;
+    session = value; game = initial(); history = []; mode = 'online'; seat = view.seat;
+    screen = 'game'; animating = false; joined = [true, false]; locked = [false, false];
+    myLockedOrder = null;
+    setHash(`table/${value.id}`);
     applyView(view);
-    void watchRoom(value, () => { void refreshRoom(); }, status => { connectionStatus = status; })
+    void watchRoom(value, () => { void refreshRoom(); }, s => { connectionStatus = s; })
       .catch(error => { if (epoch === requestEpoch) { message = networkError(error); connectionStatus = 'Disconnected'; } });
   }
   async function runOnline(operation: () => Promise<Session>) {
@@ -169,27 +213,25 @@
     const value = read<Session>('room');
     if (value) void runOnline(async () => value);
   }
-  function joinInvitation() {
-    const match = joinLink.trim().match(/#\/join\/([\w-]+)\/([a-f0-9]{64})(?:$|\s)/);
-    if (!match) { message = 'Paste the complete invitation link from your friend.'; return; }
-    void runOnline(async () => ({ id: match[1], token: match[2] }));
+  function acceptInvitation() {
+    const target = joinTarget;
+    if (target) void runOnline(async () => target);
   }
   async function reconnect() {
     message = ''; disconnect();
     await refreshRoom();
     if (session && screen === 'game' && mode === 'online') {
-      void watchRoom(session, () => { void refreshRoom(); }, status => { connectionStatus = status; })
+      void watchRoom(session, () => { void refreshRoom(); }, s => { connectionStatus = s; })
         .catch(error => { message = networkError(error); });
     }
   }
-  async function lockOrder() {
-    if (!order || disabled) return;
-    const chosen = { ...order };
+  async function lockOrder(chosen: Action) {
+    if (!canAct) return;
     if (mode === 'local') {
-      localOrders[seat] = chosen;
-      localOrders = [...localOrders];
-      clearSelection();
-      if (localOrders.every(Boolean)) localStage = 'sealed';
+      const orders = [...localOrders] as [Action | null, Action | null];
+      orders[seat] = chosen;
+      localOrders = orders;
+      if (orders.every(Boolean)) localStage = 'sealed';
       else { seat = (1 - seat) as 0 | 1; localStage = 'handoff'; }
       return;
     }
@@ -198,17 +240,17 @@
     busy = true; message = ''; myLockedOrder = chosen;
     try {
       if (mode === 'solo') {
-        const computer = await (aiPromise || Promise.resolve(chooseAction(structuredClone(game), 1, difficulty)));
+        const computer = await (aiPromise || Promise.resolve(chooseAction($state.snapshot(game) as State, 1, difficulty, Math.random, tiebreakStrength(history))));
         if (epoch !== currentEpoch || game.turn !== oldTurn) return;
         const result = resolve(game, chosen, computer);
-        game = result.state; history = [...history, result.record]; clearSelection();
+        game = result.state; history = [...history, result.record];
         myLockedOrder = null; saveGame('solo'); prepareAi();
       } else if (session) {
         const view = await submitOrder(session, oldTurn + 1, chosen);
         if (epoch === currentEpoch) applyView(view);
       }
     } catch (error) {
-      if (epoch === currentEpoch) { message = networkError(error); if (mode === 'solo') prepareAi(); }
+      if (epoch === currentEpoch) { message = networkError(error); myLockedOrder = null; if (mode === 'solo') prepareAi(); }
     } finally { if (epoch === currentEpoch) busy = false; }
   }
   async function revealLocal() {
@@ -218,113 +260,129 @@
     await tick();
     const result = resolve(game, pair[0], pair[1]);
     game = result.state; history = [...history, result.record];
-    localOrders = [null, null]; clearSelection(); saveGame('local');
+    localOrders = [null, null]; saveGame('local');
   }
   function nextLocalTurn() {
-    if (animationBusy || finished) return;
-    seat = (game.turn % 2) as 0 | 1;
-    localStage = 'handoff'; clearSelection();
+    if (animating || finished) return;
+    seat = 0;
+    localStage = 'handoff';
   }
-  async function copyInvite() {
-    if (!session) return;
-    try { await navigator.clipboard.writeText(invitation(session)); toast = 'Invitation copied'; }
-    catch { toast = 'Copy the invitation from the field below.'; }
+  async function shareInvite() {
+    if (inviteLink) toast = await offerInvitation(inviteLink);
   }
+  function openRules() { rulesDialog?.showModal(); }
   function home() {
-    epoch++; screen = 'home'; message = ''; busy = false; animationBusy = false;
-    clearSelection(); void unwatchRoom();
-    window.history.replaceState(null, '', `${location.pathname}${location.search}#/`);
+    epoch++; screen = 'home'; message = ''; busy = false; animating = false;
+    void unwatchRoom(); refreshSaved();
+    setHash('');
+    window.scrollTo(0, 0);
+  }
+  function learn() {
+    epoch++; void unwatchRoom();
+    screen = 'learn'; message = '';
+    setHash('learn');
+    window.scrollTo(0, 0);
+  }
+  function finishTutorial(play: boolean) {
+    newcomer = false; store('learned', true); tips = false;
+    if (play) { difficulty = 'easy'; requestStart('solo'); } else home();
+  }
+  function again() {
+    if (mode === 'online') createTable();
+    else requestStart(mode);
+  }
+  const verdict = $derived(finished ? verdictText(outcome(game, history, rules), game.scores, names, rules) : '');
+
+  function startWorker() {
+    try { worker = new Worker(new URL('./ai.worker.ts', import.meta.url), { type: 'module' }); }
+    catch { worker = null; return; }
+    worker.onmessage = event => settleAi(event.data);
+    worker.onerror = () => failAi('The computer stopped calculating. Lock in again.');
+  }
+  function settleAi(data: { id: number; action?: Action; error?: string }) {
+    const pending = pendingAi.get(data.id);
+    pendingAi.delete(data.id);
+    if (data.error) pending?.reject(new Error(data.error)); else pending?.resolve(data.action!);
+  }
+  function failAi(reason: string) {
+    for (const pending of pendingAi.values()) pending.reject(new Error(reason));
+    pendingAi.clear(); worker?.terminate(); worker = null;
+  }
+  function loadPreferences() {
+    refreshSaved();
+    newcomer = !read('learned');
+    tips = newcomer && read('tips') !== 'off';
+    const saved = read<string>('difficulty');
+    if (saved) difficulty = normalizeLevel(saved);
+  }
+  /** Opens an invitation or the lesson from the address. Navigation never silently resumes a saved match; invitations ask first. */
+  function route() {
+    const invite = location.hash.match(/^#\/join\/([\w-]+)\/([a-f0-9]{64})$/);
+    if (invite) { epoch++; void unwatchRoom(); message = ''; busy = false; animating = false; joinTarget = { id: invite[1], token: invite[2] }; screen = 'join'; }
+    else if (location.hash === '#/learn') learn();
   }
   onMount(() => {
-    try {
-      worker = new Worker(new URL('./ai.worker.ts', import.meta.url), { type: 'module' });
-      worker.onmessage = event => {
-        const pending = pendingAi.get(event.data.id);
-        if (!pending) return;
-        pendingAi.delete(event.data.id);
-        if (event.data.error) pending.reject(new Error(event.data.error)); else pending.resolve(event.data.action);
-      };
-      worker.onerror = () => {
-        for (const pending of pendingAi.values()) pending.reject(new Error('The computer calculation stopped. Try locking your order again.'));
-        pendingAi.clear(); worker?.terminate(); worker = null;
-      };
-    } catch { worker = null; }
-    savedSolo = !!read('solo'); savedRoom = !!read('room'); savedLocal = !!read('local');
-    // Navigation never silently resumes a saved match. Invitations require acceptance too.
-    if (location.hash.startsWith('#/join/')) joinLink = location.href;
+    startWorker();
+    loadPreferences();
+    route();
     const onVisible = () => { if (document.visibilityState === 'visible') void refreshRoom(); };
     document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
+    // An invitation opened in a tab that already shows the game changes only the hash.
+    window.addEventListener('hashchange', route);
+    return () => { document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('hashchange', route); };
   });
   onDestroy(() => { alive = false; epoch++; worker?.terminate(); disconnect(); });
 </script>
 
 <svelte:head>
-  <title>Crosscurrent · {screen === 'home' ? 'Sea. Land. Air.' : finished ? 'Final score' : `Turn ${turn} of 12`}</title>
-  <meta name="theme-color" content="#101214" />
-  <meta name="description" content="A tactical, balanced card game for two. Play against the computer, a friend online, or together on one device." />
+  <title>{pageTitle(screen, game.turn)}</title>
 </svelte:head>
 
-<div class="shell" class:at-table={screen === 'game'}>
-  <header class="masthead">
-    <button class="brand" on:click={home} aria-label="Crosscurrent lobby"><Icon name="shift" size={25} /><span>CROSSCURRENT<small>SEA / LAND / AIR</small></span></button>
-    <nav class="header-right" aria-label="Game navigation">
-      {#if screen === 'game'}<button class="text-button" on:click={home}>Lobby</button>{/if}
-      <button class="help-button" on:click={() => rulesDialog.showModal()} aria-label="How to play">{screen === 'home' ? 'How to play' : 'Rules'} <span aria-hidden="true">↗</span></button>
-    </nav>
-  </header>
-  {#if message}<div class="error-banner" role="alert"><span>{message}</span><button on:click={() => message = ''} aria-label="Dismiss message">×</button></div>{/if}
-  {#if screen === 'home'}
-    <Lobby bind:difficulty bind:joinLink {busy} {savedSolo} {savedLocal} {savedRoom}
-      onSolo={() => requestStart('solo')} onLocal={() => requestStart('local')} onOnline={createTable}
-      onResumeSolo={() => resumeOffline('solo')} onResumeLocal={() => resumeOffline('local')}
-      onResumeRoom={resumeTable} onJoin={joinInvitation} onRules={() => rulesDialog.showModal()} />
-  {:else if mode === 'local' && (localStage === 'handoff' || localStage === 'sealed')}
-    <main class="handoff">
-      <div class="handoff-symbol"><Icon name="lock" size={40} /></div>
-      <p class="eyebrow">LOCAL TWO-PLAYER · TURN {turn} / 12</p>
-      <h1>{localStage === 'sealed' ? 'Both orders locked.' : `Player ${seat + 1}, your move.`}</h1>
-      <p>{localStage === 'sealed' ? 'Bring the screen back into view for both players.' : 'Pass the device. The other player should look away while you choose your order.'}</p>
-      {#if localStage === 'sealed'}
-        <button class="primary" on:click={revealLocal}>Reveal together <Icon name="arrow" size={20} /></button>
-      {:else}
-        <button class="primary" on:click={() => localStage = 'choose'}>I’m ready <Icon name="arrow" size={20} /></button>
-      {/if}
-      <small>Cards and hands are public. Only this turn’s orders stay secret.</small>
-    </main>
-  {:else}
-    {#key `${mode}:${session?.id || ''}`}
-      <Table {game} {history} {seat} {mode} {opponentName} {busy} {disabled} {joined} {locked} {myLockedOrder}
-        {connectionStatus} {toast} {kind} {selected} {destination} {order} {projected}
-        localReview={mode === 'local' && localStage === 'review'} inviteLink={session ? invitation(session) : ''}
-        onKind={selectKind} onCard={card => { selected = card; }} onBoardCard={selectBoard}
-        onFront={front => { destination = front; }} onLock={lockOrder} onCopy={copyInvite}
-        onReconnect={reconnect} onAnimation={value => { animationBusy = value; }} onNext={nextLocalTurn}
-        onAgain={() => mode === 'online' ? createTable() : requestStart(mode)} />
-    {/key}
-  {/if}
-</div>
+<TopBar home={screen === 'home'} online={screen === 'game' && mode === 'online'} onHome={home} onReconnect={reconnect} onRules={openRules} />
+{#if message}<div class="notice" role="alert"><span>{message}</span><button onclick={() => (message = '')} aria-label="Dismiss">×</button></div>{/if}
 
-<dialog bind:this={rulesDialog} class="rules-dialog" aria-labelledby="rules-title">
-  <div class="dialog-top"><span class="eyebrow">FIELD GUIDE / CROSSCURRENT V0.2</span><button class="close-button" on:click={() => rulesDialog.close()} aria-label="Close rules">×</button></div>
-  <h2 id="rules-title">Same cards.<br />Different decisions.</h2>
-  <p>Both players begin with Ace through King. Secretly choose one complete order, then reveal together. Hands, deployed cards and spent cards are public.</p>
-  <div class="rule-actions">
-    <section><Icon name="deploy" /><h3>Deploy</h3><p>Play a card from your hand to Sea, Land or Air. Its rank adds to your strength there.</p></section>
-    <section><Icon name="shift" /><h3>Shift</h3><p>Spend your lowest hand card to move a deployed card to a different front.</p></section>
-    <section><Icon name="recall" /><h3>Recall</h3><p>Spend your lowest hand card to recover a deployed card. It still scores this turn, then returns to your hand.</p></section>
+{#if screen === 'home'}
+  <Home {difficulty} {busy} {newcomer} {savedSolo} {savedLocal} {savedRoom}
+    onDifficulty={value => { difficulty = value; store('difficulty', value); }}
+    onSolo={() => requestStart('solo')} onLocal={() => requestStart('local')} onOnline={createTable}
+    onLearn={learn} onRules={openRules}
+    onResumeSolo={() => resumeOffline('solo')} onResumeLocal={() => resumeOffline('local')} onResumeRoom={resumeTable} />
+{:else if screen === 'learn'}
+  <Tutorial onDone={finishTutorial} onSkip={home} />
+{:else if screen === 'join'}
+  <Join {busy} onJoin={acceptInvitation} onRules={openRules} />
+{:else if handingOff}
+  <Handoff sealed={localStage === 'sealed'} {seat} turn={game.turn} onReveal={revealLocal} onShow={() => (localStage = 'choose')} />
+{:else}
+  {#key `${mode}:${session?.id || ''}`}
+    {#snippet review()}
+      <p class="review-note">Both players: check what happened, then pass to Player 1.</p>
+      <button class="btn primary" onclick={nextLocalTurn}>Next turn</button>
+    {/snippet}
+    <Table {game} {history} {rules} {seat} {names} {canAct} {status} locked={myLockedOrder} theirsLocked={mode === 'online' && locked[1 - seat]}
+      footer={reviewing ? review : undefined} coach={tip} onDismissCoach={hideTips}
+      onLock={lockOrder} onBusy={value => { animating = value; }}>
+      {#snippet banner()}
+        <TableBanner link={inviteLink} {toast} verdict={animating ? '' : verdict} {busy} online={mode === 'online'} onShare={shareInvite} onAgain={again} onHome={home} />
+      {/snippet}
+    </Table>
+  {/key}
+{/if}
+
+<dialog bind:this={rulesDialog} aria-labelledby="rules-title" onclick={event => { if (event.target === event.currentTarget) rulesDialog?.close(); }}>
+  <Rules {rules} onClose={() => rulesDialog?.close()} onLearn={() => { rulesDialog?.close(); learn(); }} />
+</dialog>
+<dialog bind:this={restartDialog} aria-labelledby="restart-title" onclick={event => { if (event.target === event.currentTarget) restartDialog?.close(); }}>
+  <div class="sheet">
+    <h2 id="restart-title">Start a new game?</h2>
+    <p>This replaces {replacing}.</p>
+    <div class="sheet-actions">
+      <button class="btn" onclick={() => restartDialog?.close()}>Keep it</button>
+      <button class="btn primary" onclick={() => { restartDialog?.close(); pendingStart?.(); }}>Start new game</button>
+    </div>
   </div>
-  <h3>Score three times</h3>
-  <div class="rule-scoring"><span>TURN 4<b>1 point</b></span><span>TURN 8<b>2 points</b></span><span>TURN 12<b>3 points</b></span></div>
-  <p>At each checkpoint, the higher strength at each front wins its points. A tied front awards nothing. Then <strong>each player removes their own highest card from every occupied front</strong>, whether they won, lost or tied.</p>
-  <p>Recall saves its target. If that card was the highest, no replacement is removed. Recalling a lower card does not protect the highest card.</p>
-  <h3>Twelve turns. One game.</h3>
-  <p>The higher total score wins. Equal scores are a draw. No passes or redeals. Ace is 1, Jack 11, Queen 12 and King 13. Sea, Land and Air have identical rules.</p>
-  <div class="strategy-note"><b>Win efficiently.</b><p>Winning by ten earns no more than winning by one. Shift excess strength, or Recall a valuable card before it is spent.</p></div>
-  <p class="fine-print">The computer only receives the public position, never your selected order. Its play is not proven optimal. Private invitations grant access to one seat. Local mode relies on players looking away, not security against inspecting this device.</p>
-  <button class="primary" on:click={() => rulesDialog.close()}>Got it <Icon name="arrow" size={20} /></button>
 </dialog>
-<dialog bind:this={restartDialog} class="confirm-dialog" aria-labelledby="restart-title">
-  <h2 id="restart-title">Start a new game?</h2><p>This replaces your unfinished saved {replacement} game.</p>
-  <div class="dialog-actions"><button class="secondary" on:click={() => restartDialog.close()}>Keep saved game</button><button class="primary" on:click={() => { restartDialog.close(); pendingStart?.(); }}>Start new game</button></div>
-</dialog>
+
+<style>
+  .review-note { flex: 1 1 200px; font-size: 15px; color: var(--ink-2); }
+</style>

@@ -216,5 +216,3532 @@
   "research_integrity_notes": [
     "An earlier qualitative claim that Piquet was roughly 80–90% skill/variance was later found unsupported and must not be cited as evidence.",
     "Piquet agency was qualitatively located in exchange decisions, declaration information, trick timing/suit forcing, and scoring-risk management."
-  ]
+  ],
+  "crosscurrent_2026_audit_of_v02": {
+    "evidence": "Simulation with particular bots unless marked exact. Final-turn figures are exact solutions of positions sampled from bot play.",
+    "harness": "research/sim (Rust); seats alternate; draws count one half; 95% intervals",
+    "engine_validation": {
+      "games_compared_with_typescript": 3060,
+      "transitions_compared": 36720,
+      "includes_python_reference_transcripts": 60,
+      "random_games_per_variant_symmetry_check": 20000
+    },
+    "bot": {
+      "name": "mctsx:N",
+      "description": "Simultaneous-move MCTS with regret matching (outcome sampling), N iterations per decision, final turn solved exactly by linear programming",
+      "exploration_gamma": 0.2,
+      "final_choice_purification": 0.1,
+      "rollout_deploy_probability": 0.9,
+      "tuning_results_n300": {
+        "gamma_0.2_vs_0.1": 0.608,
+        "purify_0.1_vs_0.03": 0.665,
+        "purify_0.2_vs_0.1": 0.363,
+        "purify_0.3_vs_0.1": 0.303
+      }
+    },
+    "reproduced_historical": {
+      "random_vs_random": {
+        "games": 20000,
+        "result_pct": 50.0,
+        "ci95_halfwidth_pct": 0.7,
+        "draw_pct": 11.4
+      },
+      "tactical_vs_random": {
+        "games": 1000,
+        "result_pct": 96.7
+      },
+      "tactical_self_play": {
+        "games": 1000,
+        "result_pct": 49.0,
+        "draw_pct": 7.3
+      }
+    },
+    "shipped_levels": {
+      "expert_deep_vs_tactical": {
+        "games": 1000,
+        "result_pct": 48.9,
+        "ci95_halfwidth_pct": 3.0,
+        "finding": "Deep was not stronger than Tactical"
+      },
+      "casual_vs_random": {
+        "games": 1000,
+        "result_pct": 85.9
+      },
+      "tactical_vs_casual": {
+        "games": 1000,
+        "result_pct": 81.1
+      },
+      "mctsx16000_vs_tactical": {
+        "games": 400,
+        "result_pct": 91.6,
+        "wdl": [
+          350,
+          33,
+          17
+        ],
+        "winner_behind_after_turn4_pct": 83.4
+      },
+      "mctsx16000_vs_expert": {
+        "games": 400,
+        "result_pct": 91.2
+      },
+      "mctsx16000_vs_casual": {
+        "games": 400,
+        "result_pct": 97.1
+      },
+      "mctsx16000_vs_random": {
+        "games": 400,
+        "result_pct": 99.8
+      }
+    },
+    "search_ladder": [
+      {
+        "pair": "mctsx:4000 vs mctsx:1000",
+        "games": 400,
+        "result_pct": 71.9,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          260,
+          55,
+          85
+        ],
+        "draw_pct": 13.8
+      },
+      {
+        "pair": "mctsx:16000 vs mctsx:4000",
+        "games": 400,
+        "result_pct": 74.3,
+        "ci95_halfwidth_pct": 3.8,
+        "wdl": [
+          266,
+          62,
+          72
+        ],
+        "draw_pct": 15.5
+      },
+      {
+        "pair": "mctsx:64000 vs mctsx:16000",
+        "games": 400,
+        "result_pct": 69.9,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          244,
+          71,
+          85
+        ],
+        "draw_pct": 17.8
+      },
+      {
+        "pair": "mctsx:16000 self-play",
+        "games": 400,
+        "result_pct": 49.5,
+        "ci95_halfwidth_pct": 4.5,
+        "wdl": [
+          165,
+          66,
+          169
+        ],
+        "draw_pct": 16.5,
+        "seat0_result_pct": 48.7
+      }
+    ],
+    "final_turn_exact_on_sampled_positions": [
+      {
+        "positions_from": "tactical self-play",
+        "n": 400,
+        "saddle_pct": 60.0,
+        "pure_guess_width1_pct": 32.0,
+        "width_half_pct": 8.0,
+        "mean_width": 0.36
+      },
+      {
+        "positions_from": "mctsx:4000 self-play",
+        "n": 400,
+        "saddle_pct": 61.5,
+        "pure_guess_width1_pct": 25.0,
+        "width_half_pct": 13.5,
+        "mean_width": 0.318
+      },
+      {
+        "positions_from": "mctsx:16000 self-play",
+        "n": 400,
+        "saddle_pct": 42.2,
+        "pure_guess_width1_pct": 42.5,
+        "width_half_pct": 15.2,
+        "mean_width": 0.501,
+        "equilibrium_support_actions": 2.7,
+        "legal_actions": 25.1,
+        "uniform_random_loss_vs_equilibrium": 0.333
+      }
+    ],
+    "comebacks_mctsx16000_self_play": {
+      "winner_behind_after_turn4_pct": 36.8,
+      "winner_behind_after_turn8_pct": 26.0
+    },
+    "order_mix_mctsx16000_pct": {
+      "deploy": 90,
+      "shift": 9,
+      "recall": 1
+    },
+    "scripted_probes_vs_mctsx4000_with_final_strength_tiebreak": {
+      "onefront": 98.5,
+      "highfirst": 95.5,
+      "pile": 99.8,
+      "mirror": 94.0,
+      "deployonly": 96.5,
+      "casual": 95.0,
+      "lowfirst": 84.5,
+      "note": "Values are mctsx:4000's result. lowfirst also lost 97% to mctsx:16000, beat Casual 78.5% and lost to Tactical 84.8%."
+    }
+  },
+  "crosscurrent_2026_rule_variant_study": {
+    "evidence": "Simulation with particular bots unless marked exact. Final-turn figures are exact solutions of positions sampled from bot self-play. Exact reduced-game values are exact for those reduced games only.",
+    "harness": "research/sim (Rust); seats alternate; draws count one half; 95% intervals; logs and scripts in research/results",
+    "metric_note": "stronger_expected_result_pct is the stronger bot's result with a draw counted one half: the chance that one game names the stronger bot if a draw were settled by a coin. Outright wins alone can rise without it when a tiebreak splits former draws evenly.",
+    "pairings": {
+      "4k vs 1k": "mctsx:4000 vs mctsx:1000",
+      "16k vs 4k": "mctsx:16000 vs mctsx:4000",
+      "plain 4k vs 1k": "mcts:4000 vs mcts:1000 (no exact final turn)"
+    },
+    "screening_protocol": "mctsx:4000 vs mctsx:1000 (400 or 600 games), mctsx:4000 self-play (400), exact final-turn analysis of 400 self-play positions; sweep 1 also mctsx:16000 vs mctsx:4000 (400) and mctsx:4000 vs random (200)",
+    "finalist_protocol": "fresh seeds: 4k vs 1k (1,200), 16k vs 4k (600), plain 4k vs 1k (600), self-play (600), final-turn analysis (600); sweep 6 adds controls and a second batch (4k vs 1k 2,400, 16k vs 4k 600, plain 1,200) for the tiebreak candidates",
+    "finalists_pooled": [
+      {
+        "rules": "base",
+        "games": 2400,
+        "stronger_wdl": [
+          1599,
+          331,
+          470
+        ],
+        "stronger_expected_result_pct": 73.5,
+        "ci95_halfwidth_pct": 1.6,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 72.3,
+          "16k vs 4k": 72.8,
+          "plain 4k vs 1k": 76.7
+        },
+        "self_play_draw_pct": 12.2,
+        "self_play_seat0_pct": 49.7,
+        "winner_behind_after_turn8_pct": {
+          "4k_vs_1k": 29.8,
+          "self_play": 34.0
+        },
+        "lead_changes_per_game_self_play": 0.8,
+        "final_turn_saddle_pct": 55.7,
+        "final_turn_pure_guess_pct": 31.0
+      },
+      {
+        "rules": "base+tbfinal",
+        "games": 6600,
+        "stronger_wdl": [
+          4845,
+          38,
+          1717
+        ],
+        "stronger_expected_result_pct": 73.7,
+        "ci95_halfwidth_pct": 1.1,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 72.2,
+          "16k vs 4k": 76.2,
+          "plain 4k vs 1k": 75.1
+        },
+        "level_on_points_pct": 14.6,
+        "level_games_won_lost_by_stronger": [
+          422,
+          166
+        ],
+        "self_play_draw_pct": 0.7,
+        "self_play_seat0_pct": 53.0,
+        "winner_behind_after_turn8_pct": {
+          "4k_vs_1k": 38.3,
+          "self_play": 40.8
+        },
+        "lead_changes_per_game_self_play": 0.66,
+        "final_turn_saddle_pct": 57.5,
+        "final_turn_pure_guess_pct": 41.2
+      },
+      {
+        "rules": "base+s111+tbfinal",
+        "games": 2400,
+        "stronger_wdl": [
+          1836,
+          21,
+          543
+        ],
+        "stronger_expected_result_pct": 76.9,
+        "ci95_halfwidth_pct": 1.7,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 76.6,
+          "16k vs 4k": 75.8,
+          "plain 4k vs 1k": 78.8
+        },
+        "self_play_draw_pct": 1.0,
+        "self_play_seat0_pct": 49.8,
+        "winner_behind_after_turn8_pct": {
+          "4k_vs_1k": 10.0,
+          "self_play": 12.1
+        },
+        "lead_changes_per_game_self_play": 0.23,
+        "final_turn_saddle_pct": 74.2,
+        "final_turn_pure_guess_pct": 24.5
+      },
+      {
+        "rules": "base+s111+tbstr",
+        "games": 2400,
+        "stronger_wdl": [
+          1885,
+          21,
+          494
+        ],
+        "stronger_expected_result_pct": 79.0,
+        "ci95_halfwidth_pct": 1.6,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 78.7,
+          "16k vs 4k": 78.2,
+          "plain 4k vs 1k": 80.2
+        },
+        "self_play_draw_pct": 0.8,
+        "self_play_seat0_pct": 51.9,
+        "winner_behind_after_turn8_pct": {
+          "4k_vs_1k": 6.4,
+          "self_play": 7.9
+        },
+        "lead_changes_per_game_self_play": 0.22,
+        "final_turn_saddle_pct": 72.7,
+        "final_turn_pure_guess_pct": 24.8
+      },
+      {
+        "rules": "base+s234+tbfinal",
+        "games": 6600,
+        "stronger_wdl": [
+          4890,
+          4,
+          1706
+        ],
+        "stronger_expected_result_pct": 74.1,
+        "ci95_halfwidth_pct": 1.1,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 73.7,
+          "16k vs 4k": 72.2,
+          "plain 4k vs 1k": 76.4
+        },
+        "level_on_points_pct": 1.2,
+        "level_games_won_lost_by_stronger": [
+          26,
+          21
+        ],
+        "self_play_draw_pct": 0.2,
+        "self_play_seat0_pct": 53.2,
+        "winner_behind_after_turn8_pct": {
+          "4k_vs_1k": 24.7,
+          "self_play": 30.1
+        },
+        "lead_changes_per_game_self_play": 0.65,
+        "final_turn_saddle_pct": 66.0,
+        "final_turn_pure_guess_pct": 34.0
+      },
+      {
+        "rules": "base+s234+tbstr",
+        "games": 6600,
+        "stronger_wdl": [
+          5050,
+          1,
+          1549
+        ],
+        "stronger_expected_result_pct": 76.5,
+        "ci95_halfwidth_pct": 1.0,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 75.6,
+          "16k vs 4k": 76.0,
+          "plain 4k vs 1k": 78.7
+        },
+        "level_on_points_pct": 1.9,
+        "level_games_won_lost_by_stronger": [
+          64,
+          14
+        ],
+        "self_play_draw_pct": 0.0,
+        "self_play_seat0_pct": 50.0,
+        "winner_behind_after_turn8_pct": {
+          "4k_vs_1k": 22.8,
+          "self_play": 27.8
+        },
+        "lead_changes_per_game_self_play": 0.65,
+        "final_turn_saddle_pct": 68.0,
+        "final_turn_pure_guess_pct": 31.5
+      },
+      {
+        "rules": "base+cp:4=3,8=4,12=5+tbfinal",
+        "games": 2400,
+        "stronger_wdl": [
+          1803,
+          2,
+          595
+        ],
+        "stronger_expected_result_pct": 75.2,
+        "ci95_halfwidth_pct": 1.7,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 76.0,
+          "16k vs 4k": 70.5,
+          "plain 4k vs 1k": 78.1
+        },
+        "self_play_draw_pct": 0.0,
+        "self_play_seat0_pct": 48.0,
+        "winner_behind_after_turn8_pct": {
+          "4k_vs_1k": 25.3,
+          "self_play": 29.8
+        },
+        "lead_changes_per_game_self_play": 0.68,
+        "final_turn_saddle_pct": 66.0,
+        "final_turn_pure_guess_pct": 33.8
+      },
+      {
+        "rules": "base+cp:4=3,8=4,12=5+tbstr",
+        "games": 2400,
+        "stronger_wdl": [
+          1808,
+          1,
+          591
+        ],
+        "stronger_expected_result_pct": 75.4,
+        "ci95_halfwidth_pct": 1.7,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 76.5,
+          "16k vs 4k": 72.2,
+          "plain 4k vs 1k": 76.3
+        },
+        "self_play_draw_pct": 0.0,
+        "self_play_seat0_pct": 47.0,
+        "winner_behind_after_turn8_pct": {
+          "4k_vs_1k": 23.0,
+          "self_play": 28.2
+        },
+        "lead_changes_per_game_self_play": 0.66,
+        "final_turn_saddle_pct": 65.0,
+        "final_turn_pure_guess_pct": 35.0
+      },
+      {
+        "rules": "base+s234",
+        "games": 2400,
+        "stronger_wdl": [
+          1777,
+          33,
+          590
+        ],
+        "stronger_expected_result_pct": 74.7,
+        "ci95_halfwidth_pct": 1.7,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 73.6,
+          "16k vs 4k": 71.4,
+          "plain 4k vs 1k": 80.2
+        },
+        "level_on_points_pct": 1.4,
+        "self_play_draw_pct": 1.7,
+        "self_play_seat0_pct": 47.3,
+        "winner_behind_after_turn8_pct": {
+          "4k_vs_1k": 24.9,
+          "self_play": 29.2
+        },
+        "lead_changes_per_game_self_play": 0.66,
+        "final_turn_saddle_pct": 69.7,
+        "final_turn_pure_guess_pct": 28.7
+      },
+      {
+        "rules": "base+tbstr",
+        "games": 2400,
+        "stronger_wdl": [
+          1814,
+          10,
+          576
+        ],
+        "stronger_expected_result_pct": 75.8,
+        "ci95_halfwidth_pct": 1.7,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 76.9,
+          "16k vs 4k": 72.4,
+          "plain 4k vs 1k": 77.0
+        },
+        "level_on_points_pct": 18.2,
+        "level_games_won_lost_by_stronger": [
+          340,
+          88
+        ],
+        "self_play_draw_pct": 0.5,
+        "self_play_seat0_pct": 53.7,
+        "winner_behind_after_turn8_pct": {
+          "4k_vs_1k": 30.1,
+          "self_play": 32.5
+        },
+        "lead_changes_per_game_self_play": 0.56,
+        "final_turn_saddle_pct": 61.5,
+        "final_turn_pure_guess_pct": 37.2
+      }
+    ],
+    "exact_reduced_games": [
+      {
+        "ranks": 4,
+        "turns": 3,
+        "scoring": "1 then 2",
+        "tiebreak": "none or final strength",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          0,
+          100,
+          0
+        ],
+        "openings_securing_value": "3 of 12"
+      },
+      {
+        "ranks": 5,
+        "turns": 4,
+        "scoring": "1 then 2",
+        "tiebreak": "none or final strength",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          0,
+          100,
+          0
+        ],
+        "openings_securing_value": "0 of 15"
+      },
+      {
+        "ranks": 5,
+        "turns": 4,
+        "scoring": "1 then 1",
+        "tiebreak": "none",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          11.4,
+          77.1,
+          11.4
+        ],
+        "openings_securing_value": "0 of 15"
+      },
+      {
+        "ranks": 5,
+        "turns": 4,
+        "scoring": "1 then 1",
+        "tiebreak": "final or total strength",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          0,
+          100,
+          0
+        ],
+        "openings_securing_value": "0 of 15"
+      },
+      {
+        "ranks": 6,
+        "turns": 5,
+        "scoring": "1 then 2",
+        "tiebreak": "none or final strength",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          0,
+          100,
+          0
+        ],
+        "openings_securing_value": "6 of 18"
+      },
+      {
+        "ranks": 6,
+        "turns": 5,
+        "scoring": "1 then 1",
+        "tiebreak": "final strength",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          0,
+          100,
+          0
+        ],
+        "openings_securing_value": "6 of 18"
+      },
+      {
+        "ranks": 6,
+        "turns": 5,
+        "scoring": "1 then 1",
+        "tiebreak": "total strength",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          0,
+          100,
+          0
+        ],
+        "openings_securing_value": "9 of 18"
+      },
+      {
+        "ranks": 6,
+        "turns": 5,
+        "scoring": "1 then 1",
+        "tiebreak": "none",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          13.5,
+          72.9,
+          13.5
+        ],
+        "openings_securing_value": "0 of 18"
+      }
+    ],
+    "adopted": {
+      "name": "v0.3",
+      "rules": "base+s234+tbstr",
+      "points_per_front": {
+        "4": 2,
+        "8": 3,
+        "12": 4
+      },
+      "tiebreak": "total strength on all fronts summed over the three scorings, then draw",
+      "status": "Adopted on simulation evidence; not yet tested with human players."
+    },
+    "product_levels_calibration": [
+      {
+        "log": "sweep5.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:300",
+        "b": "random",
+        "games": 400,
+        "a_result_pct": 89.5,
+        "ci95_halfwidth_pct": 3.0,
+        "wdl": [
+          358,
+          0,
+          42
+        ],
+        "seat0_result_pct": 48.0,
+        "winner_behind_after_turn4_pct": 29.2,
+        "winner_behind_after_turn8_pct": 24.5,
+        "lead_changes_per_game": 0.57,
+        "level_on_points_pct": 0.8,
+        "level_games_a_won_drew_lost": [
+          3,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "sweep5.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:300",
+        "b": "casual",
+        "games": 400,
+        "a_result_pct": 56.0,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          224,
+          0,
+          176
+        ],
+        "seat0_result_pct": 54.5,
+        "winner_behind_after_turn4_pct": 40.2,
+        "winner_behind_after_turn8_pct": 38.0,
+        "lead_changes_per_game": 0.65,
+        "level_on_points_pct": 1.5,
+        "level_games_a_won_drew_lost": [
+          5,
+          0,
+          1
+        ]
+      },
+      {
+        "log": "sweep5.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:300",
+        "b": "tactical",
+        "games": 400,
+        "a_result_pct": 13.5,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          54,
+          0,
+          346
+        ],
+        "seat0_result_pct": 51.5,
+        "winner_behind_after_turn4_pct": 13.2,
+        "winner_behind_after_turn8_pct": 14.2,
+        "lead_changes_per_game": 0.23,
+        "level_on_points_pct": 0.5,
+        "level_games_a_won_drew_lost": [
+          1,
+          0,
+          1
+        ]
+      },
+      {
+        "log": "sweep5.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:3000",
+        "b": "mctsx:300",
+        "games": 400,
+        "a_result_pct": 89.7,
+        "ci95_halfwidth_pct": 3.0,
+        "wdl": [
+          359,
+          0,
+          41
+        ],
+        "seat0_result_pct": 51.2,
+        "winner_behind_after_turn4_pct": 30.2,
+        "winner_behind_after_turn8_pct": 19.2,
+        "lead_changes_per_game": 0.51,
+        "level_on_points_pct": 1.0,
+        "level_games_a_won_drew_lost": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "sweep5.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:3000",
+        "b": "tactical",
+        "games": 400,
+        "a_result_pct": 64.5,
+        "ci95_halfwidth_pct": 4.7,
+        "wdl": [
+          258,
+          0,
+          142
+        ],
+        "seat0_result_pct": 54.0,
+        "winner_behind_after_turn4_pct": 52.8,
+        "winner_behind_after_turn8_pct": 39.5,
+        "lead_changes_per_game": 0.73,
+        "level_on_points_pct": 1.2,
+        "level_games_a_won_drew_lost": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "sweep5.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:24000",
+        "b": "mctsx:3000",
+        "games": 400,
+        "a_result_pct": 80.2,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          321,
+          0,
+          79
+        ],
+        "seat0_result_pct": 46.3,
+        "winner_behind_after_turn4_pct": 23.2,
+        "winner_behind_after_turn8_pct": 18.2,
+        "lead_changes_per_game": 0.46,
+        "level_on_points_pct": 1.8,
+        "level_games_a_won_drew_lost": [
+          7,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "sweep5.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:24000",
+        "b": "tactical",
+        "games": 200,
+        "a_result_pct": 90.7,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          181,
+          1,
+          18
+        ],
+        "seat0_result_pct": 53.2,
+        "winner_behind_after_turn4_pct": 66.8,
+        "winner_behind_after_turn8_pct": 28.6,
+        "lead_changes_per_game": 0.78,
+        "level_on_points_pct": 4.0,
+        "level_games_a_won_drew_lost": [
+          7,
+          1,
+          0
+        ]
+      }
+    ],
+    "scripted_probes_v03": [
+      {
+        "log": "probes.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "onefront",
+        "games": 200,
+        "a_result_pct": 99.0,
+        "ci95_halfwidth_pct": 1.4,
+        "wdl": [
+          198,
+          0,
+          2
+        ],
+        "seat0_result_pct": 50.0,
+        "winner_behind_after_turn4_pct": 5.0,
+        "winner_behind_after_turn8_pct": 1.0,
+        "lead_changes_per_game": 0.05,
+        "level_on_points_pct": 0.0,
+        "level_games_a_won_drew_lost": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "probes.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "highfirst",
+        "games": 200,
+        "a_result_pct": 99.0,
+        "ci95_halfwidth_pct": 1.4,
+        "wdl": [
+          198,
+          0,
+          2
+        ],
+        "seat0_result_pct": 50.0,
+        "winner_behind_after_turn4_pct": 81.5,
+        "winner_behind_after_turn8_pct": 45.5,
+        "lead_changes_per_game": 0.89,
+        "level_on_points_pct": 2.0,
+        "level_games_a_won_drew_lost": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "probes.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "pile",
+        "games": 200,
+        "a_result_pct": 99.0,
+        "ci95_halfwidth_pct": 1.4,
+        "wdl": [
+          198,
+          0,
+          2
+        ],
+        "seat0_result_pct": 49.0,
+        "winner_behind_after_turn4_pct": 6.5,
+        "winner_behind_after_turn8_pct": 2.5,
+        "lead_changes_per_game": 0.07,
+        "level_on_points_pct": 0.0,
+        "level_games_a_won_drew_lost": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "probes.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "mirror",
+        "games": 200,
+        "a_result_pct": 98.5,
+        "ci95_halfwidth_pct": 1.7,
+        "wdl": [
+          197,
+          0,
+          3
+        ],
+        "seat0_result_pct": 48.5,
+        "winner_behind_after_turn4_pct": 24.5,
+        "winner_behind_after_turn8_pct": 14.5,
+        "lead_changes_per_game": 0.36,
+        "level_on_points_pct": 1.5,
+        "level_games_a_won_drew_lost": [
+          3,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "probes.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "deployonly",
+        "games": 200,
+        "a_result_pct": 94.0,
+        "ci95_halfwidth_pct": 3.3,
+        "wdl": [
+          188,
+          0,
+          12
+        ],
+        "seat0_result_pct": 53.0,
+        "winner_behind_after_turn4_pct": 29.5,
+        "winner_behind_after_turn8_pct": 18.5,
+        "lead_changes_per_game": 0.51,
+        "level_on_points_pct": 0.5,
+        "level_games_a_won_drew_lost": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "probes.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "casual",
+        "games": 200,
+        "a_result_pct": 92.5,
+        "ci95_halfwidth_pct": 3.7,
+        "wdl": [
+          185,
+          0,
+          15
+        ],
+        "seat0_result_pct": 50.5,
+        "winner_behind_after_turn4_pct": 52.0,
+        "winner_behind_after_turn8_pct": 30.5,
+        "lead_changes_per_game": 0.8,
+        "level_on_points_pct": 2.5,
+        "level_games_a_won_drew_lost": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "probes.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "lowfirst",
+        "games": 200,
+        "a_result_pct": 96.5,
+        "ci95_halfwidth_pct": 2.6,
+        "wdl": [
+          193,
+          0,
+          7
+        ],
+        "seat0_result_pct": 50.5,
+        "winner_behind_after_turn4_pct": 3.5,
+        "winner_behind_after_turn8_pct": 2.0,
+        "lead_changes_per_game": 0.04,
+        "level_on_points_pct": 10.0,
+        "level_games_a_won_drew_lost": [
+          20,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "probes.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:16000",
+        "b": "lowfirst",
+        "games": 200,
+        "a_result_pct": 100.0,
+        "ci95_halfwidth_pct": 0.0,
+        "wdl": [
+          200,
+          0,
+          0
+        ],
+        "seat0_result_pct": 50.0,
+        "winner_behind_after_turn4_pct": 0.5,
+        "winner_behind_after_turn8_pct": 0.5,
+        "lead_changes_per_game": 0.01,
+        "level_on_points_pct": 12.0,
+        "level_games_a_won_drew_lost": [
+          24,
+          0,
+          0
+        ]
+      },
+      {
+        "log": "probes.log",
+        "rules": "base+s234+tbstr",
+        "a": "lowfirst",
+        "b": "casual",
+        "games": 400,
+        "a_result_pct": 49.4,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          197,
+          1,
+          202
+        ],
+        "seat0_result_pct": 49.9,
+        "winner_behind_after_turn4_pct": 47.4,
+        "winner_behind_after_turn8_pct": 46.9,
+        "lead_changes_per_game": 0.49,
+        "level_on_points_pct": 8.5,
+        "level_games_a_won_drew_lost": [
+          3,
+          1,
+          30
+        ]
+      },
+      {
+        "log": "probes.log",
+        "rules": "base+s234+tbstr",
+        "a": "tactical",
+        "b": "lowfirst",
+        "games": 400,
+        "a_result_pct": 95.3,
+        "ci95_halfwidth_pct": 2.1,
+        "wdl": [
+          381,
+          0,
+          19
+        ],
+        "seat0_result_pct": 51.7,
+        "winner_behind_after_turn4_pct": 4.8,
+        "winner_behind_after_turn8_pct": 4.8,
+        "lead_changes_per_game": 0.04,
+        "level_on_points_pct": 2.8,
+        "level_games_a_won_drew_lost": [
+          10,
+          0,
+          1
+        ]
+      }
+    ],
+    "screening_runs": [
+      {
+        "log": "sweep1.log",
+        "rules": "base",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 71.9,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          260,
+          55,
+          85
+        ],
+        "seat0_result_pct": 48.4,
+        "winner_behind_after_turn4_pct": 33.3,
+        "winner_behind_after_turn8_pct": 30.1,
+        "lead_changes_per_game": 0.7
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 73.3,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          263,
+          60,
+          77
+        ],
+        "seat0_result_pct": 47.7,
+        "winner_behind_after_turn4_pct": 31.8,
+        "winner_behind_after_turn8_pct": 27.4,
+        "lead_changes_per_game": 0.63
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 53.2,
+        "ci95_halfwidth_pct": 4.5,
+        "wdl": [
+          179,
+          68,
+          153
+        ],
+        "seat0_result_pct": 48.5,
+        "winner_behind_after_turn4_pct": 38.0,
+        "winner_behind_after_turn8_pct": 36.1,
+        "lead_changes_per_game": 0.82
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 61.5,
+        "mean_guess_width": 0.318,
+        "pure_guess_width1_pct": 25.0
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base",
+        "a": "mctsx:4000",
+        "b": "random",
+        "games": 200,
+        "a_result_pct": 99.0,
+        "ci95_halfwidth_pct": 1.0,
+        "wdl": [
+          196,
+          4,
+          0
+        ],
+        "seat0_result_pct": 51.0,
+        "winner_behind_after_turn4_pct": 34.7,
+        "winner_behind_after_turn8_pct": 14.3,
+        "lead_changes_per_game": 0.54
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 71.8,
+        "ci95_halfwidth_pct": 4.4,
+        "wdl": [
+          287,
+          0,
+          113
+        ],
+        "seat0_result_pct": 52.7,
+        "winner_behind_after_turn4_pct": 38.2,
+        "winner_behind_after_turn8_pct": 35.2,
+        "lead_changes_per_game": 0.59
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+tbfinal",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 70.9,
+        "ci95_halfwidth_pct": 4.4,
+        "wdl": [
+          280,
+          7,
+          113
+        ],
+        "seat0_result_pct": 48.1,
+        "winner_behind_after_turn4_pct": 34.4,
+        "winner_behind_after_turn8_pct": 37.9,
+        "lead_changes_per_game": 0.65
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 48.2,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          192,
+          2,
+          206
+        ],
+        "seat0_result_pct": 47.2,
+        "winner_behind_after_turn4_pct": 41.2,
+        "winner_behind_after_turn8_pct": 44.0,
+        "lead_changes_per_game": 0.69
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+tbfinal",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 52.2,
+        "mean_guess_width": 0.469,
+        "pure_guess_width1_pct": 46.0
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+tbfinal",
+        "a": "mctsx:4000",
+        "b": "random",
+        "games": 200,
+        "a_result_pct": 100.0,
+        "ci95_halfwidth_pct": 0.0,
+        "wdl": [
+          200,
+          0,
+          0
+        ],
+        "seat0_result_pct": 50.0,
+        "winner_behind_after_turn4_pct": 41.0,
+        "winner_behind_after_turn8_pct": 26.5,
+        "lead_changes_per_game": 0.64
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 76.9,
+        "ci95_halfwidth_pct": 4.1,
+        "wdl": [
+          307,
+          1,
+          92
+        ],
+        "seat0_result_pct": 51.9,
+        "winner_behind_after_turn4_pct": 32.1,
+        "winner_behind_after_turn8_pct": 29.3,
+        "lead_changes_per_game": 0.6
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+tbstr",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 74.1,
+        "ci95_halfwidth_pct": 4.3,
+        "wdl": [
+          295,
+          3,
+          102
+        ],
+        "seat0_result_pct": 51.4,
+        "winner_behind_after_turn4_pct": 34.5,
+        "winner_behind_after_turn8_pct": 25.9,
+        "lead_changes_per_game": 0.5
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 52.5,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          208,
+          4,
+          188
+        ],
+        "seat0_result_pct": 50.2,
+        "winner_behind_after_turn4_pct": 33.6,
+        "winner_behind_after_turn8_pct": 36.6,
+        "lead_changes_per_game": 0.63
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+tbstr",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 65.0,
+        "mean_guess_width": 0.347,
+        "pure_guess_width1_pct": 34.5
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+tbstr",
+        "a": "mctsx:4000",
+        "b": "random",
+        "games": 200,
+        "a_result_pct": 99.0,
+        "ci95_halfwidth_pct": 1.4,
+        "wdl": [
+          198,
+          0,
+          2
+        ],
+        "seat0_result_pct": 51.0,
+        "winner_behind_after_turn4_pct": 33.0,
+        "winner_behind_after_turn8_pct": 18.5,
+        "lead_changes_per_game": 0.47
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s111",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 73.6,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          263,
+          63,
+          74
+        ],
+        "seat0_result_pct": 52.4,
+        "winner_behind_after_turn4_pct": 21.7,
+        "winner_behind_after_turn8_pct": 1.2,
+        "lead_changes_per_game": 0.23
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s111",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 73.9,
+        "ci95_halfwidth_pct": 3.8,
+        "wdl": [
+          261,
+          69,
+          70
+        ],
+        "seat0_result_pct": 48.9,
+        "winner_behind_after_turn4_pct": 16.6,
+        "winner_behind_after_turn8_pct": 0.3,
+        "lead_changes_per_game": 0.17
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s111",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 53.1,
+        "ci95_halfwidth_pct": 4.4,
+        "wdl": [
+          171,
+          83,
+          146
+        ],
+        "seat0_result_pct": 46.4,
+        "winner_behind_after_turn4_pct": 24.6,
+        "winner_behind_after_turn8_pct": 0.3,
+        "lead_changes_per_game": 0.25
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s111",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 62.2,
+        "mean_guess_width": 0.265,
+        "pure_guess_width1_pct": 15.2
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s111",
+        "a": "mctsx:4000",
+        "b": "random",
+        "games": 200,
+        "a_result_pct": 100.0,
+        "ci95_halfwidth_pct": 0.0,
+        "wdl": [
+          200,
+          0,
+          0
+        ],
+        "seat0_result_pct": 50.0,
+        "winner_behind_after_turn4_pct": 16.0,
+        "winner_behind_after_turn8_pct": 2.0,
+        "lead_changes_per_game": 0.17
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s111+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 80.7,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          322,
+          2,
+          76
+        ],
+        "seat0_result_pct": 46.0,
+        "winner_behind_after_turn4_pct": 24.4,
+        "winner_behind_after_turn8_pct": 11.1,
+        "lead_changes_per_game": 0.21
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s111+tbfinal",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 78.7,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          314,
+          2,
+          84
+        ],
+        "seat0_result_pct": 48.7,
+        "winner_behind_after_turn4_pct": 23.4,
+        "winner_behind_after_turn8_pct": 10.1,
+        "lead_changes_per_game": 0.19
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s111+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 52.2,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          207,
+          4,
+          189
+        ],
+        "seat0_result_pct": 49.5,
+        "winner_behind_after_turn4_pct": 24.7,
+        "winner_behind_after_turn8_pct": 12.4,
+        "lead_changes_per_game": 0.2
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s111+tbfinal",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 72.5,
+        "mean_guess_width": 0.269,
+        "pure_guess_width1_pct": 26.2
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s111+tbfinal",
+        "a": "mctsx:4000",
+        "b": "random",
+        "games": 200,
+        "a_result_pct": 100.0,
+        "ci95_halfwidth_pct": 0.0,
+        "wdl": [
+          200,
+          0,
+          0
+        ],
+        "seat0_result_pct": 50.0,
+        "winner_behind_after_turn4_pct": 21.0,
+        "winner_behind_after_turn8_pct": 2.5,
+        "lead_changes_per_game": 0.21
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s234",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 78.7,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          313,
+          4,
+          83
+        ],
+        "seat0_result_pct": 48.2,
+        "winner_behind_after_turn4_pct": 30.1,
+        "winner_behind_after_turn8_pct": 23.7,
+        "lead_changes_per_game": 0.59
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s234",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 75.1,
+        "ci95_halfwidth_pct": 4.2,
+        "wdl": [
+          296,
+          9,
+          95
+        ],
+        "seat0_result_pct": 46.9,
+        "winner_behind_after_turn4_pct": 25.8,
+        "winner_behind_after_turn8_pct": 24.8,
+        "lead_changes_per_game": 0.57
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s234",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 49.2,
+        "ci95_halfwidth_pct": 4.8,
+        "wdl": [
+          192,
+          10,
+          198
+        ],
+        "seat0_result_pct": 49.7,
+        "winner_behind_after_turn4_pct": 29.5,
+        "winner_behind_after_turn8_pct": 31.8,
+        "lead_changes_per_game": 0.67
+      },
+      {
+        "log": "sweep1.log",
+        "rules": "base+s234",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 67.0,
+        "mean_guess_width": 0.324,
+        "pure_guess_width1_pct": 31.8
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s124",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 71.4,
+        "ci95_halfwidth_pct": 4.4,
+        "wdl": [
+          281,
+          9,
+          110
+        ],
+        "seat0_result_pct": 48.9,
+        "winner_behind_after_turn4_pct": 40.4,
+        "winner_behind_after_turn8_pct": 38.6,
+        "lead_changes_per_game": 0.73
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s124",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 50.7,
+        "ci95_halfwidth_pct": 4.8,
+        "wdl": [
+          197,
+          12,
+          191
+        ],
+        "seat0_result_pct": 54.0,
+        "winner_behind_after_turn4_pct": 37.4,
+        "winner_behind_after_turn8_pct": 46.6,
+        "lead_changes_per_game": 0.77
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s124",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 52.2,
+        "mean_guess_width": 0.458,
+        "pure_guess_width1_pct": 43.8
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s4x3",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 73.8,
+        "ci95_halfwidth_pct": 4.1,
+        "wdl": [
+          280,
+          30,
+          90
+        ],
+        "seat0_result_pct": 46.8,
+        "winner_behind_after_turn4_pct": 32.2,
+        "winner_behind_after_turn8_pct": 33.2,
+        "lead_changes_per_game": 0.78
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s4x3",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 49.1,
+        "ci95_halfwidth_pct": 4.7,
+        "wdl": [
+          178,
+          37,
+          185
+        ],
+        "seat0_result_pct": 50.9,
+        "winner_behind_after_turn4_pct": 34.4,
+        "winner_behind_after_turn8_pct": 35.3,
+        "lead_changes_per_game": 0.86
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s4x3",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 64.8,
+        "mean_guess_width": 0.315,
+        "pure_guess_width1_pct": 27.8
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s6x2",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 75.2,
+        "ci95_halfwidth_pct": 3.7,
+        "wdl": [
+          267,
+          68,
+          65
+        ],
+        "seat0_result_pct": 51.7,
+        "winner_behind_after_turn4_pct": 20.5,
+        "winner_behind_after_turn8_pct": 16.0,
+        "lead_changes_per_game": 0.37
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s6x2",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 49.7,
+        "ci95_halfwidth_pct": 4.3,
+        "wdl": [
+          152,
+          94,
+          154
+        ],
+        "seat0_result_pct": 50.5,
+        "winner_behind_after_turn4_pct": 23.2,
+        "winner_behind_after_turn8_pct": 20.9,
+        "lead_changes_per_game": 0.4
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s6x2",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 69.5,
+        "mean_guess_width": 0.171,
+        "pure_guess_width1_pct": 3.8
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s6x2+exnone",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 84.4,
+        "ci95_halfwidth_pct": 3.1,
+        "wdl": [
+          314,
+          47,
+          39
+        ],
+        "seat0_result_pct": 50.1,
+        "winner_behind_after_turn4_pct": 17.3,
+        "winner_behind_after_turn8_pct": 14.4,
+        "lead_changes_per_game": 0.33
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s6x2+exnone",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 51.4,
+        "ci95_halfwidth_pct": 4.3,
+        "wdl": [
+          159,
+          93,
+          148
+        ],
+        "seat0_result_pct": 52.1,
+        "winner_behind_after_turn4_pct": 23.8,
+        "winner_behind_after_turn8_pct": 27.0,
+        "lead_changes_per_game": 0.57
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s6x2+exnone",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 57.8,
+        "mean_guess_width": 0.27,
+        "pure_guess_width1_pct": 11.8
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s6inc",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 74.4,
+        "ci95_halfwidth_pct": 4.2,
+        "wdl": [
+          289,
+          17,
+          94
+        ],
+        "seat0_result_pct": 52.6,
+        "winner_behind_after_turn4_pct": 25.6,
+        "winner_behind_after_turn8_pct": 42.0,
+        "lead_changes_per_game": 1.13
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s6inc",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 48.7,
+        "ci95_halfwidth_pct": 4.7,
+        "wdl": [
+          179,
+          32,
+          189
+        ],
+        "seat0_result_pct": 49.7,
+        "winner_behind_after_turn4_pct": 25.0,
+        "winner_behind_after_turn8_pct": 37.5,
+        "lead_changes_per_game": 1.01
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s6inc",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 70.2,
+        "mean_guess_width": 0.26,
+        "pure_guess_width1_pct": 22.2
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s12inc+exnone",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 84.8,
+        "ci95_halfwidth_pct": 3.5,
+        "wdl": [
+          336,
+          6,
+          58
+        ],
+        "seat0_result_pct": 54.0,
+        "winner_behind_after_turn4_pct": 11.4,
+        "winner_behind_after_turn8_pct": 34.0,
+        "lead_changes_per_game": 1.01
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s12inc+exnone",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 51.0,
+        "ci95_halfwidth_pct": 4.8,
+        "wdl": [
+          195,
+          18,
+          187
+        ],
+        "seat0_result_pct": 49.2,
+        "winner_behind_after_turn4_pct": 14.1,
+        "winner_behind_after_turn8_pct": 35.1,
+        "lead_changes_per_game": 1.3
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s12inc+exnone",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 82.2,
+        "mean_guess_width": 0.14,
+        "pure_guess_width1_pct": 10.2
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+exnone",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 74.4,
+        "ci95_halfwidth_pct": 3.8,
+        "wdl": [
+          263,
+          69,
+          68
+        ],
+        "seat0_result_pct": 47.1,
+        "winner_behind_after_turn4_pct": 28.7,
+        "winner_behind_after_turn8_pct": 25.4,
+        "lead_changes_per_game": 0.66
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+exnone",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 50.2,
+        "ci95_halfwidth_pct": 4.5,
+        "wdl": [
+          167,
+          68,
+          165
+        ],
+        "seat0_result_pct": 50.5,
+        "winner_behind_after_turn4_pct": 35.2,
+        "winner_behind_after_turn8_pct": 28.9,
+        "lead_changes_per_game": 0.77
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+exnone",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 41.2,
+        "mean_guess_width": 0.486,
+        "pure_guess_width1_pct": 38.5
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+exwin",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 70.0,
+        "ci95_halfwidth_pct": 4.1,
+        "wdl": [
+          250,
+          60,
+          90
+        ],
+        "seat0_result_pct": 50.2,
+        "winner_behind_after_turn4_pct": 39.4,
+        "winner_behind_after_turn8_pct": 50.9,
+        "lead_changes_per_game": 1.06
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+exwin",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 50.9,
+        "ci95_halfwidth_pct": 4.3,
+        "wdl": [
+          159,
+          89,
+          152
+        ],
+        "seat0_result_pct": 53.1,
+        "winner_behind_after_turn4_pct": 42.4,
+        "winner_behind_after_turn8_pct": 51.4,
+        "lead_changes_per_game": 1.13
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+exwin",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 53.0,
+        "mean_guess_width": 0.419,
+        "pure_guess_width1_pct": 36.8
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+exall",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 71.3,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          255,
+          60,
+          85
+        ],
+        "seat0_result_pct": 49.7,
+        "winner_behind_after_turn4_pct": 39.1,
+        "winner_behind_after_turn8_pct": 30.9,
+        "lead_changes_per_game": 0.76
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+exall",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 49.7,
+        "ci95_halfwidth_pct": 4.4,
+        "wdl": [
+          161,
+          76,
+          163
+        ],
+        "seat0_result_pct": 54.2,
+        "winner_behind_after_turn4_pct": 39.8,
+        "winner_behind_after_turn8_pct": 38.6,
+        "lead_changes_per_game": 0.89
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+exall",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 49.5,
+        "mean_guess_width": 0.436,
+        "pure_guess_width1_pct": 36.8
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+noshift",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 70.8,
+        "ci95_halfwidth_pct": 4.1,
+        "wdl": [
+          254,
+          58,
+          88
+        ],
+        "seat0_result_pct": 50.0,
+        "winner_behind_after_turn4_pct": 39.8,
+        "winner_behind_after_turn8_pct": 32.2,
+        "lead_changes_per_game": 0.8
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+noshift",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 52.6,
+        "ci95_halfwidth_pct": 4.5,
+        "wdl": [
+          181,
+          59,
+          160
+        ],
+        "seat0_result_pct": 50.4,
+        "winner_behind_after_turn4_pct": 35.8,
+        "winner_behind_after_turn8_pct": 37.5,
+        "lead_changes_per_game": 0.84
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+noshift",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 76.8,
+        "mean_guess_width": 0.201,
+        "pure_guess_width1_pct": 17.0
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+norecall",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 74.4,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          273,
+          49,
+          78
+        ],
+        "seat0_result_pct": 51.1,
+        "winner_behind_after_turn4_pct": 37.3,
+        "winner_behind_after_turn8_pct": 26.2,
+        "lead_changes_per_game": 0.71
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+norecall",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 46.8,
+        "ci95_halfwidth_pct": 4.5,
+        "wdl": [
+          155,
+          64,
+          181
+        ],
+        "seat0_result_pct": 49.5,
+        "winner_behind_after_turn4_pct": 35.7,
+        "winner_behind_after_turn8_pct": 30.1,
+        "lead_changes_per_game": 0.73
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+norecall",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 49.8,
+        "mean_guess_width": 0.43,
+        "pure_guess_width1_pct": 35.8
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initlow",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 77.7,
+        "ci95_halfwidth_pct": 3.6,
+        "wdl": [
+          283,
+          56,
+          61
+        ],
+        "seat0_result_pct": 48.2,
+        "winner_behind_after_turn4_pct": 36.3,
+        "winner_behind_after_turn8_pct": 25.0,
+        "lead_changes_per_game": 0.69
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initlow",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 47.6,
+        "ci95_halfwidth_pct": 4.6,
+        "wdl": [
+          163,
+          55,
+          182
+        ],
+        "seat0_result_pct": 51.4,
+        "winner_behind_after_turn4_pct": 37.1,
+        "winner_behind_after_turn8_pct": 28.4,
+        "lead_changes_per_game": 0.74
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initlow",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 44,
+        "saddle_pct": 59.1,
+        "mean_guess_width": 0.364,
+        "pure_guess_width1_pct": 31.8
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initlow+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 77.6,
+        "ci95_halfwidth_pct": 4.1,
+        "wdl": [
+          310,
+          1,
+          89
+        ],
+        "seat0_result_pct": 51.9,
+        "winner_behind_after_turn4_pct": 38.8,
+        "winner_behind_after_turn8_pct": 31.6,
+        "lead_changes_per_game": 0.5
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initlow+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 47.2,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          186,
+          6,
+          208
+        ],
+        "seat0_result_pct": 52.7,
+        "winner_behind_after_turn4_pct": 38.1,
+        "winner_behind_after_turn8_pct": 38.8,
+        "lead_changes_per_game": 0.63
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initlow+tbfinal",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 32,
+        "saddle_pct": 59.4,
+        "mean_guess_width": 0.406,
+        "pure_guess_width1_pct": 40.6
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+inithigh",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 72.3,
+        "ci95_halfwidth_pct": 4.1,
+        "wdl": [
+          265,
+          48,
+          87
+        ],
+        "seat0_result_pct": 51.5,
+        "winner_behind_after_turn4_pct": 38.6,
+        "winner_behind_after_turn8_pct": 32.7,
+        "lead_changes_per_game": 0.76
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+inithigh",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 48.5,
+        "ci95_halfwidth_pct": 4.6,
+        "wdl": [
+          167,
+          54,
+          179
+        ],
+        "seat0_result_pct": 50.5,
+        "winner_behind_after_turn4_pct": 41.9,
+        "winner_behind_after_turn8_pct": 35.3,
+        "lead_changes_per_game": 0.82
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+inithigh",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 49,
+        "saddle_pct": 40.8,
+        "mean_guess_width": 0.459,
+        "pure_guess_width1_pct": 32.7
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initbehind",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 68.6,
+        "ci95_halfwidth_pct": 4.3,
+        "wdl": [
+          257,
+          35,
+          108
+        ],
+        "seat0_result_pct": 50.4,
+        "winner_behind_after_turn4_pct": 37.5,
+        "winner_behind_after_turn8_pct": 58.1,
+        "lead_changes_per_game": 1.12
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initbehind",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 49.7,
+        "ci95_halfwidth_pct": 4.7,
+        "wdl": [
+          186,
+          26,
+          188
+        ],
+        "seat0_result_pct": 53.0,
+        "winner_behind_after_turn4_pct": 43.6,
+        "winner_behind_after_turn8_pct": 62.3,
+        "lead_changes_per_game": 1.18
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initbehind",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 36,
+        "saddle_pct": 44.4,
+        "mean_guess_width": 0.486,
+        "pure_guess_width1_pct": 41.7
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initahead",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 400,
+        "a_result_pct": 74.6,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          274,
+          49,
+          77
+        ],
+        "seat0_result_pct": 48.9,
+        "winner_behind_after_turn4_pct": 22.8,
+        "winner_behind_after_turn8_pct": 6.6,
+        "lead_changes_per_game": 0.29
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initahead",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 51.2,
+        "ci95_halfwidth_pct": 4.5,
+        "wdl": [
+          171,
+          68,
+          161
+        ],
+        "seat0_result_pct": 49.2,
+        "winner_behind_after_turn4_pct": 16.9,
+        "winner_behind_after_turn8_pct": 6.6,
+        "lead_changes_per_game": 0.23
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+initahead",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 18,
+        "saddle_pct": 22.2,
+        "mean_guess_width": 0.639,
+        "pure_guess_width1_pct": 50.0
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s111+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 600,
+        "a_result_pct": 79.7,
+        "ci95_halfwidth_pct": 3.2,
+        "wdl": [
+          478,
+          1,
+          121
+        ],
+        "seat0_result_pct": 53.4,
+        "winner_behind_after_turn4_pct": 26.7,
+        "winner_behind_after_turn8_pct": 6.5,
+        "lead_changes_per_game": 0.22
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s111+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 51.7,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          206,
+          2,
+          192
+        ],
+        "seat0_result_pct": 48.5,
+        "winner_behind_after_turn4_pct": 33.2,
+        "winner_behind_after_turn8_pct": 6.8,
+        "lead_changes_per_game": 0.27
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s111+tbstr",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 72.8,
+        "mean_guess_width": 0.266,
+        "pure_guess_width1_pct": 26.0
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s111+tbearly",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 600,
+        "a_result_pct": 77.2,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          462,
+          2,
+          136
+        ],
+        "seat0_result_pct": 49.8,
+        "winner_behind_after_turn4_pct": 16.2,
+        "winner_behind_after_turn8_pct": 0.3,
+        "lead_changes_per_game": 0.17
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s111+tbearly",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 48.9,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          195,
+          1,
+          204
+        ],
+        "seat0_result_pct": 47.6,
+        "winner_behind_after_turn4_pct": 22.3,
+        "winner_behind_after_turn8_pct": 1.0,
+        "lead_changes_per_game": 0.23
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s111+tbearly",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 78.5,
+        "mean_guess_width": 0.214,
+        "pure_guess_width1_pct": 21.2
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s111+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 600,
+        "a_result_pct": 77.4,
+        "ci95_halfwidth_pct": 3.3,
+        "wdl": [
+          463,
+          3,
+          134
+        ],
+        "seat0_result_pct": 53.9,
+        "winner_behind_after_turn4_pct": 26.0,
+        "winner_behind_after_turn8_pct": 9.9,
+        "lead_changes_per_game": 0.22
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s111+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 45.3,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          179,
+          4,
+          217
+        ],
+        "seat0_result_pct": 47.7,
+        "winner_behind_after_turn4_pct": 32.1,
+        "winner_behind_after_turn8_pct": 10.9,
+        "lead_changes_per_game": 0.26
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s111+tbfinal",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 71.5,
+        "mean_guess_width": 0.275,
+        "pure_guess_width1_pct": 26.5
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+tbearly",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 600,
+        "a_result_pct": 75.9,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          455,
+          1,
+          144
+        ],
+        "seat0_result_pct": 45.8,
+        "winner_behind_after_turn4_pct": 31.4,
+        "winner_behind_after_turn8_pct": 22.0,
+        "lead_changes_per_game": 0.58
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+tbearly",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 49.5,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          198,
+          0,
+          202
+        ],
+        "seat0_result_pct": 48.0,
+        "winner_behind_after_turn4_pct": 34.5,
+        "winner_behind_after_turn8_pct": 27.8,
+        "lead_changes_per_game": 0.65
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+tbearly",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 60.0,
+        "mean_guess_width": 0.395,
+        "pure_guess_width1_pct": 39.0
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s234+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 600,
+        "a_result_pct": 76.2,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          457,
+          0,
+          143
+        ],
+        "seat0_result_pct": 49.5,
+        "winner_behind_after_turn4_pct": 29.7,
+        "winner_behind_after_turn8_pct": 24.0,
+        "lead_changes_per_game": 0.62
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s234+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 51.0,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          204,
+          0,
+          196
+        ],
+        "seat0_result_pct": 52.0,
+        "winner_behind_after_turn4_pct": 32.8,
+        "winner_behind_after_turn8_pct": 26.0,
+        "lead_changes_per_game": 0.63
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s234+tbfinal",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 64.5,
+        "mean_guess_width": 0.354,
+        "pure_guess_width1_pct": 35.2
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 600,
+        "a_result_pct": 76.8,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          461,
+          0,
+          139
+        ],
+        "seat0_result_pct": 47.8,
+        "winner_behind_after_turn4_pct": 27.8,
+        "winner_behind_after_turn8_pct": 22.2,
+        "lead_changes_per_game": 0.56
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 400,
+        "a_result_pct": 50.7,
+        "ci95_halfwidth_pct": 4.9,
+        "wdl": [
+          203,
+          0,
+          197
+        ],
+        "seat0_result_pct": 51.2,
+        "winner_behind_after_turn4_pct": 34.2,
+        "winner_behind_after_turn8_pct": 32.5,
+        "lead_changes_per_game": 0.78
+      },
+      {
+        "log": "sweep1b.log",
+        "rules": "base+s234+tbstr",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 400,
+        "saddle_pct": 66.2,
+        "mean_guess_width": 0.338,
+        "pure_guess_width1_pct": 33.8
+      }
+    ],
+    "finalist_runs": [
+      {
+        "log": "sweep3.log",
+        "rules": "base",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 72.3,
+        "ci95_halfwidth_pct": 2.3,
+        "wdl": [
+          780,
+          176,
+          244
+        ],
+        "seat0_result_pct": 49.5,
+        "winner_behind_after_turn4_pct": 34.3,
+        "winner_behind_after_turn8_pct": 29.8,
+        "lead_changes_per_game": 0.69
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 72.8,
+        "ci95_halfwidth_pct": 3.2,
+        "wdl": [
+          396,
+          81,
+          123
+        ],
+        "seat0_result_pct": 47.4,
+        "winner_behind_after_turn4_pct": 33.1,
+        "winner_behind_after_turn8_pct": 26.2,
+        "lead_changes_per_game": 0.6
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 50.6,
+        "ci95_halfwidth_pct": 3.8,
+        "wdl": [
+          267,
+          73,
+          260
+        ],
+        "seat0_result_pct": 49.7,
+        "winner_behind_after_turn4_pct": 34.7,
+        "winner_behind_after_turn8_pct": 34.0,
+        "lead_changes_per_game": 0.8
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 600,
+        "saddle_pct": 55.7,
+        "mean_guess_width": 0.377,
+        "pure_guess_width1_pct": 31.0
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 600,
+        "a_result_pct": 76.7,
+        "ci95_halfwidth_pct": 3.1,
+        "wdl": [
+          423,
+          74,
+          103
+        ],
+        "seat0_result_pct": 50.5,
+        "winner_behind_after_turn4_pct": 35.9,
+        "winner_behind_after_turn8_pct": 30.6,
+        "lead_changes_per_game": 0.76
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 72.1,
+        "ci95_halfwidth_pct": 2.5,
+        "wdl": [
+          861,
+          8,
+          331
+        ],
+        "seat0_result_pct": 51.1,
+        "winner_behind_after_turn4_pct": 40.9,
+        "winner_behind_after_turn8_pct": 38.3,
+        "lead_changes_per_game": 0.61
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+tbfinal",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 75.7,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          453,
+          3,
+          144
+        ],
+        "seat0_result_pct": 49.2,
+        "winner_behind_after_turn4_pct": 39.0,
+        "winner_behind_after_turn8_pct": 31.7,
+        "lead_changes_per_game": 0.55
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 48.7,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          290,
+          4,
+          306
+        ],
+        "seat0_result_pct": 53.0,
+        "winner_behind_after_turn4_pct": 38.1,
+        "winner_behind_after_turn8_pct": 40.8,
+        "lead_changes_per_game": 0.66
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+tbfinal",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 600,
+        "saddle_pct": 57.5,
+        "mean_guess_width": 0.418,
+        "pure_guess_width1_pct": 41.2
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+tbfinal",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 600,
+        "a_result_pct": 74.3,
+        "ci95_halfwidth_pct": 3.5,
+        "wdl": [
+          445,
+          1,
+          154
+        ],
+        "seat0_result_pct": 48.6,
+        "winner_behind_after_turn4_pct": 34.2,
+        "winner_behind_after_turn8_pct": 37.4,
+        "lead_changes_per_game": 0.58
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s111+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 76.6,
+        "ci95_halfwidth_pct": 2.4,
+        "wdl": [
+          912,
+          15,
+          273
+        ],
+        "seat0_result_pct": 50.6,
+        "winner_behind_after_turn4_pct": 27.3,
+        "winner_behind_after_turn8_pct": 10.0,
+        "lead_changes_per_game": 0.23
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s111+tbfinal",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 75.7,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          452,
+          5,
+          143
+        ],
+        "seat0_result_pct": 46.1,
+        "winner_behind_after_turn4_pct": 25.5,
+        "winner_behind_after_turn8_pct": 9.1,
+        "lead_changes_per_game": 0.23
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s111+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 48.7,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          289,
+          6,
+          305
+        ],
+        "seat0_result_pct": 49.8,
+        "winner_behind_after_turn4_pct": 28.6,
+        "winner_behind_after_turn8_pct": 12.1,
+        "lead_changes_per_game": 0.23
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s111+tbfinal",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 600,
+        "saddle_pct": 74.2,
+        "mean_guess_width": 0.252,
+        "pure_guess_width1_pct": 24.5
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s111+tbfinal",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 600,
+        "a_result_pct": 78.7,
+        "ci95_halfwidth_pct": 3.3,
+        "wdl": [
+          472,
+          1,
+          127
+        ],
+        "seat0_result_pct": 50.2,
+        "winner_behind_after_turn4_pct": 31.6,
+        "winner_behind_after_turn8_pct": 11.2,
+        "lead_changes_per_game": 0.26
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s111+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 78.7,
+        "ci95_halfwidth_pct": 2.3,
+        "wdl": [
+          940,
+          9,
+          251
+        ],
+        "seat0_result_pct": 48.1,
+        "winner_behind_after_turn4_pct": 23.4,
+        "winner_behind_after_turn8_pct": 6.4,
+        "lead_changes_per_game": 0.2
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s111+tbstr",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 78.2,
+        "ci95_halfwidth_pct": 3.3,
+        "wdl": [
+          466,
+          7,
+          127
+        ],
+        "seat0_result_pct": 49.2,
+        "winner_behind_after_turn4_pct": 21.2,
+        "winner_behind_after_turn8_pct": 6.4,
+        "lead_changes_per_game": 0.16
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s111+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 50.2,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          299,
+          5,
+          296
+        ],
+        "seat0_result_pct": 51.9,
+        "winner_behind_after_turn4_pct": 27.9,
+        "winner_behind_after_turn8_pct": 7.9,
+        "lead_changes_per_game": 0.22
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s111+tbstr",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 600,
+        "saddle_pct": 72.7,
+        "mean_guess_width": 0.261,
+        "pure_guess_width1_pct": 24.8
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s111+tbstr",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 600,
+        "a_result_pct": 80.2,
+        "ci95_halfwidth_pct": 3.2,
+        "wdl": [
+          479,
+          5,
+          116
+        ],
+        "seat0_result_pct": 48.2,
+        "winner_behind_after_turn4_pct": 22.5,
+        "winner_behind_after_turn8_pct": 7.9,
+        "lead_changes_per_game": 0.19
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s234+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 73.4,
+        "ci95_halfwidth_pct": 2.5,
+        "wdl": [
+          881,
+          0,
+          319
+        ],
+        "seat0_result_pct": 49.6,
+        "winner_behind_after_turn4_pct": 29.1,
+        "winner_behind_after_turn8_pct": 24.7,
+        "lead_changes_per_game": 0.6
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s234+tbfinal",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 73.4,
+        "ci95_halfwidth_pct": 3.5,
+        "wdl": [
+          440,
+          1,
+          159
+        ],
+        "seat0_result_pct": 52.1,
+        "winner_behind_after_turn4_pct": 27.7,
+        "winner_behind_after_turn8_pct": 22.0,
+        "lead_changes_per_game": 0.51
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s234+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 45.1,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          270,
+          1,
+          329
+        ],
+        "seat0_result_pct": 53.2,
+        "winner_behind_after_turn4_pct": 33.9,
+        "winner_behind_after_turn8_pct": 30.1,
+        "lead_changes_per_game": 0.65
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s234+tbfinal",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 600,
+        "saddle_pct": 66.0,
+        "mean_guess_width": 0.34,
+        "pure_guess_width1_pct": 34.0
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s234+tbfinal",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 600,
+        "a_result_pct": 74.8,
+        "ci95_halfwidth_pct": 3.5,
+        "wdl": [
+          449,
+          0,
+          151
+        ],
+        "seat0_result_pct": 50.2,
+        "winner_behind_after_turn4_pct": 28.2,
+        "winner_behind_after_turn8_pct": 24.2,
+        "lead_changes_per_game": 0.59
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 74.3,
+        "ci95_halfwidth_pct": 2.5,
+        "wdl": [
+          891,
+          0,
+          309
+        ],
+        "seat0_result_pct": 49.2,
+        "winner_behind_after_turn4_pct": 28.8,
+        "winner_behind_after_turn8_pct": 22.8,
+        "lead_changes_per_game": 0.59
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 77.3,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          464,
+          0,
+          136
+        ],
+        "seat0_result_pct": 47.7,
+        "winner_behind_after_turn4_pct": 26.5,
+        "winner_behind_after_turn8_pct": 22.5,
+        "lead_changes_per_game": 0.51
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 47.7,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          286,
+          0,
+          314
+        ],
+        "seat0_result_pct": 50.0,
+        "winner_behind_after_turn4_pct": 33.7,
+        "winner_behind_after_turn8_pct": 27.8,
+        "lead_changes_per_game": 0.65
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s234+tbstr",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 600,
+        "saddle_pct": 68.0,
+        "mean_guess_width": 0.318,
+        "pure_guess_width1_pct": 31.5
+      },
+      {
+        "log": "sweep3.log",
+        "rules": "base+s234+tbstr",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 600,
+        "a_result_pct": 79.2,
+        "ci95_halfwidth_pct": 3.3,
+        "wdl": [
+          475,
+          0,
+          125
+        ],
+        "seat0_result_pct": 50.5,
+        "winner_behind_after_turn4_pct": 30.8,
+        "winner_behind_after_turn8_pct": 24.2,
+        "lead_changes_per_game": 0.6
+      },
+      {
+        "log": "sweep4.log",
+        "rules": "base+cp:4=3,8=4,12=5+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 76.0,
+        "ci95_halfwidth_pct": 2.4,
+        "wdl": [
+          912,
+          1,
+          287
+        ],
+        "seat0_result_pct": 48.7,
+        "winner_behind_after_turn4_pct": 25.9,
+        "winner_behind_after_turn8_pct": 25.3,
+        "lead_changes_per_game": 0.58
+      },
+      {
+        "log": "sweep4.log",
+        "rules": "base+cp:4=3,8=4,12=5+tbfinal",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 70.5,
+        "ci95_halfwidth_pct": 3.7,
+        "wdl": [
+          423,
+          0,
+          177
+        ],
+        "seat0_result_pct": 52.2,
+        "winner_behind_after_turn4_pct": 28.5,
+        "winner_behind_after_turn8_pct": 24.0,
+        "lead_changes_per_game": 0.54
+      },
+      {
+        "log": "sweep4.log",
+        "rules": "base+cp:4=3,8=4,12=5+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 49.7,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          298,
+          0,
+          302
+        ],
+        "seat0_result_pct": 48.0,
+        "winner_behind_after_turn4_pct": 34.2,
+        "winner_behind_after_turn8_pct": 29.8,
+        "lead_changes_per_game": 0.68
+      },
+      {
+        "log": "sweep4.log",
+        "rules": "base+cp:4=3,8=4,12=5+tbfinal",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 600,
+        "saddle_pct": 66.0,
+        "mean_guess_width": 0.339,
+        "pure_guess_width1_pct": 33.8
+      },
+      {
+        "log": "sweep4.log",
+        "rules": "base+cp:4=3,8=4,12=5+tbfinal",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 600,
+        "a_result_pct": 78.1,
+        "ci95_halfwidth_pct": 3.3,
+        "wdl": [
+          468,
+          1,
+          131
+        ],
+        "seat0_result_pct": 49.9,
+        "winner_behind_after_turn4_pct": 29.0,
+        "winner_behind_after_turn8_pct": 23.2,
+        "lead_changes_per_game": 0.58
+      },
+      {
+        "log": "sweep4.log",
+        "rules": "base+cp:4=3,8=4,12=5+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 76.5,
+        "ci95_halfwidth_pct": 2.4,
+        "wdl": [
+          917,
+          1,
+          282
+        ],
+        "seat0_result_pct": 49.2,
+        "winner_behind_after_turn4_pct": 29.4,
+        "winner_behind_after_turn8_pct": 23.0,
+        "lead_changes_per_game": 0.58
+      },
+      {
+        "log": "sweep4.log",
+        "rules": "base+cp:4=3,8=4,12=5+tbstr",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 72.2,
+        "ci95_halfwidth_pct": 3.6,
+        "wdl": [
+          433,
+          0,
+          167
+        ],
+        "seat0_result_pct": 51.8,
+        "winner_behind_after_turn4_pct": 31.3,
+        "winner_behind_after_turn8_pct": 22.0,
+        "lead_changes_per_game": 0.56
+      },
+      {
+        "log": "sweep4.log",
+        "rules": "base+cp:4=3,8=4,12=5+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 51.3,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          308,
+          0,
+          292
+        ],
+        "seat0_result_pct": 47.0,
+        "winner_behind_after_turn4_pct": 34.8,
+        "winner_behind_after_turn8_pct": 28.2,
+        "lead_changes_per_game": 0.66
+      },
+      {
+        "log": "sweep4.log",
+        "rules": "base+cp:4=3,8=4,12=5+tbstr",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 600,
+        "saddle_pct": 65.0,
+        "mean_guess_width": 0.35,
+        "pure_guess_width1_pct": 35.0
+      },
+      {
+        "log": "sweep4.log",
+        "rules": "base+cp:4=3,8=4,12=5+tbstr",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 600,
+        "a_result_pct": 76.3,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          458,
+          0,
+          142
+        ],
+        "seat0_result_pct": 47.0,
+        "winner_behind_after_turn4_pct": 30.0,
+        "winner_behind_after_turn8_pct": 23.8,
+        "lead_changes_per_game": 0.6
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 73.6,
+        "ci95_halfwidth_pct": 2.5,
+        "wdl": [
+          877,
+          13,
+          310
+        ],
+        "seat0_result_pct": 50.9,
+        "winner_behind_after_turn4_pct": 32.2,
+        "winner_behind_after_turn8_pct": 24.9,
+        "lead_changes_per_game": 0.62,
+        "level_on_points_pct": 1.1,
+        "level_games_a_won_drew_lost": [
+          0,
+          13,
+          0
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 71.4,
+        "ci95_halfwidth_pct": 3.6,
+        "wdl": [
+          420,
+          17,
+          163
+        ],
+        "seat0_result_pct": 53.1,
+        "winner_behind_after_turn4_pct": 25.9,
+        "winner_behind_after_turn8_pct": 20.9,
+        "lead_changes_per_game": 0.52,
+        "level_on_points_pct": 2.8,
+        "level_games_a_won_drew_lost": [
+          0,
+          17,
+          0
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 46.7,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          275,
+          10,
+          315
+        ],
+        "seat0_result_pct": 47.3,
+        "winner_behind_after_turn4_pct": 31.9,
+        "winner_behind_after_turn8_pct": 29.2,
+        "lead_changes_per_game": 0.66,
+        "level_on_points_pct": 1.7,
+        "level_games_a_won_drew_lost": [
+          0,
+          10,
+          0
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 600,
+        "saddle_pct": 69.7,
+        "mean_guess_width": 0.295,
+        "pure_guess_width1_pct": 28.7
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 600,
+        "a_result_pct": 80.2,
+        "ci95_halfwidth_pct": 3.2,
+        "wdl": [
+          480,
+          3,
+          117
+        ],
+        "seat0_result_pct": 51.1,
+        "winner_behind_after_turn4_pct": 30.8,
+        "winner_behind_after_turn8_pct": 26.3,
+        "lead_changes_per_game": 0.61,
+        "level_on_points_pct": 0.5,
+        "level_games_a_won_drew_lost": [
+          0,
+          3,
+          0
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 76.9,
+        "ci95_halfwidth_pct": 2.4,
+        "wdl": [
+          921,
+          3,
+          276
+        ],
+        "seat0_result_pct": 49.6,
+        "winner_behind_after_turn4_pct": 34.5,
+        "winner_behind_after_turn8_pct": 30.1,
+        "lead_changes_per_game": 0.55,
+        "level_on_points_pct": 18.0,
+        "level_games_a_won_drew_lost": [
+          168,
+          3,
+          45
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+tbstr",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 72.4,
+        "ci95_halfwidth_pct": 3.6,
+        "wdl": [
+          433,
+          3,
+          164
+        ],
+        "seat0_result_pct": 49.2,
+        "winner_behind_after_turn4_pct": 36.3,
+        "winner_behind_after_turn8_pct": 24.8,
+        "lead_changes_per_game": 0.49,
+        "level_on_points_pct": 16.3,
+        "level_games_a_won_drew_lost": [
+          76,
+          3,
+          19
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 48.2,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          288,
+          3,
+          309
+        ],
+        "seat0_result_pct": 53.7,
+        "winner_behind_after_turn4_pct": 33.3,
+        "winner_behind_after_turn8_pct": 32.5,
+        "lead_changes_per_game": 0.56,
+        "level_on_points_pct": 17.3,
+        "level_games_a_won_drew_lost": [
+          53,
+          3,
+          48
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+tbstr",
+        "final_turn_positions_from": "mctsx:4000",
+        "simultaneous_final_turns": 600,
+        "saddle_pct": 61.5,
+        "mean_guess_width": 0.378,
+        "pure_guess_width1_pct": 37.2
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+tbstr",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 600,
+        "a_result_pct": 77.0,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          460,
+          4,
+          136
+        ],
+        "seat0_result_pct": 51.7,
+        "winner_behind_after_turn4_pct": 33.1,
+        "winner_behind_after_turn8_pct": 27.2,
+        "lead_changes_per_game": 0.53,
+        "level_on_points_pct": 20.7,
+        "level_games_a_won_drew_lost": [
+          96,
+          4,
+          24
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 2400,
+        "a_result_pct": 73.8,
+        "ci95_halfwidth_pct": 1.8,
+        "wdl": [
+          1770,
+          1,
+          629
+        ],
+        "seat0_result_pct": 48.6,
+        "winner_behind_after_turn4_pct": 29.1,
+        "winner_behind_after_turn8_pct": 25.6,
+        "lead_changes_per_game": 0.6,
+        "level_on_points_pct": 0.9,
+        "level_games_a_won_drew_lost": [
+          11,
+          1,
+          10
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234+tbfinal",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 70.9,
+        "ci95_halfwidth_pct": 3.6,
+        "wdl": [
+          425,
+          1,
+          174
+        ],
+        "seat0_result_pct": 52.6,
+        "winner_behind_after_turn4_pct": 30.6,
+        "winner_behind_after_turn8_pct": 29.2,
+        "lead_changes_per_game": 0.61,
+        "level_on_points_pct": 1.5,
+        "level_games_a_won_drew_lost": [
+          3,
+          1,
+          5
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234+tbfinal",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 1200,
+        "a_result_pct": 77.1,
+        "ci95_halfwidth_pct": 2.4,
+        "wdl": [
+          925,
+          1,
+          274
+        ],
+        "seat0_result_pct": 51.1,
+        "winner_behind_after_turn4_pct": 26.8,
+        "winner_behind_after_turn8_pct": 25.9,
+        "lead_changes_per_game": 0.58,
+        "level_on_points_pct": 1.6,
+        "level_games_a_won_drew_lost": [
+          12,
+          1,
+          6
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 2400,
+        "a_result_pct": 76.3,
+        "ci95_halfwidth_pct": 1.7,
+        "wdl": [
+          1830,
+          1,
+          569
+        ],
+        "seat0_result_pct": 50.1,
+        "winner_behind_after_turn4_pct": 30.0,
+        "winner_behind_after_turn8_pct": 23.1,
+        "lead_changes_per_game": 0.58,
+        "level_on_points_pct": 2.0,
+        "level_games_a_won_drew_lost": [
+          39,
+          1,
+          7
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 74.7,
+        "ci95_halfwidth_pct": 3.5,
+        "wdl": [
+          448,
+          0,
+          152
+        ],
+        "seat0_result_pct": 49.7,
+        "winner_behind_after_turn4_pct": 29.3,
+        "winner_behind_after_turn8_pct": 25.5,
+        "lead_changes_per_game": 0.57,
+        "level_on_points_pct": 2.7,
+        "level_games_a_won_drew_lost": [
+          14,
+          0,
+          2
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+s234+tbstr",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 1200,
+        "a_result_pct": 78.5,
+        "ci95_halfwidth_pct": 2.3,
+        "wdl": [
+          942,
+          0,
+          258
+        ],
+        "seat0_result_pct": 48.8,
+        "winner_behind_after_turn4_pct": 30.3,
+        "winner_behind_after_turn8_pct": 24.7,
+        "lead_changes_per_game": 0.59,
+        "level_on_points_pct": 1.3,
+        "level_games_a_won_drew_lost": [
+          11,
+          0,
+          5
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+tbfinal",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 2400,
+        "a_result_pct": 72.2,
+        "ci95_halfwidth_pct": 1.8,
+        "wdl": [
+          1725,
+          16,
+          659
+        ],
+        "seat0_result_pct": 48.3,
+        "winner_behind_after_turn4_pct": 39.5,
+        "winner_behind_after_turn8_pct": 38.8,
+        "lead_changes_per_game": 0.62,
+        "level_on_points_pct": 14.6,
+        "level_games_a_won_drew_lost": [
+          235,
+          16,
+          100
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+tbfinal",
+        "a": "mctsx:16000",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 76.7,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          460,
+          1,
+          139
+        ],
+        "seat0_result_pct": 51.6,
+        "winner_behind_after_turn4_pct": 35.1,
+        "winner_behind_after_turn8_pct": 32.4,
+        "lead_changes_per_game": 0.57,
+        "level_on_points_pct": 13.0,
+        "level_games_a_won_drew_lost": [
+          57,
+          1,
+          20
+        ]
+      },
+      {
+        "log": "sweep6.log",
+        "rules": "base+tbfinal",
+        "a": "mcts:4000",
+        "b": "mcts:1000",
+        "games": 1200,
+        "a_result_pct": 75.5,
+        "ci95_halfwidth_pct": 2.4,
+        "wdl": [
+          901,
+          9,
+          290
+        ],
+        "seat0_result_pct": 48.4,
+        "winner_behind_after_turn4_pct": 39.0,
+        "winner_behind_after_turn8_pct": 36.7,
+        "lead_changes_per_game": 0.61,
+        "level_on_points_pct": 15.4,
+        "level_games_a_won_drew_lost": [
+          130,
+          9,
+          46
+        ]
+      }
+    ]
+  }
 }

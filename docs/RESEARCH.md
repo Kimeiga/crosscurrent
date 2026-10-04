@@ -707,3 +707,220 @@ Examples:
 - "Crosscurrent's full optimal draw rate is low" is **not established**.
 
 That distinction is essential to the project.
+
+## 2026-10 audit of v0.2
+
+This section records a full audit made before the v0.3 rule change. The question was the project's original one, sharpened by a product requirement: a player who will only ever play **one game** should still be able to treat its result as evidence of who played better. That asks for three things at once: structural fairness (unchanged), a steep skill gradient, and as little of the result as possible decided by draws or by pure guesses.
+
+### Tooling
+
+`research/sim` is a dependency-free Rust simulator (see `research/README.md`). Every number below can be regenerated from the scripts and logs in `research/results/`.
+
+- **Engine equivalence (construction/validation).** The Rust engine reproduced the TypeScript engine on 3,060 games and 36,720 transitions: all 60 original Python-reference transcripts plus 3,000 seeded random games biased toward Shift and Recall. For every rule variant used below, 20,000 random games preserved label-swap symmetry and card conservation.
+- **Research bot.** Simultaneous-move Monte Carlo tree search with regret matching (outcome sampling, after Lanctot et al.), written `mctsx:N` for N iterations per decision, with the final turn solved exactly as a matrix game by linear programming. Rollouts deploy a random card 90% of the time. Exploration γ = 0.2 and a final-move purification threshold of 0.1 were tuned head-to-head on v0.2 (γ 0.2 vs 0.1: 60.8%; purification 0.1 vs 0.03: 66.5%; 0.2 and 0.3 vs 0.1: 36.3% and 30.3%, n = 300 each). The last result is itself informative: a bot that plays too predictably is punished, so mixed strategies matter in this game.
+- **Final-turn analysis (exact on sampled positions).** Positions after turn 11 are sampled from bot self-play and turn 12 is solved exactly. A position has a *saddle point* when the best pure order of each player is optimal even if revealed; then the result is decided by calculation, not by guessing. The *guess width* is (min–max minus max–min) of the pure-strategy payoffs in result units: 0 for a saddle point, 1 when whoever guesses right wins outright.
+
+All match results are bot-specific simulations: 400 games per pairing unless stated, seats alternating, draws counted as one half, ± values are 95% intervals.
+
+### Reproduced historical measurements (simulation)
+
+| Matchup | Then | Now |
+| --- | ---: | ---: |
+| Random vs random | 48.1%, 11.6% draws (1,000) | 50.0% ±0.7, 11.4% draws (20,000) |
+| Tactical vs random | 96.8% (2,000) | 96.7% ±1.0 (1,000) |
+| Tactical self-play | 51.2%, 7.2% draws (1,000) | 49.0% ±3.0, 7.3% draws (1,000) |
+
+### The shipped computer levels (simulation)
+
+- "Deep" (1,800 fictitious-play iterations) against "Tactical" (280): **48.9% ±3.0** over 1,000 games. Deep was not stronger. Both levels solve the same one-turn heuristic matrix; more iterations only refine an equilibrium of the heuristic, not of the game.
+- Casual vs random 85.9%; Tactical vs Casual 81.1% (1,000 each).
+- `mctsx:16000` against Tactical **91.6%** (350/33/17), against Deep 91.2%, Casual 97.1%, random 99.8%. In 83% of its wins against Tactical it was *behind after turn 4*: the strong bot routinely gives up the first scoring to keep high cards, which the one-turn heuristic cannot see.
+
+### Skill gradient and draws (simulation)
+
+| Pairing | Result | W/D/L | Draws |
+| --- | ---: | ---: | ---: |
+| mctsx 4,000 vs 1,000 | 71.9% ±4.0 | 260/55/85 | 13.8% |
+| mctsx 16,000 vs 4,000 | 74.3% ±3.8 | 266/62/72 | 15.5% |
+| mctsx 64,000 vs 16,000 | 69.9% ±4.0 | 244/71/85 | 17.8% |
+| mctsx 16,000 self-play | 49.5% ±4.5 (seat 0: 48.7%) | 165/66/169 | 16.5% |
+
+Each fourfold increase in search wins about 70–74% and the gradient had not flattened at 64,000 iterations, so this game rewards deeper reasoning well beyond the shipped AI. The weakness is draws: they *rise* as play gets stronger (13.8% → 15.5% → 17.8%), consistent with the all-draw equilibria found in the solved reduced variants. A drawn single game says nothing about who is better.
+
+### How often one guess decides the game (exact solutions of bot positions)
+
+| Positions from | Saddle point | Pure win/loss guess (width 1) | Width 0.5 | Mean width |
+| --- | ---: | ---: | ---: | ---: |
+| Tactical self-play | 60.0% | 32.0% | 8.0% | 0.360 |
+| mctsx 4,000 self-play | 61.5% | 25.0% | 13.5% | 0.318 |
+| mctsx 16,000 self-play | 42.2% | **42.5%** | 15.2% | 0.501 |
+
+Under the strongest play measured, 42.5% of games reached a final turn where the result flipped between a win and a loss on a simultaneous guess, and another 15% flipped between a draw and a decisive result. Equilibrium play there mixes over only about 2.7 of 25 legal orders, and playing uniformly at random instead costs a third of a game (0.333 expected result), so the final turn is not trivial; but the closer two strong players are, the more often v0.2 hands the result to a guess. Because the last scoring is worth half of all points (9 of 18), that guess carries a lot of weight.
+
+### Comebacks and order mix (simulation)
+
+In `mctsx:16000` self-play, the eventual winner trailed after turn 4 in 36.8% of decided games and after turn 8 in 26.0%. Strong bots chose Deploy about 90% of the time, Shift about 9% and Recall about 1%; the v0.2 Tactical heuristic used Shift 20–23% and Recall 2–4%. Recall is rare in strong play but not useless: the tutorial position in this repository and the certified endgame both use it or depend on it.
+
+### Looking for dominant simple strategies (simulation)
+
+Against `mctsx:4000`, with v0.2 scoring and the final-strength tiebreak studied below (these runs were not logged to `research/results/`): one-front stacking lost 98.5%, high-card-first 95.5%, piling onto a front already won 99.8%, mirroring the opponent's previous card 94.0%, random deploys 96.5%, v0.2 Casual 95.0%. The strongest simple rule found was **lowfirst**, play your lowest card where you are furthest behind: it lost 84.5% to `mctsx:4000` and 97% to `mctsx:16000`, beat v0.2 Casual 78.5%, and lost to v0.2 Tactical 84.8%. No simple rule approached strong play. That lowfirst is the best of them supports the reading that conserving high cards is central.
+
+Repeated under the adopted v0.3 rules (`research/results/probes.log`, 200 games each): `mctsx:4000` scored 99.0% against one-front stacking, high-card-first and piling, 98.5% against mirroring, 94.0% against random deploys, 92.5% against v0.2 Casual and 96.5% against lowfirst; `mctsx:16000` won all 200 games against lowfirst. Lowfirst and Casual were even (49.4% over 400 games), and v0.2 Tactical beat lowfirst 95.3%.
+
+
+## 2026 rule-variant study and v0.3
+
+### Question and protocol
+
+Which changes make a single game more decisive for the better player without adding luck, breaking symmetry, or making the game shallow? About thirty variants were screened with one protocol (simulation, `research/results/`): `mctsx:4000` against `mctsx:1000` (400 or 600 games), `mctsx:4000` self-play for draws and comeback structure (400 games), and exact final-turn analysis of 400 self-play positions. Finalists were then rerun with larger samples and a second search family (below). Every variant passed the 20,000-game symmetry and conservation check.
+
+"Strong wins / draws / upsets" are the outright results of the bot with four times the search. The screening treated them as the headline because a draw is no evidence of who played better. The finalists below corrected that reading: a tiebreak can turn draws into wins and losses without favoring the better player, so outright wins can rise while a single game carries no more evidence. The finalist comparison therefore uses the stronger bot's expected result as well.
+
+### Screening results (simulation)
+
+Variant names are explained in `research/README.md`; `base` is v0.2. Final-turn figures for the initiative variants (in parentheses) cover only the few final turns that were simultaneous.
+
+| Variant | 4k vs 1k: strong wins / draws / upsets | Self-play draws | Final turn saddle | Final turn pure guess | Winner behind after turn 8 | Lead changes |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `base` | 65.0% / 13.8% / 21.2% (n=400) | 17.0% | 61.5% | 25.0% | 36.1% | 0.82 |
+| `base+tbfinal` | 71.8% / 0.0% / 28.2% (n=400) | 0.5% | 52.2% | 46.0% | 44.0% | 0.69 |
+| `base+tbstr` | 76.8% / 0.2% / 23.0% (n=400) | 1.0% | 65.0% | 34.5% | 36.6% | 0.63 |
+| `base+s111` | 65.8% / 15.8% / 18.5% (n=400) | 20.8% | 62.2% | 15.2% | 0.3% | 0.25 |
+| `base+s111+tbfinal` | 80.5% / 0.5% / 19.0% (n=400) | 1.0% | 72.5% | 26.2% | 12.4% | 0.20 |
+| `base+s234` | 78.2% / 1.0% / 20.8% (n=400) | 2.5% | 67.0% | 31.8% | 31.8% | 0.67 |
+| `base+s124` | 70.2% / 2.2% / 27.5% (n=400) | 3.0% | 52.2% | 43.8% | 46.6% | 0.77 |
+| `base+s4x3` | 70.0% / 7.5% / 22.5% (n=400) | 9.2% | 64.8% | 27.8% | 35.3% | 0.86 |
+| `base+s6x2` | 66.8% / 17.0% / 16.2% (n=400) | 23.5% | 69.5% | 3.8% | 20.9% | 0.40 |
+| `base+s6x2+exnone` | 78.5% / 11.8% / 9.8% (n=400) | 23.2% | 57.8% | 11.8% | 27.0% | 0.57 |
+| `base+s6inc` | 72.2% / 4.2% / 23.5% (n=400) | 8.0% | 70.2% | 22.2% | 37.5% | 1.01 |
+| `base+s12inc+exnone` | 84.0% / 1.5% / 14.5% (n=400) | 4.5% | 82.2% | 10.2% | 35.1% | 1.30 |
+| `base+exnone` | 65.8% / 17.2% / 17.0% (n=400) | 17.0% | 41.2% | 38.5% | 28.9% | 0.77 |
+| `base+exwin` | 62.5% / 15.0% / 22.5% (n=400) | 22.2% | 53.0% | 36.8% | 51.4% | 1.13 |
+| `base+exall` | 63.8% / 15.0% / 21.2% (n=400) | 19.0% | 49.5% | 36.8% | 38.6% | 0.89 |
+| `base+noshift` | 63.5% / 14.5% / 22.0% (n=400) | 14.8% | 76.8% | 17.0% | 37.5% | 0.84 |
+| `base+norecall` | 68.2% / 12.2% / 19.5% (n=400) | 16.0% | 49.8% | 35.8% | 30.1% | 0.73 |
+| `base+initlow` | 70.8% / 14.0% / 15.2% (n=400) | 13.8% | (59%, n=44) | (32%) | 28.4% | 0.74 |
+| `base+initlow+tbfinal` | 77.5% / 0.2% / 22.2% (n=400) | 1.5% | (59%, n=32) | (41%) | 38.8% | 0.63 |
+| `base+inithigh` | 66.2% / 12.0% / 21.8% (n=400) | 13.5% | (41%, n=49) | (33%) | 35.3% | 0.82 |
+| `base+initbehind` | 64.2% / 8.8% / 27.0% (n=400) | 6.5% | (44%, n=36) | (42%) | 62.3% | 1.18 |
+| `base+initahead` | 68.5% / 12.2% / 19.2% (n=400) | 17.0% | (22%, n=18) | (50%) | 6.6% | 0.23 |
+| `base+s111+tbstr` | 79.7% / 0.2% / 20.2% (n=600) | 0.5% | 72.8% | 26.0% | 6.8% | 0.27 |
+| `base+s111+tbearly` | 77.0% / 0.3% / 22.7% (n=600) | 0.2% | 78.5% | 21.2% | 1.0% | 0.23 |
+| `base+tbearly` | 75.8% / 0.2% / 24.0% (n=600) | 0.0% | 60.0% | 39.0% | 27.8% | 0.65 |
+| `base+s234+tbfinal` | 76.2% / 0.0% / 23.8% (n=600) | 0.0% | 64.5% | 35.2% | 26.0% | 0.63 |
+| `base+s234+tbstr` | 76.8% / 0.0% / 23.2% (n=600) | 0.0% | 66.2% | 33.8% | 32.5% | 0.78 |
+
+### What the screening showed
+
+1. **A symmetric tiebreak removes draws.** Settling equal points by strength cut self-play draws from 17% to 0–1% in every schedule tested, with no change to symmetry.
+2. **The scoring schedule is the main lever.** The more the last scoring dominates, the more often one guess decides the game and the weaker the skill signal: 1/2/4 (70.2% strong wins) and 1/2/3 (65.0%) trail 2/3/4 (78.2% even without a tiebreak) and 1/1/1 with a tiebreak (77–81%).
+3. **2/3/4 has an arithmetic advantage.** Under 1/2/3 the commonest close pattern, winning 2–1, winning 2–1 and losing 1–2, scores +1 +2 −3 = 0: a draw. Under 2/3/4 no combination of single-front splits cancels (+2 +3 −4 = +1), and self-play draws fell from 17.0% to 2.5% without any tiebreak.
+4. **Flat schedules end games early.** With 1/1/1 the eventual winner was behind after turn 8 in 0.3–12% of games and leads changed 0.2 times per game, against 36% and 0.82 under 1/2/3 and 26–32% and 0.63–0.67 under 2/3/4. Many flat-schedule games would be settled with a third still to play.
+5. **Without exhaustion the game becomes shallow.** Scoring every turn or every second turn with no exhaustion gave the steepest search ladders (84%), but the scripted rule "deploy your highest card where you are furthest behind" then played as well as `mctsx:4000` (48.5% and 54.0% for the search bot over 200 games each). Under v0.2 and every adopted candidate the same rule lost 93–97%. The steep ladders measured weak search catching up with a simple rule. Highest-card exhaustion (D6) is what keeps big cards from simply being played early.
+6. **Other mechanics.** Winner-only exhaustion (62.5%), spending the whole board (63.8%) and removing Shift (63.5%) lowered the skill signal. Removing Recall (68.2%) was within noise of v0.2.
+7. **Earned initiative.** Letting the player whose last order named the lower card choose second, after seeing the other order, reached 77.5% with a tiebreak: no better than scoring-only changes, while turning about 90% of final turns into sequential play and requiring a room-service change. The catch-up form, where the trailing player chooses second, was the weakest variant measured (64.2% strong wins, 27.0% upsets).
+
+The finalist runs below revise findings 1 to 3. Removing draws did not by itself make a game better evidence of skill, the screening values of the leading schedules were optimistic, and the choice of tiebreak mattered as much as the schedule.
+
+### Exact reduced games
+
+Small variants were solved exactly by backward induction, solving every simultaneous decision as a matrix game (`crosscurrent-sim exact`). Values are exact for these reduced games only.
+
+| Reduced game | Scoring | Tiebreak | Value | Computed equilibrium W/D/L | Openings guaranteeing at least the value |
+| --- | --- | --- | ---: | ---: | ---: |
+| 4 ranks, 3 turns | 1 then 2 | none or final strength | 0.5 | 0 / 100 / 0% | 3 of 12 |
+| 5 ranks, 4 turns | 1 then 2 | none or final strength | 0.5 | 0 / 100 / 0% | 0 of 15 |
+| 5 ranks, 4 turns | 1 then 1 | none | 0.5 | 11.4 / 77.1 / 11.4% | 0 of 15 |
+| 5 ranks, 4 turns | 1 then 1 | final or total strength | 0.5 | 0 / 100 / 0% | 0 of 15 |
+| 6 ranks, 5 turns | 1 then 2 | none or final strength | 0.5 | 0 / 100 / 0% | 6 of 18 |
+| 6 ranks, 5 turns | 1 then 1 | final strength | 0.5 | 0 / 100 / 0% | 6 of 18 |
+| 6 ranks, 5 turns | 1 then 1 | total strength | 0.5 | 0 / 100 / 0% | 9 of 18 |
+| 6 ranks, 5 turns | 1 then 1 | none | 0.5 | 13.5 / 72.9 / 13.5% | 0 of 18 |
+
+The value of every symmetric game is 0.5 by construction; what the solver adds is how that value is reached. In every reduced game with a tiebreak, and under 1-then-2 scoring even without one, the computed equilibrium draws every game. The tiebreak did not change that: it removes draws from imperfect play, not from perfect play in these small games. The last column counts pure opening orders that secure at least the value against every reply. Some games have several (3 of 12, 6 of 18, 9 of 18). The 5-rank games, and the 6-rank game with 1-then-1 scoring and no tiebreak, have none, so there even the first order must be mixed. These confirm and sharpen the historical warning. Whether the full thirteen-rank game has drawing equilibria of this kind is unknown; the strongest bots measured drew 0–1% of v0.3 games.
+
+### Finalists (simulation)
+
+Screening values are single runs of 400–600 games, and the finalists were chosen because their runs looked best, so their screening values are biased upward. Each finalist was rerun with fresh seeds in three pairings with a fourfold search gap: `mctsx:4000` against `mctsx:1000` (1,200 games), `mctsx:16000` against `mctsx:4000` (600), and plain SM-MCTS without the exact final turn, 4,000 against 1,000 iterations (600), plus 600 games of `mctsx:4000` self-play and an exact final-turn analysis of 600 self-play positions (sweeps 3 and 4). Sweep 6 added two controls, 2/3/4 without a tiebreak and 1/2/3 with the total-strength tiebreak, and an independent second batch of 4,200 games (2,400, 600 and 1,200 in the same pairings) for the two 2/3/4 tiebreak candidates and for v0.2 with the final-strength tiebreak. From sweep 6 on, the simulator also counts the games that end level on points and who wins them on the tiebreak.
+
+The single-game measure here is the stronger bot's **expected result**: a win counts 1 and a draw ½. It is the chance that one game names the stronger player when a draw is settled by a coin. Tables generated by `research/results/finalists.py` over sweeps 3, 4 and 6; `tbstr` is total strength summed over the three scorings, `tbfinal` total strength at the last scoring.
+
+| Variant | Games | Stronger bot wins / draws / losses | Expected result for the stronger bot | Level on points | Tiebreak wins for the stronger bot |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `base` | 2,400 | 66.6% / 13.8% / 19.6% | **73.5%** ±1.6 | – | – |
+| `base+tbfinal` | 6,600 | 73.4% / 0.6% / 26.0% | **73.7%** ±1.1 | 14.6% (n=4,200) | 422 of 588 |
+| `base+s111+tbfinal` | 2,400 | 76.5% / 0.9% / 22.6% | **76.9%** ±1.7 | – | – |
+| `base+s111+tbstr` | 2,400 | 78.5% / 0.9% / 20.6% | **79.0%** ±1.6 | – | – |
+| `base+s234+tbfinal` | 6,600 | 74.1% / 0.1% / 25.8% | **74.1%** ±1.1 | 1.2% (n=4,200) | 26 of 47 |
+| `base+s234+tbstr` | 6,600 | 76.5% / 0.0% / 23.5% | **76.5%** ±1.0 | 1.9% (n=4,200) | 64 of 78 |
+| `base+cp:4=3,8=4,12=5+tbfinal` | 2,400 | 75.1% / 0.1% / 24.8% | **75.2%** ±1.7 | – | – |
+| `base+cp:4=3,8=4,12=5+tbstr` | 2,400 | 75.3% / 0.0% / 24.6% | **75.4%** ±1.7 | – | – |
+| `base+s234` | 2,400 | 74.0% / 1.4% / 24.6% | **74.7%** ±1.7 | 1.4% (n=2,400) | – |
+| `base+tbstr` | 2,400 | 75.6% / 0.4% / 24.0% | **75.8%** ±1.7 | 18.2% (n=2,400) | 340 of 428 |
+
+| Variant | 4k vs 1k: expected result (n) | 16k vs 4k: expected result (n) | plain 4k vs 1k: expected result (n) |
+| --- | ---: | ---: | ---: |
+| `base` | 72.3% ±2.3 (1,200) | 72.8% ±3.2 (600) | 76.7% ±3.1 (600) |
+| `base+tbfinal` | 72.2% ±1.5 (3,600) | 76.2% ±2.4 (1,200) | 75.1% ±2.0 (1,800) |
+| `base+s111+tbfinal` | 76.6% ±2.4 (1,200) | 75.8% ±3.4 (600) | 78.8% ±3.3 (600) |
+| `base+s111+tbstr` | 78.7% ±2.3 (1,200) | 78.2% ±3.3 (600) | 80.2% ±3.2 (600) |
+| `base+s234+tbfinal` | 73.7% ±1.4 (3,600) | 72.2% ±2.5 (1,200) | 76.4% ±2.0 (1,800) |
+| `base+s234+tbstr` | 75.6% ±1.4 (3,600) | 76.0% ±2.4 (1,200) | 78.7% ±1.9 (1,800) |
+| `base+cp:4=3,8=4,12=5+tbfinal` | 76.0% ±2.4 (1,200) | 70.5% ±3.7 (600) | 78.1% ±3.3 (600) |
+| `base+cp:4=3,8=4,12=5+tbstr` | 76.5% ±2.4 (1,200) | 72.2% ±3.6 (600) | 76.3% ±3.4 (600) |
+| `base+s234` | 73.6% ±2.5 (1,200) | 71.4% ±3.6 (600) | 80.2% ±3.2 (600) |
+| `base+tbstr` | 76.9% ±2.4 (1,200) | 72.4% ±3.6 (600) | 77.0% ±3.4 (600) |
+
+| Variant | Self-play draws | Self-play seat 0 | Final turn saddle | Final turn pure guess | Winner behind after turn 8 (4k vs 1k / self-play) | Lead changes (self-play) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `base` | 12.2% | 49.7% | 55.7% | 31.0% | 29.8% / 34.0% | 0.80 |
+| `base+tbfinal` | 0.7% | 53.0% | 57.5% | 41.2% | 38.3% / 40.8% | 0.66 |
+| `base+s111+tbfinal` | 1.0% | 49.8% | 74.2% | 24.5% | 10.0% / 12.1% | 0.23 |
+| `base+s111+tbstr` | 0.8% | 51.9% | 72.7% | 24.8% | 6.4% / 7.9% | 0.22 |
+| `base+s234+tbfinal` | 0.2% | 53.2% | 66.0% | 34.0% | 24.7% / 30.1% | 0.65 |
+| `base+s234+tbstr` | 0.0% | 50.0% | 68.0% | 31.5% | 22.8% / 27.8% | 0.65 |
+| `base+cp:4=3,8=4,12=5+tbfinal` | 0.0% | 48.0% | 66.0% | 33.8% | 25.3% / 29.8% | 0.68 |
+| `base+cp:4=3,8=4,12=5+tbstr` | 0.0% | 47.0% | 65.0% | 35.0% | 23.0% / 28.2% | 0.66 |
+| `base+s234` | 1.7% | 47.3% | 69.7% | 28.7% | 24.9% / 29.2% | 0.66 |
+| `base+tbstr` | 0.5% | 53.7% | 61.5% | 37.2% | 30.1% / 32.5% | 0.56 |
+
+### What the finalists showed
+
+1. **The screening overstated the gains.** 2/3/4 without a tiebreak screened at 78.2% strong wins (400 games) and measured 74.0% over 2,400 new games; 2/3/4 with the final-strength tiebreak went from 76.2% to 74.1%. Single short runs selected as the best of many are optimistic.
+2. **A tiebreak can make every game decisive without making it better evidence.** v0.2 and v0.2 with the final-strength tiebreak give the stronger bot the same expected result (73.5% and 73.7%, over 2,400 and 6,600 games). The tiebreak's own decisions favored the stronger bot, which won 422 of the 588 level games it settled (72%), but the rule also turned last turns that had been guesses between a draw and a win into full win-or-lose guesses (31.0% to 41.2% of final turns), and the stronger bot won fewer of the games decided on points (74.3% in the second batch, against 77.3% of v0.2's decisive games). The two effects cancelled.
+3. **Strength summed over the three scorings is evidence of skill.** Under 1/2/3 it settled 18.2% of games and the stronger bot won 340 of the 428 it decided (79%), lifting the expected result from 73.5% to 75.8%. Under 2/3/4 only 1.9% of games ended level on points, and the stronger bot won 64 of 78 (82%; 26 of 47, or 55%, with strength at the last scoring). Over 6,600 games in two independent batches, 2/3/4 with total strength gave the stronger bot 76.5% (±1.0) against 74.1% (±1.1) with strength at the last scoring, and each batch alone showed the gap (+2.5 and +2.4 points). Only about 0.4 points of it comes directly from the games level on points; the rest comes from how the search bots play under the rule. That part is a bot-specific observation.
+4. **2/3/4 against 1/2/3, both with total strength.** The expected results are close (76.5% and 75.8%), but under 2/3/4 the tiebreak decides one game in fifty instead of one in five, so points decide almost every game as D4 intends, and fewer final turns are pure guesses (31.5% against 37.2% of self-play positions). 1/2/3 keeps a little more comeback: the eventual winner trailed after turn 8 in 30.1% and 32.5% of games (4k vs 1k, self-play) against 22.8% and 27.8%.
+5. **Flat schedules remain the most skill-sensitive and the least dramatic.** 1/1/1 with total strength reached 79.0%, the highest of any finalist, but the eventual winner trailed after turn 8 in only 6.4–7.9% of games and leads changed 0.22 times per game. Most games would be settled with a third still to play.
+6. **3/4/5** measured 75.2% with the final-strength tiebreak and 75.4% with total strength, within noise of 2/3/4.
+7. **Symmetry held.** Seat 0 scored 47.0–53.7% in the ten finalist self-play runs (600 games each, 95% interval about ±4 points), consistent with 50% given ten comparisons.
+
+### Decision: v0.3
+
+v0.3 scores 2, 3 and 4 points per front at turns 4, 8 and 12 and settles equal points by total strength summed over the three scorings (DESIGN_DECISIONS D21 and D22). A provisional v0.3 earlier in this study used strength at the last scoring; the finalists replaced it. Against v0.2 the stronger bot's expected result rose from 73.5% to 76.5%, draws fell from 13.8% to one game in 6,600, and in 4,000-iteration self-play positions the share of final turns where a simultaneous guess changes the result fell from 44.3% (31.0% between a win and a loss, 13.3% between a draw and a decision) to 32.0%.
+
+What one game is worth, plainly: between these bots, the one that searches four times more wins about three games in four under v0.3. Between closer players one game is weaker evidence. In about one game in three between equal bots the last turn is still a simultaneous guess with the result at stake; that is the cost of hidden simultaneous orders (D2), which are also what makes reading the opponent a skill. These are simulations with particular search bots, none of them optimal, and no human games have been measured under v0.3.
+
+### The computer levels under v0.3 (simulation)
+
+Easy, Medium and Hard are `mctsx:300`, `mctsx:3000` and `mctsx:24000` (D17). Measured under v0.3 (`research/results/sweep5.log`; `casual` and `tactical` are the v0.2 shipped levels):
+
+| Pairing | Games | Result | W/D/L |
+| --- | ---: | ---: | ---: |
+| Easy vs random | 400 | 89.5% ±3.0 | 358/0/42 |
+| Easy vs v0.2 Casual | 400 | 56.0% ±4.9 | 224/0/176 |
+| Easy vs v0.2 Tactical | 400 | 13.5% ±3.4 | 54/0/346 |
+| Medium vs Easy | 400 | 89.7% ±3.0 | 359/0/41 |
+| Medium vs v0.2 Tactical | 400 | 64.5% ±4.7 | 258/0/142 |
+| Hard vs Medium | 400 | 80.2% ±3.9 | 321/0/79 |
+| Hard vs v0.2 Tactical | 200 | 90.7% ±4.0 | 181/1/18 |
+
+Easy plays about as well as the old Casual level, Medium is stronger than the old Tactical level, and Hard is stronger again. No level is claimed to be optimal; the ladder measurements above show that more search keeps winning.
+
+### Open questions after the study
+
+Of the open questions listed earlier, this study gave simulation evidence on several: the 1/2/3 schedule (2) was not the best measured; removing Shift (4) lowered the skill signal while removing Recall was within noise; no simple scripted schedule (6) came close to search play; "Deep" was no stronger than "Tactical" and both lost about 91% to `mctsx:16000` (7); stronger search beat weaker search at every step measured, 1,000 to 64,000 iterations (8); final-turn equilibria mix over about 2.5 of 23 orders (9); and a tiebreak removed nearly all draws between bots (11), although the exact reduced games still draw under perfect play. Still open:
+
+- How do human players experience v0.3, and does a single game between people separate skill as well as it separates search bots?
+- Why does the total-strength tiebreak raise the bots' skill signal by more than the games it decides directly?
+- Is the extra skill signal of a flat schedule worth fewer comebacks to players who will play one game?
+- The original questions 1, 3, 5, 10 and 12.

@@ -10,7 +10,19 @@ type TurnRecord = { turn: number; actions: [Action, Action]; checkpoint: Checkpo
 type Match = { state: State; history: TurnRecord[] };
 type Player = { seat: 0 | 1; hash: string; joined: boolean; orders: Action[] };
 
+type RulesName = "v0.2" | "v0.3";
+
 const ranks = Array.from({ length: 13 }, (_, i) => i + 1);
+/** Points per front won at each scoring turn, by rule set. */
+const POINTS: Record<RulesName, number[]> = {
+  "v0.2": [0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3],
+  "v0.3": [0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4],
+};
+/** The website moved to v0.3 after this time while this service kept serving the same tables,
+ * so a table's rules follow from its creation time: earlier tables were started under v0.2
+ * and keep that scoring. Clients rebuild each table under the rules it reports. */
+const V03_SINCE = Date.UTC(2026, 9, 4, 13, 45);
+const rulesOf = (created: number): RulesName => created < V03_SINCE ? "v0.2" : "v0.3";
 const labels = ["A", "B", "C"];
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 const sorted = (values: number[]) => values.sort((a, b) => a - b);
@@ -163,15 +175,15 @@ function finish(source: Side, originalRecall: number | null, checkpoint: boolean
   return side;
 }
 
-function resolve(state: State, a: Action, b: Action): { state: State; record: TurnRecord } {
+function resolve(state: State, a: Action, b: Action, rules: RulesName): { state: State; record: TurnRecord } {
   if (state.turn >= 12) throw new RoomError("This game is already complete.", 409);
   const next = state.turn + 1;
   const prepared = [
     prepare(state.sides[0], a),
     prepare(state.sides[1], b),
   ] as const;
-  const scored = next % 4 === 0;
-  const points = next / 4;
+  const points = POINTS[rules][next] ?? 0;
+  const scored = points > 0;
   const strengths = prepared.map((entry) => entry.side.board.map(sum)) as [
     number[],
     number[],
@@ -205,12 +217,12 @@ function resolve(state: State, a: Action, b: Action): { state: State; record: Tu
   };
 }
 
-function replay(players: [Player, Player]): Match {
+function replay(players: [Player, Player], rules: RulesName): Match {
   let state = initial();
   const history: TurnRecord[] = [];
   const count = Math.min(players[0].orders.length, players[1].orders.length, 12);
   for (let i = 0; i < count; i++) {
-    const result = resolve(state, players[0].orders[i], players[1].orders[i]);
+    const result = resolve(state, players[0].orders[i], players[1].orders[i], rules);
     state = result.state;
     history.push(result.record);
   }
@@ -258,15 +270,16 @@ async function load(id: string, token: unknown) {
   if (seat === -1) {
     throw new RoomError("This invitation does not grant access to this table.", 403);
   }
-  return { players, seat: seat as 0 | 1 };
+  return { players, seat: seat as 0 | 1, rules: rulesOf(Number(room.created)) };
 }
 
-function viewOf(id: string, players: [Player, Player], seat: 0 | 1) {
-  const match = replay(players);
+function viewOf(id: string, players: [Player, Player], seat: 0 | 1, rules: RulesName) {
+  const match = replay(players, rules);
   return {
     ...match,
     id,
     seat,
+    rules,
     joined: players.map((player) => player.joined) as [boolean, boolean],
     locked: players.map((player) => player.orders.length > match.state.turn) as [
       boolean,
@@ -277,8 +290,8 @@ function viewOf(id: string, players: [Player, Player], seat: 0 | 1) {
 }
 
 async function view(id: string, token: unknown) {
-  const { players, seat } = await load(id, token);
-  return viewOf(id, players, seat);
+  const { players, seat, rules } = await load(id, token);
+  return viewOf(id, players, seat, rules);
 }
 
 async function createRoom() {
@@ -336,7 +349,7 @@ async function submitOrder(
     throw new RoomError("Your order is already locked for that turn.", 409);
   }
 
-  const match = replay(data.players);
+  const match = replay(data.players, data.rules);
   if (match.state.turn >= 12 || turn !== match.state.turn + 1) {
     throw new RoomError("The turn changed. Reconnect to refresh the table.", 409);
   }
@@ -376,7 +389,7 @@ const app = new Hono();
 
 app.get("/health", async (c) => {
   await ensureSchema();
-  return c.json({ ok: true, service: "crosscurrent-rooms" });
+  return c.json({ ok: true, service: "crosscurrent-rooms", rules: "v0.3" });
 });
 
 app.post("/rooms", async (c) => c.json(await createRoom()));

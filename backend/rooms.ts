@@ -1,4 +1,4 @@
-import { initial, isAction, actions, sameAction, resolve, type Action, type Match } from '../src/engine.ts';
+import { initial, isAction, actions, sameAction, resolve, rulesNamed, RULES, V02, type Action, type Match, type Rules } from '../src/engine.ts';
 
 export interface Database {
   add(table: string, records: Array<Record<string, unknown>>): Promise<Array<string | null>>;
@@ -8,15 +8,17 @@ export interface Database {
   delete(table: string, ids: string[]): Promise<boolean[]>;
 }
 type Player = { hash: string; joined: boolean; orders: Action[] };
-type Room = { seats: string[]; created: number };
+type Room = { seats: string[]; created: number; rules?: string };
 type Subscriber = { connection_id: string; hash: string; created: number };
-export type RoomView = Match & { id: string; seat: 0 | 1; joined: [boolean, boolean]; locked: [boolean, boolean]; ownOrder: Action | null };
+export type RoomView = Match & { id: string; seat: 0 | 1; rules: string; joined: [boolean, boolean]; locked: [boolean, boolean]; ownOrder: Action | null };
 export class RoomError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
 export const digest = async (text: string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))).map(n => n.toString(16).padStart(2, '0')).join('');
 const secret = () => crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
 const MAX_AGE = 30 * 24 * 60 * 60 * 1000;
+/** The rules a table was created under. Tables saved before rooms recorded their rules were v0.2 tables. */
+const rulesOf = (room: Room): Rules => rulesNamed(room.rules, V02);
 
 export class Rooms {
   constructor(private db: Database, private send: (ids: string[], value: unknown) => Promise<unknown>) {}
@@ -31,20 +33,21 @@ export class Rooms {
     if (seat === -1) throw new RoomError('This invitation does not grant access to this table.', 403);
     return { room, players: players as [Player, Player], seat: seat as 0 | 1, hash };
   }
-  private match(players: [Player, Player]): Match {
+  private match(players: [Player, Player], rules: Rules): Match {
     let state = initial();
     const history: Match['history'] = [];
     const count = Math.min(players[0].orders.length, players[1].orders.length, 12);
     for (let i = 0; i < count; i++) {
-      const next = resolve(state, players[0].orders[i], players[1].orders[i]);
+      const next = resolve(state, players[0].orders[i], players[1].orders[i], rules);
       state = next.state; history.push(next.record);
     }
     return { state, history };
   }
-  private viewOf(id: string, players: [Player, Player], seat: 0 | 1): RoomView {
-    const match = this.match(players);
+  private viewOf(id: string, room: Room, players: [Player, Player], seat: 0 | 1): RoomView {
+    const rules = rulesOf(room);
+    const match = this.match(players, rules);
     return {
-      ...match, id, seat,
+      ...match, id, seat, rules: rules.name,
       joined: players.map(p => p.joined) as [boolean, boolean],
       locked: players.map(p => p.orders.length > match.state.turn) as [boolean, boolean],
       ownOrder: players[seat].orders[match.state.turn] || null,
@@ -57,13 +60,13 @@ export class Rooms {
       { hash: await digest(invite), joined: false, orders: [] },
     ]);
     if (seats.some(id => !id)) throw new RoomError('Could not create seats. Please try again.', 503);
-    const [id] = await this.db.add('rooms', [{ seats, created: Date.now() }]);
+    const [id] = await this.db.add('rooms', [{ seats, created: Date.now(), rules: RULES.name }]);
     if (!id) throw new RoomError('Could not create a table. Please try again.', 503);
     return { id, token, invite };
   }
   async view(id: string, token: unknown) {
-    const { players, seat } = await this.load(id, token);
-    return this.viewOf(id, players, seat);
+    const { room, players, seat } = await this.load(id, token);
+    return this.viewOf(id, room, players, seat);
   }
   async join(id: string, token: unknown) {
     const data = await this.load(id, token);
@@ -85,7 +88,7 @@ export class Rooms {
       if (sameAction(player.orders[index], candidate)) return this.view(id, token); // Safe retry after a lost response.
       throw new RoomError('Your order is already locked for that turn.', 409);
     }
-    const match = this.match(players);
+    const match = this.match(players, rulesOf(room));
     if (match.state.turn >= 12 || turn !== match.state.turn + 1) throw new RoomError('The turn changed. Reconnect to refresh the table.', 409);
     if (!actions(match.state.sides[seat]).some(a => sameAction(a, candidate))) throw new RoomError('That order is not legal in this position.');
     // Each seat writes only its own transcript, avoiding cross-player lost updates.

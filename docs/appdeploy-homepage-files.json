@@ -1,8 +1,8 @@
 [
   "src/main.ts",
-  "src/Lobby.svelte",
+  "src/Home.svelte",
   "src/GameDemo.svelte",
-  "src/homepage.css",
+  "src/styles.css",
   "src/demo/timeline.ts",
   "src/demo/player.ts",
   "src/demo/demo.css",

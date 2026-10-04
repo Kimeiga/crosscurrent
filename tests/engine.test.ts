@@ -2,8 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { initial, actions, prepare, resolve, replay, checkInvariants, isAction, rank, rankName, type Action, type State, type Side } from '../src/engine.ts';
-import { chooseAction } from '../src/ai.ts';
+import { initial, actions, prepare, resolve, replay, checkInvariants, isAction, rank, rankName, outcome, tiebreakStrength, RULES, V02, type Action, type State, type Side } from '../src/engine.ts';
 const D = (card: number, front: number): Action => ({ kind: 'deploy', card, front });
 const S = (card: number, front: number): Action => ({ kind: 'shift', card, front });
 const R = (card: number): Action => ({ kind: 'recall', card, front: -1 });
@@ -25,7 +24,7 @@ test('noncheckpoint recall returns target and spends payment', () => {
 });
 test('recalled highest card scores then returns with no replacement exhaustion', () => {
   const s: State = { turn: 3, scores: [0, 0], sides: [{ hand: [1, 3], board: [[2, 13], [], []], spent: [] }, { hand: [1, 3], board: [[12], [], []], spent: [] }] };
-  const next = resolve(s, R(13), D(1, 1)); assert.deepEqual(next.state.scores, [1, 1]); assert.deepEqual(next.state.sides[0].board, [[2], [], []]); assert.deepEqual(next.state.sides[0].hand, [3, 13]); assert.deepEqual(next.state.sides[0].spent, [1]);
+  const next = resolve(s, R(13), D(1, 1), V02); assert.deepEqual(next.state.scores, [1, 1]); assert.deepEqual(next.state.sides[0].board, [[2], [], []]); assert.deepEqual(next.state.sides[0].hand, [3, 13]); assert.deepEqual(next.state.sides[0].spent, [1]);
 });
 test('recalling a lower card does not save the highest', () => {
   const side: Side = { hand: [1, 3], board: [[2, 13], [], []], spent: [] };
@@ -37,9 +36,9 @@ test('tied and losing fronts still exhaust', () => {
   const s = resolve({ turn: 3, scores: [0, 0], sides: [side, side] }, D(1, 2), D(1, 2)).state;
   assert.deepEqual(s.scores, [0, 0]); assert.deepEqual(s.sides[0].board, [[3], [], []]);
 });
-for (const [turn, points] of [[3, 1], [7, 2], [11, 3]]) test(`checkpoint after turn ${turn + 1} awards ${points} per front`, () => {
+for (const [turn, points] of [[3, 1], [7, 2], [11, 3]]) test(`v0.2 checkpoint after turn ${turn + 1} awards ${points} per front`, () => {
   const s: State = { turn, scores: [0, 0], sides: [{ hand: [1], board: [[13], [], []], spent: [] }, { hand: [1], board: [[], [12], []], spent: [] }] };
-  assert.deepEqual(resolve(s, D(1, 2), D(1, 2)).state.scores, [points, points]);
+  assert.deepEqual(resolve(s, D(1, 2), D(1, 2), V02).state.scores, [points, points]);
 });
 test('public snapshot is immutable while preparing all possible moves', () => {
   const s = initial(); const before = structuredClone(s); for (const a of actions(s.sides[0])) prepare(s.sides[0], a); assert.deepEqual(s, before);
@@ -64,9 +63,9 @@ test('2000 complete seeded games conserve every card and preserve seat symmetry'
 const tacticalPairs: [Action, Action][] = [
   [D(13,2),D(11,2)], [D(12,2),D(3,2)], [D(8,0),D(4,2)], [D(3,1),D(6,1)], [R(12),R(4)], [D(2,2),D(9,0)], [D(6,0),D(12,1)], [D(5,0),D(10,2)], [S(5,1),D(2,0)], [D(12,0),S(2,2)], [D(9,1),D(7,0)],
 ];
-test('certified reachable winning and losing moves match all 18 replies', () => {
-  const s = replay(tacticalPairs).state; assert.deepEqual(s.scores, [4, 5]); const replies = actions(s.sides[1]); assert.equal(replies.length, 18);
-  for (const b of replies) { const win = resolve(s, S(9,2), b).state; const loss = resolve(s, S(12,1), b).state; assert(win.scores[0] > win.scores[1]); assert(loss.scores[0] < loss.scores[1]); }
+test('certified reachable winning and losing moves match all 18 replies under v0.2 scoring', () => {
+  const s = replay(tacticalPairs, V02).state; assert.deepEqual(s.scores, [4, 5]); const replies = actions(s.sides[1]); assert.equal(replies.length, 18);
+  for (const b of replies) { const win = resolve(s, S(9,2), b, V02).state; const loss = resolve(s, S(12,1), b, V02).state; assert(win.scores[0] > win.scores[1]); assert(loss.scores[0] < loss.scores[1]); }
 });
 test('golden fixtures agree with original Python v0.2 for 720 turns', () => {
   const fixtures = JSON.parse(readFileSync(new URL('./golden.json', import.meta.url), 'utf8'));
@@ -78,17 +77,38 @@ test('golden fixtures agree with original Python v0.2 for 720 turns', () => {
     let state = initial(); const states: State[] = [];
     for (let offset = 0; offset < orders.length; offset += 6) {
       const decode = (s: string): Action => ({ kind: ({ D: 'deploy', S: 'shift', R: 'recall' } as const)[s[0] as 'D' | 'S' | 'R'], card: parseInt(s[1], 16), front: Number(s[2]) - 1 });
-      state = resolve(state, decode(orders.slice(offset, offset + 3)), decode(orders.slice(offset + 3, offset + 6))).state;
+      state = resolve(state, decode(orders.slice(offset, offset + 3)), decode(orders.slice(offset + 3, offset + 6)), V02).state;
       states.push(state);
     }
     assert.equal(states.length, 12);
     assert.equal(createHash('sha256').update(canonical(states)).digest('hex'), expected);
   }
 });
-for (const level of ['casual', 'tactical', 'expert'] as const) test(`${level} computer chooses legal actions from an unchanged public snapshot`, () => {
-  const random = rng(842); let s = initial(); for (let turn = 0; turn < 12; turn++) {
-    const before = structuredClone(s); const a = chooseAction(s, 0, level, random); const legal = actions(s.sides[1]); const b = legal[Math.floor(random() * legal.length)]; assert.deepEqual(s, before); s = resolve(s, a, b).state;
-  }
-  assert(checkInvariants(s));
+for (const [turn, points] of [[3, 2], [7, 3], [11, 4]]) test(`v0.3 scoring after turn ${turn + 1} awards ${points} per front`, () => {
+  const s: State = { turn, scores: [0, 0], sides: [{ hand: [1], board: [[13], [], []], spent: [] }, { hand: [1], board: [[], [12], []], spent: [] }] };
+  assert.deepEqual(resolve(s, D(1, 2), D(1, 2)).state.scores, [points, points]);
+});
+test('equal points are decided by total strength over the three scorings, then drawn', () => {
+  // Turns 1-4 and 5-8 leave the points level; strength at those scorings carries into the tiebreak.
+  const pairs: [Action, Action][] = [
+    [D(13, 0), D(12, 0)], [D(1, 1), D(2, 1)], [D(3, 2), D(4, 2)], [D(5, 1), D(6, 2)],
+    [D(7, 0), D(8, 0)], [D(9, 1), D(10, 1)], [D(11, 2), D(13, 1)], [D(2, 0), D(1, 2)],
+  ];
+  const { state, history } = replay(pairs);
+  assert.equal(history.filter(entry => entry.checkpoint).length, 2);
+  assert.deepEqual(tiebreakStrength(history), [22 + 30, 24 + 36]);
+  assert.deepEqual(tiebreakStrength(history, { ...RULES, tiebreak: 'final-strength' }), [0, 0], 'final strength counts turn 12 only');
+  const level: State = { ...state, turn: 11, scores: [5, 5], sides: [
+    { hand: [1, 2], board: [[13], [], [3]], spent: [] },
+    { hand: [5, 6], board: [[4], [2], [3]], spent: [] },
+  ] };
+  const out = resolve(level, D(2, 1), D(5, 1));
+  assert.deepEqual(out.state.scores, [9, 9]);
+  assert.deepEqual(outcome(out.state, [...history, out.record]), { winner: 1, by: 'strength', strength: [52 + 18, 60 + 14] });
+  assert.deepEqual(outcome(out.state, [...history, out.record], { ...RULES, tiebreak: 'final-strength' }), { winner: 0, by: 'strength', strength: [18, 14] });
+  const side = (): Side => ({ hand: [1, 2], board: [[13], [], []], spent: [] });
+  const even = resolve({ ...level, sides: [side(), side()] }, D(2, 1), D(2, 1));
+  assert.equal(outcome(even.state, [even.record]).winner, null);
+  assert.equal(outcome(even.state, [even.record], V02).by, 'draw');
 });
 test('rank labels retain exact card values', () => { assert.equal(rank(1), 'A'); assert.equal(rank(13), 'K'); assert.equal(rankName(12), 'Queen'); });

@@ -1,0 +1,22 @@
+=== calibration base+s234+tbstr
+base+s234+tbstr                   mctsx:300 vs random         n=400   A=0.895±0.030  W/D/L 358/0/42  draw=0.0%  seat0=0.480  margin=+5.48  tA=0.01s tB=0.00s
+    decided=400 winner behind after cp1=29.2% cp2=24.5%  lead changes/game=0.57  final cp could decide=99.5%  A kinds D/S/R=85/12/3%  B kinds=76/16/9%
+    level on points=0.8% (3 games: A won 3, drew 0, lost 0)
+base+s234+tbstr                   mctsx:300 vs casual         n=400   A=0.560±0.049  W/D/L 224/0/176  draw=0.0%  seat0=0.545  margin=-0.06  tA=0.01s tB=0.00s
+    decided=400 winner behind after cp1=40.2% cp2=38.0%  lead changes/game=0.65  final cp could decide=99.0%  A kinds D/S/R=86/11/3%  B kinds=84/11/5%
+    level on points=1.5% (6 games: A won 5, drew 0, lost 1)
+base+s234+tbstr                   mctsx:300 vs tactical       n=400   A=0.135±0.034  W/D/L 54/0/346  draw=0.0%  seat0=0.515  margin=-5.39  tA=0.01s tB=0.00s
+    decided=400 winner behind after cp1=13.2% cp2=14.2%  lead changes/game=0.23  final cp could decide=98.2%  A kinds D/S/R=86/11/3%  B kinds=80/14/6%
+    level on points=0.5% (2 games: A won 1, drew 0, lost 1)
+base+s234+tbstr                  mctsx:3000 vs mctsx:300      n=400   A=0.897±0.030  W/D/L 359/0/41  draw=0.0%  seat0=0.512  margin=+4.24  tA=0.11s tB=0.01s
+    decided=400 winner behind after cp1=30.2% cp2=19.2%  lead changes/game=0.51  final cp could decide=99.8%  A kinds D/S/R=89/10/2%  B kinds=86/11/3%
+    level on points=1.0% (4 games: A won 4, drew 0, lost 0)
+base+s234+tbstr                  mctsx:3000 vs tactical       n=400   A=0.645±0.047  W/D/L 258/0/142  draw=0.0%  seat0=0.540  margin=+0.42  tA=0.11s tB=0.00s
+    decided=400 winner behind after cp1=52.8% cp2=39.5%  lead changes/game=0.73  final cp could decide=100.0%  A kinds D/S/R=89/11/1%  B kinds=78/18/4%
+    level on points=1.2% (5 games: A won 5, drew 0, lost 0)
+base+s234+tbstr                 mctsx:24000 vs mctsx:3000     n=400   A=0.802±0.039  W/D/L 321/0/79  draw=0.0%  seat0=0.463  margin=+3.10  tA=1.44s tB=0.15s
+    decided=400 winner behind after cp1=23.2% cp2=18.2%  lead changes/game=0.46  final cp could decide=100.0%  A kinds D/S/R=88/11/1%  B kinds=90/9/1%
+    level on points=1.8% (7 games: A won 7, drew 0, lost 0)
+base+s234+tbstr                 mctsx:24000 vs tactical       n=200   A=0.907±0.040  W/D/L 181/1/18  draw=0.5%  seat0=0.532  margin=+2.79  tA=1.28s tB=0.00s
+    decided=199 winner behind after cp1=66.8% cp2=28.6%  lead changes/game=0.78  final cp could decide=100.0%  A kinds D/S/R=87/12/1%  B kinds=76/20/4%
+    level on points=4.0% (8 games: A won 7, drew 1, lost 0)

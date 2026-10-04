@@ -12,3 +12,7 @@ test-results/
 playwright-report/
 .DS_Store
 __pycache__/
+
+# Research build outputs and local scratch
+research/sim/target*/
+.scratch/

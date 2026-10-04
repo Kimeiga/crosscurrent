@@ -1,46 +1,39 @@
 /* A fixed-aspect, clipped table. Card opacity never animates. */
-.game-demo { min-width: 0; align-self: center; width: 100%; overflow: hidden; }
-.demo-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin-bottom: 5px; color: var(--muted); font-size: 10px; letter-spacing: .09em; }
-.demo-heading b { color: var(--paper); font-weight: 500; margin-left: 13px; font-variant-numeric: tabular-nums; }
+.game-demo { min-width: 0; width: 100%; overflow: hidden; }
+.demo-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; color: var(--ink-2); font-size: 14px; }
+.demo-heading b { color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums; }
 .demo-controls { display: flex; }
-.demo-controls button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 3px; font-size: 20px; font-weight: 400; letter-spacing: 0; }
-.demo-controls button:hover { color: var(--paper); background: #ffffff0d; }
-.demo-stage { display: block; width: 100%; height: auto; overflow: hidden; isolation: isolate; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-.demo-rails { font-size: 11px; font-weight: 500; letter-spacing: .08em; }
-.demo-order { font-size: 10px; font-weight: 400; letter-spacing: .04em; }
-.demo-total { font-size: 24px; font-weight: 550; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
-.demo-you { fill: #d3dfbe; }
-.demo-them { fill: #d8b7a6; }
-.demo-front-0 > rect { fill: #152630; }
-.demo-front-1 > rect { fill: #2a251f; }
-.demo-front-2 > rect { fill: #242f37; }
-.demo-front-0 { color: #8eafc0; }
-.demo-front-1 { color: #bdab8a; }
-.demo-front-2 { color: #b5cbd8; }
-.demo-divider { stroke: #ffffff14; stroke-width: 1; }
-.demo-front-label { fill: currentColor; font-size: 13px; letter-spacing: .09em; font-weight: 500; }
-.demo-strength { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
-.demo-strength.demo-scoring { font-weight: 700; }
-.demo-award { font-size: 16px; font-weight: 600; }
-.demo-card-shadow { fill: #00000033; }
-.demo-card-face { stroke: #ffffff50; stroke-width: 1; }
-.demo-card-you .demo-card-face { fill: #e4e9dd; }
-.demo-card-them .demo-card-face { fill: #cabbad; }
-.demo-card-you text { fill: #171c1b; }
-.demo-card-them text { fill: #2d2622; }
-.demo-rank { font-size: 26px; font-weight: 600; letter-spacing: -.05em; }
+.demo-controls button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; color: var(--ink-2); }
+.demo-controls button:hover { color: var(--ink); background: var(--paper-2); }
+.demo-stage { display: block; width: 100%; height: auto; overflow: hidden; isolation: isolate; font-family: var(--sans); }
+.demo-rails { font-size: 13px; font-weight: 600; }
+.demo-order { font-size: 12px; font-weight: 500; }
+.demo-total { font-size: 26px; font-weight: 700; font-family: var(--serif); font-variant-numeric: tabular-nums; }
+.demo-you { fill: var(--seat0); }
+.demo-them { fill: var(--seat1); }
+.demo-front > rect { fill: var(--paper-2); }
+.demo-front { color: var(--ink-2); }
+.demo-divider { stroke: var(--line); stroke-width: 1; }
+.demo-front-label { fill: currentColor; font-size: 13px; font-weight: 600; }
+.demo-strength { font-size: 22px; font-weight: 700; font-family: var(--serif); font-variant-numeric: tabular-nums; }
+.demo-strength.demo-scoring { text-decoration: underline; }
+.demo-award { font-size: 16px; font-weight: 700; }
+.demo-card-shadow { fill: #3a2f1a26; }
+.demo-card-face { fill: #fffdf7; stroke: #cfc6b3; stroke-width: 1; }
+.demo-card-you text { fill: #1f1d1a; }
+.demo-card-them text { fill: #b3261e; }
+.demo-rank { font-size: 26px; font-weight: 700; letter-spacing: -.03em; font-family: var(--serif); }
 .demo-suit { font-size: 16px; }
 .demo-value { font-size: 11px; }
-.demo-footline { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; font-size: 12px; color: var(--muted); }
-.demo-footline > span:first-child { color: var(--paper); }
-.demo-footline > span:last-child { flex-shrink: 0; font-size: 9px; letter-spacing: .04em; }
-.demo-track { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-block: 4px 0; }
-.demo-track span { height: 3px; background: #343a3b; }
-.demo-track .checkpoint { background: #788273; }
-.demo-track .done { background: #8f9d83; }
-.demo-track .current { background: #d3dfbe; }
-@media (max-width: 760px) {
-  .demo-heading { margin-bottom: 0; }
-  .demo-footline { font-size: 11px; min-height: 34px; }
-  .demo-footline > span:last-child { font-size: 8px; }
+.demo-footline { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; font-size: 14px; color: var(--ink-2); }
+.demo-footline > span:first-child { color: var(--ink); }
+.demo-footline > span:last-child { flex-shrink: 0; font-size: 12px; }
+.demo-track { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin-block: 4px 0; }
+.demo-track span { height: 5px; border-radius: 3px; background: var(--paper-3); }
+.demo-track .checkpoint { background: var(--line); }
+.demo-track .done { background: var(--ink-3); }
+.demo-track .current { background: var(--ink); }
+@media (max-width: 640px) {
+  .demo-footline { font-size: 13px; }
+  .demo-footline > span:last-child { font-size: 11px; }
 }
