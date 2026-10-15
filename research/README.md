@@ -26,7 +26,7 @@ $S exact rules=gops+n6                         # exact solution of a six-card de
 $S profile rules=gops iters=4000 games=60      # effective number of bids per round in self-play
 ```
 
-`results/` holds the raw logs (`*.log`) and the scripts that produced them (`run-*.sh`). Run a script from `research/sim` after `cargo build --release`, for example `sh ../results/run-sweep6.sh`. During the study each new build went into its own target directory so that running sweeps were not disturbed. The current build reproduces the logs: re-running the first match of sweep 1 gave the same 260/55/85 record and statistics, and later builds only add the line counting games level on points. `run-gops-tuning.sh` and `run-gops.sh` produce the GOPS comparison (`gops-tuning.log`, `gops.log`; the exact and profile runs are in `gops-exact.log` and `gops-profile.log`), and `gops_compare.py` turns them into the tables in RESEARCH.md and the `crosscurrent_vs_gops_2026` entry in `docs/BENCHMARKS.json`. `table.py` turns the screening logs into the markdown table in RESEARCH.md, `finalists.py` pools the finalist runs (sweeps 3, 4 and 6), `to_json.py` exports every measurement for `docs/BENCHMARKS.json`, and `summarize.py` condenses a sweep log into one row per variant.
+`results/` holds the raw logs (`*.log`) and the scripts that produced them (`run-*.sh`). Run a script from `research/sim` after `cargo build --release`, for example `sh ../results/run-sweep6.sh`. During the study each new build went into its own target directory so that running sweeps were not disturbed. The current build reproduces the logs: re-running the first match of sweep 1 gave the same 260/55/85 record and statistics, and later builds only add the line counting games level on points. `run-gops-tuning.sh`, `run-gops.sh`, `run-gops-extras.sh` and `run-gops-robustness.sh` produce the GOPS comparison (`gops-tuning.log`, `gops.log`, `gops-exact.log` and `gops-profile.log`, `gops-robustness.log`), and `gops_compare.py` turns them into the tables in RESEARCH.md and the `crosscurrent_vs_gops_2026` entry in `docs/BENCHMARKS.json`. `table.py` turns the screening logs into the markdown table in RESEARCH.md, `finalists.py` pools the finalist runs (sweeps 3, 4 and 6), `to_json.py` exports every measurement for `docs/BENCHMARKS.json`, and `summarize.py` condenses a sweep log into one row per variant.
 
 Each `match` prints the result line, a line on comebacks and order mix, and (from the `target4` build on) how many games ended level on points and how the tiebreak settled them for policy A.
 
@@ -75,7 +75,7 @@ GOPS (Game of Pure Strategy, or Goofspiel): each player holds cards 1–13; each
 | `mcts:N` | Simultaneous-move MCTS with regret matching (outcome sampling), N iterations per decision |
 | `mctsx:N` | The same, with the final turn solved exactly as a matrix game |
 
-Tuned defaults: exploration γ = 0.2, final choice samples the average strategy after dropping actions below 10%, rollouts deploy a random card 90% of the time. These were tuned head-to-head on the v0.2 rules (see RESEARCH.md).
+Tuned defaults: exploration γ = 0.2, final choice samples the average strategy after dropping actions below 10%, rollouts deploy a random card 90% of the time. These were tuned head-to-head on the v0.2 rules (see RESEARCH.md). Options override them: `:gG` exploration, `:pP` purification, `:dD` rollouts deploy with probability D, `:u` uniform rollouts (for example `mctsx:4000:u:p0`).
 
 ## Interpretation
 

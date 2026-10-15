@@ -31,6 +31,7 @@ Use this checklist when evaluating rule or AI changes.
 14. Final-turn guess share: on positions sampled from strong play, how often the last turn has a saddle point (decided by calculation) versus a pure win/loss guess, solved exactly.
 15. Simple-rule probes: fixed scripted strategies (stack one front, play high where behind, play low where behind, pile onto a won front, mirror the opponent) against a search bot. A variant whose steep search ladder coexists with a scripted rule matching the search bot is shallow, not deep.
 16. Comeback structure under equal-strength play: how often the eventual winner trailed after each scoring, and lead changes per game.
+17. Comparisons with other games: the same search code, tuning procedure and protocol for both games, the same metrics reported side by side including those the other game wins, and a check of how the bot does against each game's simple strategies. A bot that a fixed rule beats measures its own weakness as much as the game.
 
 ## Benchmark facts retained for comparison
 
@@ -49,5 +50,7 @@ Use this checklist when evaluating rule or AI changes.
 - Early Crosscurrent tactical self-play: 476-452-72 over 1,000, expected result 51.2%, draw rate 7.2%.
 - 2026 audit of v0.2 (simulation): each 4x search budget won 70–74% (`mctsx` 1k→4k→16k→64k); draws rose with strength (13.8% → 17.8%); in strong self-play 42.5% of games reached a final turn decided by a pure win/loss guess; the shipped "Deep" level was no stronger than "Tactical" (48.9%).
 - 2026 rule-variant study (simulation, pooled over three pairings with a 4x search gap): the stronger bot's expected result was 73.5% under v0.2 with 13.8% draws, 73.7% under v0.2 with a last-scoring strength tiebreak, and 76.5% under v0.3 (2/3/4 points, total-strength tiebreak) with one draw in 6,600 games.
+- 2026 Crosscurrent against GOPS under one search bot (simulation, bot-specific, 4,800 ladder games each): a 4x search advantage was worth 75.3% (±1.2) in Crosscurrent v0.3, 69.2% (±1.3) in GOPS and 63.5% (±1.3) in GOPS with a fixed prize order; draws 0.1% against 2.7%; the last decision was a whole-game guess in 33.0% of Crosscurrent self-play positions against 11.1% in GOPS; below 64,000 iterations "bid one above the prize" beats the GOPS bot.
+- Small GOPS decks solved exactly for the result (one equilibrium each): decisive games between equilibrium players rise from 0% (3 cards) to 82.3% (7 cards) with shuffled prizes.
 
 Every benchmark must retain its original caveat: these full-game bots were not proven optimal unless explicitly described as an exact reduced-game result.

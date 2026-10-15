@@ -1,0 +1,22 @@
+=== GOPS, 4k vs 1k under other settings
+gops                             mctsx:4000 vs mctsx:1000     n=1200  A=0.608±0.027  W/D/L 715/30/455  draw=2.5%  seat0=0.494  margin=+4.73  tA=0.06s tB=0.02s
+    decided=1170 winner behind after rounds 4 and 8: cp1=41.3% cp2=33.6%  lead changes/game=0.66
+    level on points=2.5% (30 games: A won 0, drew 30, lost 0)
+gops                         mctsx:4000:r0.8 vs mctsx:1000:r0.8 n=1200  A=0.625±0.027  W/D/L 736/28/436  draw=2.3%  seat0=0.506  margin=+5.19  tA=0.08s tB=0.02s
+    decided=1172 winner behind after rounds 4 and 8: cp1=29.4% cp2=22.4%  lead changes/game=0.43
+    level on points=2.3% (28 games: A won 0, drew 28, lost 0)
+gops                         mctsx:4000:r0.8:p0 vs mctsx:1000:r0.8:p0 n=1200  A=0.613±0.027  W/D/L 721/29/450  draw=2.4%  seat0=0.499  margin=+4.64  tA=0.09s tB=0.02s
+    decided=1171 winner behind after rounds 4 and 8: cp1=34.8% cp2=26.1%  lead changes/game=0.53
+    level on points=2.4% (29 games: A won 0, drew 29, lost 0)
+=== Crosscurrent v0.3, 4k vs 1k under other settings
+base+s234+tbstr                mctsx:4000:u vs mctsx:1000:u   n=1200  A=0.769±0.024  W/D/L 923/0/277  draw=0.0%  seat0=0.522  margin=+2.94  tA=0.25s tB=0.06s
+    decided=1200 winner behind after cp1=28.5% cp2=24.9%  lead changes/game=0.61  final cp could decide=100.0%  A kinds D/S/R=89/10/2%  B kinds=88/10/2%
+    level on points=0.9% (11 games: A won 8, drew 0, lost 3)
+base+s234+tbstr               mctsx:4000:p0 vs mctsx:1000:p0  n=1200  A=0.709±0.026  W/D/L 851/0/349  draw=0.0%  seat0=0.497  margin=+2.22  tA=0.20s tB=0.04s
+    decided=1200 winner behind after cp1=30.8% cp2=27.2%  lead changes/game=0.67  final cp could decide=99.9%  A kinds D/S/R=87/11/2%  B kinds=86/12/2%
+    level on points=0.6% (7 games: A won 6, drew 0, lost 1)
+=== GOPS settings against the simple rules
+gops                             mctsx:4000 vs prize          n=400   A=0.390±0.047  W/D/L 151/10/239  draw=2.5%  seat0=0.520  margin=-7.77  tA=0.07s tB=0.00s
+gops                             mctsx:4000 vs above          n=400   A=0.406±0.048  W/D/L 159/7/234  draw=1.8%  seat0=0.526  margin=-7.65  tA=0.06s tB=0.00s
+gops                         mctsx:4000:r0.8:p0 vs prize          n=400   A=0.386±0.047  W/D/L 150/9/241  draw=2.2%  seat0=0.479  margin=-11.56  tA=0.08s tB=0.00s
+gops                         mctsx:4000:r0.8:p0 vs above          n=400   A=0.291±0.044  W/D/L 113/7/280  draw=1.8%  seat0=0.539  margin=-12.43  tA=0.08s tB=0.00s

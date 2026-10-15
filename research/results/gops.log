@@ -8,3 +8,47 @@ base+s234+tbstr                 mctsx:16000 vs mctsx:4000     n=1200  A=0.749±0
 base+s234+tbstr                   mcts:4000 vs mcts:1000      n=1200  A=0.784±0.023  W/D/L 941/0/259  draw=0.0%  seat0=0.502  margin=+2.41  tA=0.19s tB=0.04s
     decided=1200 winner behind after cp1=29.7% cp2=24.3%  lead changes/game=0.60  final cp could decide=100.0%  A kinds D/S/R=87/12/2%  B kinds=86/12/2%
     level on points=1.7% (20 games: A won 15, drew 0, lost 5)
+base+s234+tbstr                 mctsx:64000 vs mctsx:16000    n=400   A=0.656±0.047  W/D/L 262/1/137  draw=0.2%  seat0=0.486  margin=+1.34  tA=5.19s tB=1.16s
+    decided=399 winner behind after cp1=25.8% cp2=27.8%  lead changes/game=0.53  final cp could decide=100.0%  A kinds D/S/R=88/11/1%  B kinds=90/10/1%
+    level on points=2.2% (9 games: A won 5, drew 1, lost 3)
+base+s234+tbstr                  mctsx:4000 vs mctsx:4000     n=1200  A=0.503±0.028  W/D/L 603/2/595  draw=0.2%  seat0=0.486  margin=-0.19  tA=0.20s tB=0.20s
+    decided=1198 winner behind after cp1=32.4% cp2=29.9%  lead changes/game=0.69  final cp could decide=100.0%  A kinds D/S/R=90/9/1%  B kinds=90/10/1%
+    level on points=1.6% (19 games: A won 12, drew 2, lost 5)
+    final turns that were sequential: 0 of 1200
+base+s234+tbstr              final turn via mctsx:4000 n=1200 saddle=66.9% (already decided 66.9%)  mean guess width=0.330  mixed support=2.54 of 22.9 actions  NE-minus-random=0.328  width hist [("0.0", 803), ("0.5", 1), ("1.0", 396)]
+=== gops
+gops                         mctsx:4000:r0.8:p0.2 vs mctsx:1000:r0.8:p0.2 n=2400  A=0.686±0.018  W/D/L 1613/67/720  draw=2.8%  seat0=0.481  margin=+8.19  tA=0.08s tB=0.02s
+    decided=2333 winner behind after rounds 4 and 8: cp1=26.4% cp2=18.3%  lead changes/game=0.38
+    level on points=2.8% (67 games: A won 0, drew 67, lost 0)
+gops                         mctsx:16000:r0.8:p0.2 vs mctsx:4000:r0.8:p0.2 n=1200  A=0.697±0.026  W/D/L 820/32/348  draw=2.7%  seat0=0.488  margin=+7.63  tA=0.37s tB=0.09s
+    decided=1168 winner behind after rounds 4 and 8: cp1=25.6% cp2=21.2%  lead changes/game=0.44
+    level on points=2.7% (32 games: A won 0, drew 32, lost 0)
+gops                         mcts:4000:r0.8:p0.2 vs mcts:1000:r0.8:p0.2 n=1200  A=0.700±0.026  W/D/L 825/29/346  draw=2.4%  seat0=0.495  margin=+8.54  tA=0.08s tB=0.02s
+    decided=1171 winner behind after rounds 4 and 8: cp1=25.2% cp2=18.8%  lead changes/game=0.39
+    level on points=2.4% (29 games: A won 0, drew 29, lost 0)
+gops                         mctsx:64000:r0.8:p0.2 vs mctsx:16000:r0.8:p0.2 n=400   A=0.603±0.047  W/D/L 232/18/150  draw=4.5%  seat0=0.540  margin=+3.50  tA=1.61s tB=0.37s
+    decided=382 winner behind after rounds 4 and 8: cp1=30.4% cp2=24.9%  lead changes/game=0.50
+    level on points=4.5% (18 games: A won 0, drew 18, lost 0)
+gops                         mctsx:4000:r0.8:p0.2 vs mctsx:4000:r0.8:p0.2 n=1200  A=0.482±0.028  W/D/L 563/32/605  draw=2.7%  seat0=0.514  margin=-0.11  tA=0.08s tB=0.08s
+    decided=1168 winner behind after rounds 4 and 8: cp1=25.4% cp2=24.1%  lead changes/game=0.48
+    level on points=2.7% (32 games: A won 0, drew 32, lost 0)
+    final turns that were sequential: 0 of 1200
+gops                         final turn via mctsx:4000:r0.8:p0.2 n=1200 saddle=85.2% (already decided 83.2%)  mean guess width=0.130  mixed support=2.00 of 2.0 actions  NE-minus-random=0.046  width hist [("0.0", 1022), ("0.5", 45), ("1.0", 133)]
+=== gops+asc
+gops+asc                     mctsx:4000:r0.8:p0.2 vs mctsx:1000:r0.8:p0.2 n=2400  A=0.629±0.019  W/D/L 1477/65/858  draw=2.7%  seat0=0.486  margin=+4.84  tA=0.07s tB=0.02s
+    decided=2335 winner behind after rounds 4 and 8: cp1=39.7% cp2=33.7%  lead changes/game=0.71
+    level on points=2.7% (65 games: A won 0, drew 65, lost 0)
+gops+asc                     mctsx:16000:r0.8:p0.2 vs mctsx:4000:r0.8:p0.2 n=1200  A=0.654±0.026  W/D/L 768/34/398  draw=2.8%  seat0=0.517  margin=+5.50  tA=0.32s tB=0.08s
+    decided=1166 winner behind after rounds 4 and 8: cp1=38.2% cp2=30.3%  lead changes/game=0.67
+    level on points=2.8% (34 games: A won 0, drew 34, lost 0)
+gops+asc                     mcts:4000:r0.8:p0.2 vs mcts:1000:r0.8:p0.2 n=1200  A=0.627±0.027  W/D/L 736/33/431  draw=2.8%  seat0=0.485  margin=+4.80  tA=0.07s tB=0.02s
+    decided=1167 winner behind after rounds 4 and 8: cp1=44.0% cp2=31.9%  lead changes/game=0.70
+    level on points=2.8% (33 games: A won 0, drew 33, lost 0)
+gops+asc                     mctsx:64000:r0.8:p0.2 vs mctsx:16000:r0.8:p0.2 n=400   A=0.639±0.047  W/D/L 251/9/140  draw=2.2%  seat0=0.494  margin=+5.78  tA=1.45s tB=0.34s
+    decided=391 winner behind after rounds 4 and 8: cp1=29.9% cp2=34.0%  lead changes/game=0.59
+    level on points=2.2% (9 games: A won 0, drew 9, lost 0)
+gops+asc                     mctsx:4000:r0.8:p0.2 vs mctsx:4000:r0.8:p0.2 n=1200  A=0.487±0.028  W/D/L 566/36/598  draw=3.0%  seat0=0.507  margin=-0.75  tA=0.08s tB=0.08s
+    decided=1164 winner behind after rounds 4 and 8: cp1=40.5% cp2=34.5%  lead changes/game=0.72
+    level on points=3.0% (36 games: A won 0, drew 36, lost 0)
+    final turns that were sequential: 0 of 1200
+gops+asc                     final turn via mctsx:4000:r0.8:p0.2 n=1200 saddle=70.2% (already decided 69.3%)  mean guess width=0.274  mixed support=2.00 of 2.0 actions  NE-minus-random=0.014  width hist [("0.0", 843), ("0.5", 57), ("1.0", 300)]

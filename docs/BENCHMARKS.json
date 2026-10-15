@@ -3743,5 +3743,1346 @@
         ]
       }
     ]
+  },
+  "crosscurrent_vs_gops_2026": {
+    "evidence": "Simulation with one search bot for both games unless marked exact. Exact rows solve small decks completely (one equilibrium; others may exist). Last-decision rows solve exactly the last real decision of positions sampled from bot self-play.",
+    "harness": "research/sim (Rust); one SM-MCTS implementation (src/search.rs) searches both games; seats alternate; draws count one half; 95% intervals; logs and scripts in research/results",
+    "bot_settings": {
+      "crosscurrent": "mctsx defaults: rollouts deploy 90% of the time, exploration 0.2, purification 0.1 (rechecked on v0.3 in gops-tuning.log)",
+      "gops": "rollouts bid the card nearest the prize 80% of the time, exploration 0.2, purification 0.2 (chosen by head-to-head duels in gops-tuning.log)"
+    },
+    "gops_rules": "13 cards each, prizes 1-13 shuffled and revealed one at a time, higher bid scores the prize, ties score for nobody, no tiebreak; gops+asc reveals the prizes in ascending order",
+    "protocol": "fresh seeds per game: 4k vs 1k (2,400 games), 16k vs 4k (1,200), plain 4k vs 1k (1,200), 64k vs 16k (400), 4k self-play (1,200), exact last decision of 1,200 self-play positions; the ladder pools the first three pairings. Robustness: 4k vs 1k (1,200 games) under other bot settings (run-gops-robustness.sh)",
+    "caveat": "Bot-specific. Below 64,000 iterations the GOPS bot loses to the fixed rule 'bid one above the prize', so the GOPS figures describe this search family more than strong GOPS play. Iteration counts are not equal reasoning across games. No human games.",
+    "summary": [
+      {
+        "rules": "base+s234+tbstr",
+        "game": "Crosscurrent v0.3",
+        "ladder_games": 4800,
+        "stronger_wdl": [
+          3613,
+          5,
+          1182
+        ],
+        "stronger_expected_result_pct": 75.3,
+        "ci95_halfwidth_pct": 1.2,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 74.0,
+          "16k vs 4k": 74.9,
+          "plain 4k vs 1k": 78.4,
+          "64k vs 16k": 65.6
+        },
+        "by_pairing_ci95_halfwidth_pct": {
+          "4k vs 1k": 1.8,
+          "16k vs 4k": 2.5,
+          "plain 4k vs 1k": 2.3,
+          "64k vs 16k": 4.7
+        },
+        "by_pairing_draw_pct": {
+          "4k vs 1k": 0.2,
+          "16k vs 4k": 0.0,
+          "plain 4k vs 1k": 0.0,
+          "64k vs 16k": 0.2
+        },
+        "self_play_draw_pct": 0.2,
+        "self_play_seat0_pct": 48.6,
+        "winner_behind_at_one_third_pct": {
+          "4k_vs_1k": 29.4,
+          "self_play": 32.4
+        },
+        "winner_behind_at_two_thirds_pct": {
+          "4k_vs_1k": 24.6,
+          "self_play": 29.9
+        },
+        "lead_changes_per_game": {
+          "4k_vs_1k": 0.62,
+          "self_play": 0.69
+        },
+        "last_decision_positions": 1200,
+        "last_decision_saddle_pct": 66.9,
+        "last_decision_already_decided_pct": 66.9,
+        "last_decision_pure_guess_pct": 33.0,
+        "last_decision_mean_actions": 22.9,
+        "last_decision_mixed_support": 2.54,
+        "last_decision_cost_of_random_play": 0.328
+      },
+      {
+        "rules": "gops",
+        "game": "GOPS",
+        "ladder_games": 4800,
+        "stronger_wdl": [
+          3258,
+          128,
+          1414
+        ],
+        "stronger_expected_result_pct": 69.2,
+        "ci95_halfwidth_pct": 1.3,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 68.6,
+          "16k vs 4k": 69.7,
+          "plain 4k vs 1k": 70.0,
+          "64k vs 16k": 60.2
+        },
+        "by_pairing_ci95_halfwidth_pct": {
+          "4k vs 1k": 1.8,
+          "16k vs 4k": 2.6,
+          "plain 4k vs 1k": 2.6,
+          "64k vs 16k": 4.7
+        },
+        "by_pairing_draw_pct": {
+          "4k vs 1k": 2.8,
+          "16k vs 4k": 2.7,
+          "plain 4k vs 1k": 2.4,
+          "64k vs 16k": 4.5
+        },
+        "self_play_draw_pct": 2.7,
+        "self_play_seat0_pct": 51.4,
+        "winner_behind_at_one_third_pct": {
+          "4k_vs_1k": 26.4,
+          "self_play": 25.4
+        },
+        "winner_behind_at_two_thirds_pct": {
+          "4k_vs_1k": 18.3,
+          "self_play": 24.1
+        },
+        "lead_changes_per_game": {
+          "4k_vs_1k": 0.38,
+          "self_play": 0.48
+        },
+        "last_decision_positions": 1200,
+        "last_decision_saddle_pct": 85.2,
+        "last_decision_already_decided_pct": 83.2,
+        "last_decision_pure_guess_pct": 11.1,
+        "last_decision_mean_actions": 2.0,
+        "last_decision_mixed_support": 2.0,
+        "last_decision_cost_of_random_play": 0.046
+      },
+      {
+        "rules": "gops+asc",
+        "game": "GOPS, fixed prize order",
+        "ladder_games": 4800,
+        "stronger_wdl": [
+          2981,
+          132,
+          1687
+        ],
+        "stronger_expected_result_pct": 63.5,
+        "ci95_halfwidth_pct": 1.3,
+        "by_pairing_expected_result_pct": {
+          "4k vs 1k": 62.9,
+          "16k vs 4k": 65.4,
+          "plain 4k vs 1k": 62.7,
+          "64k vs 16k": 63.9
+        },
+        "by_pairing_ci95_halfwidth_pct": {
+          "4k vs 1k": 1.9,
+          "16k vs 4k": 2.6,
+          "plain 4k vs 1k": 2.7,
+          "64k vs 16k": 4.7
+        },
+        "by_pairing_draw_pct": {
+          "4k vs 1k": 2.7,
+          "16k vs 4k": 2.8,
+          "plain 4k vs 1k": 2.8,
+          "64k vs 16k": 2.2
+        },
+        "self_play_draw_pct": 3.0,
+        "self_play_seat0_pct": 50.7,
+        "winner_behind_at_one_third_pct": {
+          "4k_vs_1k": 39.7,
+          "self_play": 40.5
+        },
+        "winner_behind_at_two_thirds_pct": {
+          "4k_vs_1k": 33.7,
+          "self_play": 34.5
+        },
+        "lead_changes_per_game": {
+          "4k_vs_1k": 0.71,
+          "self_play": 0.72
+        },
+        "last_decision_positions": 1200,
+        "last_decision_saddle_pct": 70.2,
+        "last_decision_already_decided_pct": 69.3,
+        "last_decision_pure_guess_pct": 25.0,
+        "last_decision_mean_actions": 2.0,
+        "last_decision_mixed_support": 2.0,
+        "last_decision_cost_of_random_play": 0.014
+      }
+    ],
+    "ladder_4k_vs_1k_by_bot_settings": [
+      {
+        "rules": "base+s234+tbstr",
+        "game": "Crosscurrent v0.3",
+        "settings": "tuned: rollouts deploy 90%, purification 0.1",
+        "games": 2400,
+        "expected_result_pct": 74.0,
+        "ci95_halfwidth_pct": 1.8,
+        "draw_pct": 0.2,
+        "log": "gops.log"
+      },
+      {
+        "rules": "base+s234+tbstr",
+        "game": "Crosscurrent v0.3",
+        "settings": "uniform rollouts, purification 0.1",
+        "games": 1200,
+        "expected_result_pct": 76.9,
+        "ci95_halfwidth_pct": 2.4,
+        "draw_pct": 0.0,
+        "log": "gops-robustness.log"
+      },
+      {
+        "rules": "base+s234+tbstr",
+        "game": "Crosscurrent v0.3",
+        "settings": "rollouts deploy 90%, no purification",
+        "games": 1200,
+        "expected_result_pct": 70.9,
+        "ci95_halfwidth_pct": 2.6,
+        "draw_pct": 0.0,
+        "log": "gops-robustness.log"
+      },
+      {
+        "rules": "gops",
+        "game": "GOPS",
+        "settings": "tuned: rollouts bid nearest the prize 80%, purification 0.2",
+        "games": 2400,
+        "expected_result_pct": 68.6,
+        "ci95_halfwidth_pct": 1.8,
+        "draw_pct": 2.8,
+        "log": "gops.log"
+      },
+      {
+        "rules": "gops",
+        "game": "GOPS",
+        "settings": "uniform rollouts, purification 0.1 (untuned)",
+        "games": 1200,
+        "expected_result_pct": 60.8,
+        "ci95_halfwidth_pct": 2.7,
+        "draw_pct": 2.5,
+        "log": "gops-robustness.log"
+      },
+      {
+        "rules": "gops",
+        "game": "GOPS",
+        "settings": "rollouts bid nearest the prize 80%, purification 0.1",
+        "games": 1200,
+        "expected_result_pct": 62.5,
+        "ci95_halfwidth_pct": 2.7,
+        "draw_pct": 2.3,
+        "log": "gops-robustness.log"
+      },
+      {
+        "rules": "gops",
+        "game": "GOPS",
+        "settings": "rollouts bid nearest the prize 80%, no purification",
+        "games": 1200,
+        "expected_result_pct": 61.3,
+        "ci95_halfwidth_pct": 2.7,
+        "draw_pct": 2.4,
+        "log": "gops-robustness.log"
+      }
+    ],
+    "exact_small_decks": [
+      {
+        "rules": "gops+n3",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          0.0,
+          100.0,
+          0.0
+        ],
+        "decisive_pct": 0.0,
+        "decision_nodes": 146,
+        "mixed_nodes_pct": 8.2
+      },
+      {
+        "rules": "gops+n4",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          11.7,
+          76.5,
+          11.7
+        ],
+        "decisive_pct": 23.5,
+        "decision_nodes": 2112,
+        "mixed_nodes_pct": 13.2
+      },
+      {
+        "rules": "gops+n5",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          24.3,
+          51.3,
+          24.3
+        ],
+        "decisive_pct": 48.7,
+        "decision_nodes": 30648,
+        "mixed_nodes_pct": 17.5
+      },
+      {
+        "rules": "gops+n6",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          35.7,
+          28.6,
+          35.7
+        ],
+        "decisive_pct": 71.4,
+        "decision_nodes": 397452,
+        "mixed_nodes_pct": 21.0
+      },
+      {
+        "rules": "gops+asc+n3",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          0.0,
+          100.0,
+          0.0
+        ],
+        "decisive_pct": 0.0,
+        "decision_nodes": 37,
+        "mixed_nodes_pct": 10.8
+      },
+      {
+        "rules": "gops+asc+n4",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          0.0,
+          100.0,
+          0.0
+        ],
+        "decisive_pct": 0.0,
+        "decision_nodes": 241,
+        "mixed_nodes_pct": 19.1
+      },
+      {
+        "rules": "gops+asc+n5",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          20.5,
+          59.1,
+          20.5
+        ],
+        "decisive_pct": 40.9,
+        "decision_nodes": 1413,
+        "mixed_nodes_pct": 28.9
+      },
+      {
+        "rules": "gops+asc+n6",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          39.6,
+          20.8,
+          39.6
+        ],
+        "decisive_pct": 79.2,
+        "decision_nodes": 7625,
+        "mixed_nodes_pct": 35.1
+      },
+      {
+        "rules": "gops+n7",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          41.2,
+          17.7,
+          41.2
+        ],
+        "decisive_pct": 82.3,
+        "decision_nodes": 4923380,
+        "mixed_nodes_pct": 27.3
+      },
+      {
+        "rules": "gops+asc+n7",
+        "value": 0.5,
+        "equilibrium_wdl_pct": [
+          44.6,
+          10.9,
+          44.6
+        ],
+        "decisive_pct": 89.1,
+        "decision_nodes": 39167,
+        "mixed_nodes_pct": 43.4
+      }
+    ],
+    "effective_moves_profile": [
+      {
+        "rules": "base+s234+tbstr",
+        "iterations": 4000,
+        "mean_effective_moves": 19.07,
+        "mean_moves_over_10pct": 1.27,
+        "per_turn_effective_over10pct_legal": [
+          [
+            26.5,
+            0.0,
+            39.0
+          ],
+          [
+            25.3,
+            0.1,
+            39.0
+          ],
+          [
+            24.4,
+            0.1,
+            36.0
+          ],
+          [
+            21.1,
+            1.0,
+            36.0
+          ],
+          [
+            21.6,
+            0.3,
+            33.0
+          ],
+          [
+            20.3,
+            0.7,
+            32.0
+          ],
+          [
+            18.5,
+            1.2,
+            31.0
+          ],
+          [
+            15.7,
+            2.0,
+            30.0
+          ],
+          [
+            15.3,
+            2.2,
+            25.0
+          ],
+          [
+            13.0,
+            3.0,
+            25.0
+          ],
+          [
+            8.1,
+            3.4,
+            25.0
+          ]
+        ]
+      },
+      {
+        "rules": "gops",
+        "iterations": 4000,
+        "mean_effective_moves": 4.62,
+        "mean_moves_over_10pct": 3.39,
+        "per_turn_effective_over10pct_legal": [
+          [
+            7.4,
+            4.0,
+            13.0
+          ],
+          [
+            6.8,
+            4.1,
+            12.0
+          ],
+          [
+            6.0,
+            3.8,
+            11.0
+          ],
+          [
+            5.5,
+            3.9,
+            10.0
+          ],
+          [
+            5.0,
+            3.7,
+            9.0
+          ],
+          [
+            4.6,
+            3.7,
+            8.0
+          ],
+          [
+            4.0,
+            3.3,
+            7.0
+          ],
+          [
+            3.6,
+            3.2,
+            6.0
+          ],
+          [
+            3.2,
+            2.9,
+            5.0
+          ],
+          [
+            2.6,
+            2.6,
+            4.0
+          ],
+          [
+            2.1,
+            2.1,
+            3.0
+          ]
+        ]
+      },
+      {
+        "rules": "gops+asc",
+        "iterations": 4000,
+        "mean_effective_moves": 4.58,
+        "mean_moves_over_10pct": 3.45,
+        "per_turn_effective_over10pct_legal": [
+          [
+            7.2,
+            4.4,
+            13.0
+          ],
+          [
+            6.4,
+            4.0,
+            12.0
+          ],
+          [
+            5.6,
+            3.7,
+            11.0
+          ],
+          [
+            5.1,
+            3.6,
+            10.0
+          ],
+          [
+            4.9,
+            3.6,
+            9.0
+          ],
+          [
+            4.4,
+            3.5,
+            8.0
+          ],
+          [
+            4.1,
+            3.3,
+            7.0
+          ],
+          [
+            3.7,
+            3.2,
+            6.0
+          ],
+          [
+            3.4,
+            3.1,
+            5.0
+          ],
+          [
+            3.0,
+            3.0,
+            4.0
+          ],
+          [
+            2.6,
+            2.6,
+            3.0
+          ]
+        ]
+      },
+      {
+        "rules": "base+s234+tbstr",
+        "iterations": 64000,
+        "mean_effective_moves": 12.22,
+        "mean_moves_over_10pct": 2.44,
+        "per_turn_effective_over10pct_legal": [
+          [
+            28.2,
+            0.0,
+            39.0
+          ],
+          [
+            12.9,
+            3.3,
+            39.0
+          ],
+          [
+            7.4,
+            3.1,
+            39.0
+          ],
+          [
+            4.4,
+            1.7,
+            39.0
+          ],
+          [
+            18.6,
+            1.5,
+            36.0
+          ],
+          [
+            17.3,
+            1.8,
+            35.0
+          ],
+          [
+            12.9,
+            2.4,
+            35.0
+          ],
+          [
+            7.8,
+            3.1,
+            34.0
+          ],
+          [
+            9.8,
+            3.3,
+            29.0
+          ],
+          [
+            8.3,
+            3.4,
+            29.0
+          ],
+          [
+            6.9,
+            3.2,
+            28.0
+          ]
+        ]
+      },
+      {
+        "rules": "gops",
+        "iterations": 64000,
+        "mean_effective_moves": 3.84,
+        "mean_moves_over_10pct": 3.06,
+        "per_turn_effective_over10pct_legal": [
+          [
+            5.6,
+            3.8,
+            13.0
+          ],
+          [
+            4.9,
+            3.1,
+            12.0
+          ],
+          [
+            4.6,
+            3.1,
+            11.0
+          ],
+          [
+            4.6,
+            3.5,
+            10.0
+          ],
+          [
+            4.3,
+            3.5,
+            9.0
+          ],
+          [
+            4.1,
+            3.4,
+            8.0
+          ],
+          [
+            3.8,
+            3.3,
+            7.0
+          ],
+          [
+            3.1,
+            2.8,
+            6.0
+          ],
+          [
+            2.8,
+            2.7,
+            5.0
+          ],
+          [
+            2.4,
+            2.4,
+            4.0
+          ],
+          [
+            2.0,
+            2.1,
+            3.0
+          ]
+        ]
+      }
+    ],
+    "tuning_and_baselines": [
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.5",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 53.6,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          315,
+          13,
+          272
+        ],
+        "seat0_result_pct": 50.2
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 56.9,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          335,
+          13,
+          252
+        ],
+        "seat0_result_pct": 50.9
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.95",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 54.1,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          315,
+          19,
+          266
+        ],
+        "seat0_result_pct": 49.1
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8",
+        "b": "mctsx:4000:r0.5",
+        "games": 600,
+        "a_result_pct": 49.7,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          288,
+          21,
+          291
+        ],
+        "seat0_result_pct": 47.7
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.95",
+        "b": "mctsx:4000:r0.8",
+        "games": 600,
+        "a_result_pct": 52.9,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          310,
+          15,
+          275
+        ],
+        "seat0_result_pct": 52.6
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8",
+        "b": "prize",
+        "games": 400,
+        "a_result_pct": 43.9,
+        "ci95_halfwidth_pct": 4.8,
+        "wdl": [
+          172,
+          7,
+          221
+        ],
+        "seat0_result_pct": 46.1
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8",
+        "b": "above",
+        "games": 400,
+        "a_result_pct": 22.3,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          86,
+          6,
+          308
+        ],
+        "seat0_result_pct": 51.5
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8",
+        "b": "random",
+        "games": 400,
+        "a_result_pct": 90.2,
+        "ci95_halfwidth_pct": 2.9,
+        "wdl": [
+          359,
+          4,
+          37
+        ],
+        "seat0_result_pct": 51.5
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:1000:r0.8",
+        "b": "prize",
+        "games": 400,
+        "a_result_pct": 25.8,
+        "ci95_halfwidth_pct": 4.2,
+        "wdl": [
+          99,
+          8,
+          293
+        ],
+        "seat0_result_pct": 51.2
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:g0.1",
+        "b": "mctsx:4000:r0.8",
+        "games": 600,
+        "a_result_pct": 48.1,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          278,
+          21,
+          301
+        ],
+        "seat0_result_pct": 54.1
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:g0.3",
+        "b": "mctsx:4000:r0.8",
+        "games": 600,
+        "a_result_pct": 50.6,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          294,
+          19,
+          287
+        ],
+        "seat0_result_pct": 48.7
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0.03",
+        "b": "mctsx:4000:r0.8",
+        "games": 600,
+        "a_result_pct": 45.2,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          266,
+          10,
+          324
+        ],
+        "seat0_result_pct": 51.8
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0.2",
+        "b": "mctsx:4000:r0.8",
+        "games": 600,
+        "a_result_pct": 57.6,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          334,
+          23,
+          243
+        ],
+        "seat0_result_pct": 51.9
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0",
+        "b": "mctsx:4000:r0.8",
+        "games": 600,
+        "a_result_pct": 40.1,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          231,
+          19,
+          350
+        ],
+        "seat0_result_pct": 54.2
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0.3",
+        "b": "mctsx:4000:r0.8:p0.2",
+        "games": 600,
+        "a_result_pct": 52.7,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          306,
+          21,
+          273
+        ],
+        "seat0_result_pct": 52.2
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0.5",
+        "b": "mctsx:4000:r0.8:p0.2",
+        "games": 600,
+        "a_result_pct": 44.4,
+        "ci95_halfwidth_pct": 3.9,
+        "wdl": [
+          258,
+          17,
+          325
+        ],
+        "seat0_result_pct": 46.6
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0.2",
+        "b": "prize",
+        "games": 400,
+        "a_result_pct": 56.0,
+        "ci95_halfwidth_pct": 4.8,
+        "wdl": [
+          218,
+          12,
+          170
+        ],
+        "seat0_result_pct": 48.5
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0.2",
+        "b": "above",
+        "games": 400,
+        "a_result_pct": 14.2,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          55,
+          4,
+          341
+        ],
+        "seat0_result_pct": 47.2
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:16000:r0.8:p0.2",
+        "b": "above",
+        "games": 200,
+        "a_result_pct": 27.5,
+        "ci95_halfwidth_pct": 6.1,
+        "wdl": [
+          52,
+          6,
+          142
+        ],
+        "seat0_result_pct": 48.5
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000:p0.2",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 33.0,
+        "ci95_halfwidth_pct": 3.8,
+        "wdl": [
+          198,
+          0,
+          402
+        ],
+        "seat0_result_pct": 52.0
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000:p0.05",
+        "b": "mctsx:4000",
+        "games": 600,
+        "a_result_pct": 42.1,
+        "ci95_halfwidth_pct": 4.0,
+        "wdl": [
+          252,
+          1,
+          347
+        ],
+        "seat0_result_pct": 49.6
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops+asc",
+        "a": "mctsx:4000:r0.8:p0.2",
+        "b": "prize",
+        "games": 400,
+        "a_result_pct": 14.7,
+        "ci95_halfwidth_pct": 3.4,
+        "wdl": [
+          55,
+          8,
+          337
+        ],
+        "seat0_result_pct": 48.7
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops+asc",
+        "a": "mctsx:4000:r0.8:p0.2",
+        "b": "above",
+        "games": 400,
+        "a_result_pct": 40.4,
+        "ci95_halfwidth_pct": 4.8,
+        "wdl": [
+          161,
+          1,
+          238
+        ],
+        "seat0_result_pct": 50.6
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0.2",
+        "b": "mctsx:1000:r0.8:p0.2",
+        "games": 400,
+        "a_result_pct": 69.9,
+        "ci95_halfwidth_pct": 4.5,
+        "wdl": [
+          277,
+          5,
+          118
+        ],
+        "seat0_result_pct": 49.6
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:16000:r0.8:p0.2",
+        "b": "mctsx:4000:r0.8:p0.2",
+        "games": 400,
+        "a_result_pct": 69.8,
+        "ci95_halfwidth_pct": 4.4,
+        "wdl": [
+          274,
+          10,
+          116
+        ],
+        "seat0_result_pct": 49.5
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:64000:r0.8:p0.2",
+        "b": "above",
+        "games": 100,
+        "a_result_pct": 49.0,
+        "ci95_halfwidth_pct": 9.7,
+        "wdl": [
+          48,
+          2,
+          50
+        ],
+        "seat0_result_pct": 50.0
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:1000:r0.8:p0.2",
+        "b": "prize",
+        "games": 200,
+        "a_result_pct": 33.3,
+        "ci95_halfwidth_pct": 6.5,
+        "wdl": [
+          65,
+          3,
+          132
+        ],
+        "seat0_result_pct": 48.2
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:16000:r0.8:p0.2",
+        "b": "prize",
+        "games": 200,
+        "a_result_pct": 81.5,
+        "ci95_halfwidth_pct": 5.3,
+        "wdl": [
+          161,
+          4,
+          35
+        ],
+        "seat0_result_pct": 47.0
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:1000:r0.8:p0.2",
+        "b": "above",
+        "games": 200,
+        "a_result_pct": 18.5,
+        "ci95_halfwidth_pct": 5.4,
+        "wdl": [
+          36,
+          2,
+          162
+        ],
+        "seat0_result_pct": 54.0
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:64000:r0.8:p0.2",
+        "b": "prize",
+        "games": 100,
+        "a_result_pct": 82.0,
+        "ci95_halfwidth_pct": 7.4,
+        "wdl": [
+          81,
+          2,
+          17
+        ],
+        "seat0_result_pct": 49.0
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:1000:r0.8:p0.2",
+        "b": "random",
+        "games": 200,
+        "a_result_pct": 88.0,
+        "ci95_halfwidth_pct": 4.4,
+        "wdl": [
+          174,
+          4,
+          22
+        ],
+        "seat0_result_pct": 46.5
+      },
+      {
+        "log": "gops-tuning.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0.2",
+        "b": "random",
+        "games": 200,
+        "a_result_pct": 85.5,
+        "ci95_halfwidth_pct": 4.8,
+        "wdl": [
+          170,
+          2,
+          28
+        ],
+        "seat0_result_pct": 51.0
+      }
+    ],
+    "robustness_runs": [
+      {
+        "log": "gops-robustness.log",
+        "rules": "gops",
+        "a": "mctsx:4000",
+        "b": "mctsx:1000",
+        "games": 1200,
+        "a_result_pct": 60.8,
+        "ci95_halfwidth_pct": 2.7,
+        "wdl": [
+          715,
+          30,
+          455
+        ],
+        "seat0_result_pct": 49.4,
+        "winner_behind_after_turn4_pct": 41.3,
+        "winner_behind_after_turn8_pct": 33.6,
+        "lead_changes_per_game": 0.66,
+        "level_on_points_pct": 2.5,
+        "level_games_a_won_drew_lost": [
+          0,
+          30,
+          0
+        ]
+      },
+      {
+        "log": "gops-robustness.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8",
+        "b": "mctsx:1000:r0.8",
+        "games": 1200,
+        "a_result_pct": 62.5,
+        "ci95_halfwidth_pct": 2.7,
+        "wdl": [
+          736,
+          28,
+          436
+        ],
+        "seat0_result_pct": 50.6,
+        "winner_behind_after_turn4_pct": 29.4,
+        "winner_behind_after_turn8_pct": 22.4,
+        "lead_changes_per_game": 0.43,
+        "level_on_points_pct": 2.3,
+        "level_games_a_won_drew_lost": [
+          0,
+          28,
+          0
+        ]
+      },
+      {
+        "log": "gops-robustness.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0",
+        "b": "mctsx:1000:r0.8:p0",
+        "games": 1200,
+        "a_result_pct": 61.3,
+        "ci95_halfwidth_pct": 2.7,
+        "wdl": [
+          721,
+          29,
+          450
+        ],
+        "seat0_result_pct": 49.9,
+        "winner_behind_after_turn4_pct": 34.8,
+        "winner_behind_after_turn8_pct": 26.1,
+        "lead_changes_per_game": 0.53,
+        "level_on_points_pct": 2.4,
+        "level_games_a_won_drew_lost": [
+          0,
+          29,
+          0
+        ]
+      },
+      {
+        "log": "gops-robustness.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000:u",
+        "b": "mctsx:1000:u",
+        "games": 1200,
+        "a_result_pct": 76.9,
+        "ci95_halfwidth_pct": 2.4,
+        "wdl": [
+          923,
+          0,
+          277
+        ],
+        "seat0_result_pct": 52.2,
+        "winner_behind_after_turn4_pct": 28.5,
+        "winner_behind_after_turn8_pct": 24.9,
+        "lead_changes_per_game": 0.61,
+        "level_on_points_pct": 0.9,
+        "level_games_a_won_drew_lost": [
+          8,
+          0,
+          3
+        ]
+      },
+      {
+        "log": "gops-robustness.log",
+        "rules": "base+s234+tbstr",
+        "a": "mctsx:4000:p0",
+        "b": "mctsx:1000:p0",
+        "games": 1200,
+        "a_result_pct": 70.9,
+        "ci95_halfwidth_pct": 2.6,
+        "wdl": [
+          851,
+          0,
+          349
+        ],
+        "seat0_result_pct": 49.7,
+        "winner_behind_after_turn4_pct": 30.8,
+        "winner_behind_after_turn8_pct": 27.2,
+        "lead_changes_per_game": 0.67,
+        "level_on_points_pct": 0.6,
+        "level_games_a_won_drew_lost": [
+          6,
+          0,
+          1
+        ]
+      },
+      {
+        "log": "gops-robustness.log",
+        "rules": "gops",
+        "a": "mctsx:4000",
+        "b": "prize",
+        "games": 400,
+        "a_result_pct": 39.0,
+        "ci95_halfwidth_pct": 4.7,
+        "wdl": [
+          151,
+          10,
+          239
+        ],
+        "seat0_result_pct": 52.0
+      },
+      {
+        "log": "gops-robustness.log",
+        "rules": "gops",
+        "a": "mctsx:4000",
+        "b": "above",
+        "games": 400,
+        "a_result_pct": 40.6,
+        "ci95_halfwidth_pct": 4.8,
+        "wdl": [
+          159,
+          7,
+          234
+        ],
+        "seat0_result_pct": 52.6
+      },
+      {
+        "log": "gops-robustness.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0",
+        "b": "prize",
+        "games": 400,
+        "a_result_pct": 38.6,
+        "ci95_halfwidth_pct": 4.7,
+        "wdl": [
+          150,
+          9,
+          241
+        ],
+        "seat0_result_pct": 47.9
+      },
+      {
+        "log": "gops-robustness.log",
+        "rules": "gops",
+        "a": "mctsx:4000:r0.8:p0",
+        "b": "above",
+        "games": 400,
+        "a_result_pct": 29.1,
+        "ci95_halfwidth_pct": 4.4,
+        "wdl": [
+          113,
+          7,
+          280
+        ],
+        "seat0_result_pct": 53.9
+      }
+    ]
   }
 }
