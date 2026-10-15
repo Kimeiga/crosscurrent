@@ -924,3 +924,13 @@ Of the open questions listed earlier, this study gave simulation evidence on sev
 - Why does the total-strength tiebreak raise the bots' skill signal by more than the games it decides directly?
 - Is the extra skill signal of a flat schedule worth fewer comebacks to players who will play one game?
 - The original questions 1, 3, 5, 10 and 12.
+
+## 2026-10 Crosscurrent against GOPS under one bot
+
+### Question and setup
+
+The record compared Crosscurrent with GOPS only through different bots (for example GOPS's 88.02% for a more-informed bot against a simpler one), so "does one game of Crosscurrent say more about who is better than one game of GOPS?" had no like-for-like answer. GOPS was added to the simulator and run through the same search code and the same protocol.
+
+- **One search implementation (validation).** The SM-MCTS moved into a game-generic module (`research/sim/src/search.rs`), with chance outcomes, GOPS's next prize, keyed into the tree. Crosscurrent runs through it unchanged: ten deterministic runs covering matches, last-turn analysis, profiles and puzzles were byte-identical before and after.
+- **GOPS engine (validation).** Standard rules: 13 cards each, the prizes 1–13 shuffled and revealed one at a time, the higher bid scores the prize, a tied round scores for nobody. In 20,000 random games per variant the engine preserves label-swap symmetry, spends every card once and conserves prize value. It reproduces both recorded GOPS facts: bid-the-prize mirror games drew 5,000 of 5,000, and one above the prize beat it 78–13 in every game.
+- **Tuning (simulation).** Each game's bot was tuned by head-to-head duels at 4,000 iterations, as the Crosscurrent bot was. For GOPS, rollouts that bid the card nearest the prize 80% of the time (the counterpart of Crosscurrent's mostly-deploy rollouts) beat uniform rollouts 56.9% ±3.9 over 600 games, and purification 0.2 beat 0.1 57.6% ±3.9 (0.3 was level; 0.5 and none were worse); exploration 0.1 or 0.3 made no difference. For Crosscurrent v0.3 the existing defaults held: purification 0.1 beat 0.2 and 0.05 in 67.0% and 57.9% of 600 games. Each game is measured with its own tuned bot (`gops-tuning.log`).
