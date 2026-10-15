@@ -5,3 +5,6 @@ base+s234+tbstr                  mctsx:4000 vs mctsx:1000     n=2400  A=0.740±0
 base+s234+tbstr                 mctsx:16000 vs mctsx:4000     n=1200  A=0.749±0.025  W/D/L 899/0/301  draw=0.0%  seat0=0.502  margin=+2.31  tA=1.32s tB=0.30s
     decided=1200 winner behind after cp1=28.5% cp2=21.8%  lead changes/game=0.52  final cp could decide=100.0%  A kinds D/S/R=89/10/1%  B kinds=90/10/1%
     level on points=1.8% (22 games: A won 17, drew 0, lost 5)
+base+s234+tbstr                   mcts:4000 vs mcts:1000      n=1200  A=0.784±0.023  W/D/L 941/0/259  draw=0.0%  seat0=0.502  margin=+2.41  tA=0.19s tB=0.04s
+    decided=1200 winner behind after cp1=29.7% cp2=24.3%  lead changes/game=0.60  final cp could decide=100.0%  A kinds D/S/R=87/12/2%  B kinds=86/12/2%
+    level on points=1.7% (20 games: A won 15, drew 0, lost 5)
