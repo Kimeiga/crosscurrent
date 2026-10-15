@@ -2,7 +2,9 @@
 
 use crate::game::*;
 use crate::lp;
+use crate::search::{purified_choice, Search, SimGame};
 
+#[derive(Clone)]
 pub struct Rng(u64);
 impl Rng {
     pub fn new(seed: u64) -> Self {
@@ -237,14 +239,71 @@ pub enum Rollout {
     DeployBias(f32),
 }
 
-pub struct Node {
-    st: State,
-    acts: [Vec<Action>; 2],
-    regret: [Vec<f64>; 2],
-    ssum: [Vec<f64>; 2],
-    kids: Vec<(u16, u32)>,
-    visits: u32,
-    total: f64,
+/// Crosscurrent as the generic search sees it (src/search.rs).
+pub struct CrossGame<'a> {
+    pub rules: &'a Rules,
+    pub rollout: Rollout,
+}
+
+impl SimGame for CrossGame<'_> {
+    type State = State;
+    type Action = Action;
+    fn is_terminal(&self, s: &State) -> bool {
+        self.rules.is_terminal(s)
+    }
+    fn result(&self, s: &State) -> f64 {
+        self.rules.result(s) as f64
+    }
+    fn legal(&self, s: &State, p: usize, out: &mut Vec<Action>) {
+        let mut l = ActionList::new();
+        self.rules.legal(s, p, &mut l);
+        out.clear();
+        out.extend_from_slice(l.as_slice());
+    }
+    fn is_last(&self, s: &State) -> bool {
+        s.turn + 1 == self.rules.turns
+    }
+    fn last_value(&self, s: &State) -> f64 {
+        final_value(self.rules, s)
+    }
+    fn step(&self, s: &State, a: Action, b: Action, _rng: &mut Rng) -> (State, u32) {
+        (self.rules.step(s, a, b), 0)
+    }
+    fn has_chance(&self) -> bool {
+        false
+    }
+    fn rollout_step(&self, st: &State, rng: &mut Rng) -> State {
+        let rules = self.rules;
+        let mut l = ActionList::new();
+        let mut pick = [Action { kind: 0, card: 0, front: 0 }; 2];
+        let fixed = match (rules.leader(st), st.pending) {
+            (Some(l), Some(a)) => Some((l, a)),
+            _ => None,
+        };
+        for p in 0..2 {
+            if let Some((l, a)) = fixed {
+                if p == l {
+                    pick[p] = a;
+                    continue;
+                }
+            }
+            let side = &st.sides[p];
+            let deploy_first = match self.rollout {
+                Rollout::Uniform => false,
+                Rollout::DeployBias(q) => rng.f64() < q as f64,
+            };
+            if deploy_first && side.hand != 0 {
+                let n = side.hand.count_ones() as usize;
+                let k = rng.below(n);
+                let card = cards(side.hand).nth(k).unwrap();
+                pick[p] = Action { kind: DEPLOY, card, front: rng.below(rules.fronts) as u8 };
+            } else {
+                rules.actions(side, &mut l);
+                pick[p] = l.items[rng.below(l.len)];
+            }
+        }
+        rules.resolve(st, pick[0], pick[1])
+    }
 }
 
 pub struct Mcts {
@@ -255,166 +314,20 @@ pub struct Mcts {
     pub purify: f64,
     /// Solve the final turn exactly instead of searching it.
     pub exact_last: bool,
-    nodes: Vec<Node>,
-    pub last_root_value: f64,
-    pub last_policy: Vec<(Action, f64)>,
+    tree: Search<State, Action>,
 }
 
 impl Mcts {
     pub fn new(iters: u32) -> Self {
-        Mcts { iters, gamma: 0.2, rollout: Rollout::DeployBias(0.9), purify: 0.1, exact_last: false, nodes: Vec::new(), last_root_value: 0.5, last_policy: Vec::new() }
-    }
-
-    fn make_node(&mut self, rules: &Rules, st: State) -> u32 {
-        let mut l = ActionList::new();
-        let mut acts: [Vec<Action>; 2] = [Vec::new(), Vec::new()];
-        if !rules.is_terminal(&st) {
-            for p in 0..2 {
-                rules.legal(&st, p, &mut l);
-                acts[p] = l.as_slice().to_vec();
-            }
-        }
-        let n0 = acts[0].len();
-        let n1 = acts[1].len();
-        self.nodes.push(Node {
-            st,
-            acts,
-            regret: [vec![0.0; n0], vec![0.0; n1]],
-            ssum: [vec![0.0; n0], vec![0.0; n1]],
-            kids: Vec::new(),
-            visits: 0,
-            total: 0.0,
-        });
-        (self.nodes.len() - 1) as u32
-    }
-
-    fn policy(regret: &[f64], out: &mut Vec<f64>) {
-        out.clear();
-        let pos: f64 = regret.iter().map(|r| r.max(0.0)).sum();
-        if pos <= 0.0 {
-            let u = 1.0 / regret.len() as f64;
-            out.extend(std::iter::repeat(u).take(regret.len()));
-        } else {
-            out.extend(regret.iter().map(|r| r.max(0.0) / pos));
-        }
-    }
-
-    fn rollout(&self, rules: &Rules, mut st: State, rng: &mut Rng) -> f64 {
-        let mut l = ActionList::new();
-        while !rules.is_terminal(&st) {
-            let mut pick = [Action { kind: 0, card: 0, front: 0 }; 2];
-            let fixed = match (rules.leader(&st), st.pending) {
-                (Some(l), Some(a)) => Some((l, a)),
-                _ => None,
-            };
-            for p in 0..2 {
-                if let Some((l, a)) = fixed {
-                    if p == l {
-                        pick[p] = a;
-                        continue;
-                    }
-                }
-                let side = &st.sides[p];
-                let deploy_first = match self.rollout {
-                    Rollout::Uniform => false,
-                    Rollout::DeployBias(q) => rng.f64() < q as f64,
-                };
-                if deploy_first && side.hand != 0 {
-                    let n = side.hand.count_ones() as usize;
-                    let k = rng.below(n);
-                    let card = cards(side.hand).nth(k).unwrap();
-                    pick[p] = Action { kind: DEPLOY, card, front: rng.below(rules.fronts) as u8 };
-                } else {
-                    rules.actions(side, &mut l);
-                    pick[p] = l.items[rng.below(l.len)];
-                }
-            }
-            st = rules.resolve(&st, pick[0], pick[1]);
-        }
-        rules.result(&st) as f64
-    }
-
-    fn iterate(&mut self, rules: &Rules, idx: u32, rng: &mut Rng, buf: &mut [Vec<f64>; 2]) -> f64 {
-        let i = idx as usize;
-        if rules.is_terminal(&self.nodes[i].st) {
-            return rules.result(&self.nodes[i].st) as f64;
-        }
-        if self.exact_last && self.nodes[i].st.turn + 1 == rules.turns {
-            let v = final_value(rules, &self.nodes[i].st);
-            self.nodes[i].visits += 1;
-            self.nodes[i].total += v;
-            return v;
-        }
-        let mut chosen = [0usize; 2];
-        let mut prob = [0f64; 2];
-        for p in 0..2 {
-            Mcts::policy(&self.nodes[i].regret[p], &mut buf[p]);
-            let n = buf[p].len() as f64;
-            let g = self.gamma;
-            for v in buf[p].iter_mut() {
-                *v = (1.0 - g) * *v + g / n;
-            }
-            chosen[p] = sample(&buf[p], rng);
-            prob[p] = buf[p][chosen[p]];
-            // accumulate the regret-matching strategy (without exploration)
-            let pos: f64 = self.nodes[i].regret[p].iter().map(|r| r.max(0.0)).sum();
-            let len = self.nodes[i].ssum[p].len();
-            for k in 0..len {
-                let s = if pos <= 0.0 { 1.0 / len as f64 } else { self.nodes[i].regret[p][k].max(0.0) / pos };
-                self.nodes[i].ssum[p][k] += s;
-            }
-        }
-        let key = (chosen[0] * 64 + chosen[1]) as u16;
-        let found = self.nodes[i].kids.iter().find(|(k, _)| *k == key).map(|(_, c)| *c);
-        let u = match found {
-            Some(c) => self.iterate(rules, c, rng, buf),
-            None => {
-                let a = self.nodes[i].acts[0][chosen[0]];
-                let b = self.nodes[i].acts[1][chosen[1]];
-                let next = rules.step(&self.nodes[i].st, a, b);
-                let c = self.make_node(rules, next);
-                self.nodes[i].kids.push((key, c));
-                let v = if rules.is_terminal(&next) {
-                    rules.result(&next) as f64
-                } else if self.exact_last && next.turn + 1 == rules.turns {
-                    final_value(rules, &next)
-                } else {
-                    self.rollout(rules, next, rng)
-                };
-                self.nodes[c as usize].visits += 1;
-                self.nodes[c as usize].total += v;
-                v
-            }
-        };
-        let node = &mut self.nodes[i];
-        node.visits += 1;
-        node.total += u;
-        for p in 0..2 {
-            let x = if p == 0 { u } else { 1.0 - u };
-            let est = x / prob[p];
-            for k in 0..node.regret[p].len() {
-                let r = if k == chosen[p] { est } else { 0.0 };
-                node.regret[p][k] += r - x;
-            }
-        }
-        u
+        Mcts { iters, gamma: 0.2, rollout: Rollout::DeployBias(0.9), purify: 0.1, exact_last: false, tree: Search::new(iters) }
     }
 
     /// Search and return the root average strategy for `seat`.
     pub fn search(&mut self, rules: &Rules, st: &State, seat: usize, rng: &mut Rng) -> Vec<(Action, f64)> {
-        self.nodes.clear();
-        let root = self.make_node(rules, *st);
-        let mut buf = [Vec::new(), Vec::new()];
-        for _ in 0..self.iters {
-            self.iterate(rules, root, rng, &mut buf);
-        }
-        let node = &self.nodes[root as usize];
-        self.last_root_value = if node.visits > 0 { node.total / node.visits as f64 } else { 0.5 };
-        if seat == 1 {
-            self.last_root_value = 1.0 - self.last_root_value;
-        }
-        let total: f64 = node.ssum[seat].iter().sum();
-        node.acts[seat].iter().zip(node.ssum[seat].iter()).map(|(a, s)| (*a, s / total)).collect()
+        self.tree.iters = self.iters;
+        self.tree.gamma = self.gamma;
+        self.tree.exact_last = self.exact_last;
+        self.tree.search(&CrossGame { rules, rollout: self.rollout }, st, seat, rng)
     }
 }
 
@@ -424,12 +337,7 @@ impl Policy for Mcts {
             return exact_final_choice(rules, st, seat, rng);
         }
         let pol = self.search(rules, st, seat, rng);
-        let mut probs: Vec<f64> = pol.iter().map(|(_, p)| if *p < self.purify { 0.0 } else { *p }).collect();
-        if probs.iter().sum::<f64>() <= 0.0 {
-            probs = pol.iter().map(|(_, p)| *p).collect();
-        }
-        self.last_policy = pol.clone();
-        pol[sample(&probs, rng)].0
+        purified_choice(&pol, self.purify, rng)
     }
     fn name(&self) -> String {
         format!("mcts{}{}", self.iters, if self.exact_last { "x" } else { "" })

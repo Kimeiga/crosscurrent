@@ -1,0 +1,36 @@
+=== rollouts: chance of bidding the card nearest the prize (r), against uniform rollouts
+gops                         mctsx:4000:r0.5 vs mctsx:4000     n=600   A=0.536±0.040  W/D/L 315/13/272  draw=2.2%  seat0=0.502  margin=+0.63  tA=0.09s tB=0.07s
+gops                         mctsx:4000:r0.8 vs mctsx:4000     n=600   A=0.569±0.039  W/D/L 335/13/252  draw=2.2%  seat0=0.509  margin=+1.63  tA=0.09s tB=0.07s
+gops                         mctsx:4000:r0.95 vs mctsx:4000     n=600   A=0.541±0.039  W/D/L 315/19/266  draw=3.2%  seat0=0.491  margin=+0.29  tA=0.09s tB=0.07s
+=== rollouts: head-to-head between biased settings
+gops                         mctsx:4000:r0.8 vs mctsx:4000:r0.5 n=600   A=0.497±0.039  W/D/L 288/21/291  draw=3.5%  seat0=0.477  margin=-0.55  tA=0.09s tB=0.09s
+gops                         mctsx:4000:r0.95 vs mctsx:4000:r0.8 n=600   A=0.529±0.039  W/D/L 310/15/275  draw=2.5%  seat0=0.526  margin=+0.92  tA=0.09s tB=0.09s
+=== r0.8 against baselines
+gops                         mctsx:4000:r0.8 vs prize          n=400   A=0.439±0.048  W/D/L 172/7/221  draw=1.8%  seat0=0.461  margin=-7.36  tA=0.09s tB=0.00s
+gops                         mctsx:4000:r0.8 vs above          n=400   A=0.223±0.040  W/D/L 86/6/308  draw=1.5%  seat0=0.515  margin=-15.96  tA=0.09s tB=0.00s
+gops                         mctsx:4000:r0.8 vs random         n=400   A=0.902±0.029  W/D/L 359/4/37  draw=1.0%  seat0=0.515  margin=+14.98  tA=0.09s tB=0.00s
+gops                         mctsx:1000:r0.8 vs prize          n=400   A=0.258±0.042  W/D/L 99/8/293  draw=2.0%  seat0=0.512  margin=-17.77  tA=0.02s tB=0.00s
+=== exploration (g) with r0.8, against the default 0.2
+gops                         mctsx:4000:r0.8:g0.1 vs mctsx:4000:r0.8 n=600   A=0.481±0.039  W/D/L 278/21/301  draw=3.5%  seat0=0.541  margin=-1.45  tA=0.09s tB=0.09s
+gops                         mctsx:4000:r0.8:g0.3 vs mctsx:4000:r0.8 n=600   A=0.506±0.039  W/D/L 294/19/287  draw=3.2%  seat0=0.487  margin=-0.02  tA=0.09s tB=0.09s
+=== purification (p) with r0.8, against the default 0.1
+gops                         mctsx:4000:r0.8:p0.03 vs mctsx:4000:r0.8 n=600   A=0.452±0.040  W/D/L 266/10/324  draw=1.7%  seat0=0.518  margin=-1.85  tA=0.10s tB=0.10s
+gops                         mctsx:4000:r0.8:p0.2 vs mctsx:4000:r0.8 n=600   A=0.576±0.039  W/D/L 334/23/243  draw=3.8%  seat0=0.519  margin=+3.67  tA=0.10s tB=0.10s
+gops                         mctsx:4000:r0.8:p0 vs mctsx:4000:r0.8 n=600   A=0.401±0.039  W/D/L 231/19/350  draw=3.2%  seat0=0.542  margin=-3.28  tA=0.09s tB=0.09s
+=== purification beyond 0.2 (GOPS, r0.8), against p0.2
+gops                         mctsx:4000:r0.8:p0.3 vs mctsx:4000:r0.8:p0.2 n=600   A=0.527±0.039  W/D/L 306/21/273  draw=3.5%  seat0=0.522  margin=+0.67  tA=0.09s tB=0.09s
+gops                         mctsx:4000:r0.8:p0.5 vs mctsx:4000:r0.8:p0.2 n=600   A=0.444±0.039  W/D/L 258/17/325  draw=2.8%  seat0=0.466  margin=-3.31  tA=0.10s tB=0.10s
+=== p0.2 baseline checks (GOPS)
+gops                         mctsx:4000:r0.8:p0.2 vs prize          n=400   A=0.560±0.048  W/D/L 218/12/170  draw=3.0%  seat0=0.485  margin=-2.21  tA=0.09s tB=0.00s
+gops                         mctsx:4000:r0.8:p0.2 vs above          n=400   A=0.142±0.034  W/D/L 55/4/341  draw=1.0%  seat0=0.472  margin=-20.55  tA=0.10s tB=0.00s
+gops                         mctsx:16000:r0.8:p0.2 vs above          n=200   A=0.275±0.061  W/D/L 52/6/142  draw=3.0%  seat0=0.485  margin=-14.26  tA=0.37s tB=0.00s
+=== Crosscurrent v0.3: is the default purification still best?
+base+s234+tbstr              mctsx:4000:p0.2 vs mctsx:4000     n=600   A=0.330±0.038  W/D/L 198/0/402  draw=0.0%  seat0=0.520  margin=-1.48  tA=0.21s tB=0.21s
+base+s234+tbstr              mctsx:4000:p0.05 vs mctsx:4000     n=600   A=0.421±0.040  W/D/L 252/1/347  draw=0.2%  seat0=0.496  margin=-0.65  tA=0.21s tB=0.21s
+=== diagnostics: fixed prize order (no chance) against the baselines
+gops+asc                     mctsx:4000:r0.8:p0.2 vs prize          n=400   A=0.147±0.034  W/D/L 55/8/337  draw=2.0%  seat0=0.487  margin=-18.80  tA=0.08s tB=0.00s
+gops+asc                     mctsx:4000:r0.8:p0.2 vs above          n=400   A=0.404±0.048  W/D/L 161/1/238  draw=0.2%  seat0=0.506  margin=-7.36  tA=0.07s tB=0.00s
+=== diagnostics: GOPS budget ladder, 400 games each
+gops                         mctsx:4000:r0.8:p0.2 vs mctsx:1000:r0.8:p0.2 n=400   A=0.699±0.045  W/D/L 277/5/118  draw=1.2%  seat0=0.496  margin=+7.16  tA=0.09s tB=0.02s
+gops                         mctsx:16000:r0.8:p0.2 vs mctsx:4000:r0.8:p0.2 n=400   A=0.698±0.044  W/D/L 274/10/116  draw=2.5%  seat0=0.495  margin=+8.27  tA=0.39s tB=0.09s
+gops                         mctsx:64000:r0.8:p0.2 vs above          n=100   A=0.490±0.097  W/D/L 48/2/50  draw=2.0%  seat0=0.500  margin=-5.41  tA=1.68s tB=0.00s

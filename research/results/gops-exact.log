@@ -1,0 +1,10 @@
+gops+n3                                  exact value=0.500000 equilibrium W/D/L=0.0000/1.0000/0.0000 nodes=146 mixed nodes=8.2% time=0.0s
+gops+n4                                  exact value=0.500000 equilibrium W/D/L=0.1173/0.7653/0.1173 nodes=2112 mixed nodes=13.2% time=0.0s
+gops+n5                                  exact value=0.500000 equilibrium W/D/L=0.2434/0.5132/0.2434 nodes=30648 mixed nodes=17.5% time=0.1s
+gops+n6                                  exact value=0.500000 equilibrium W/D/L=0.3571/0.2857/0.3571 nodes=397452 mixed nodes=21.0% time=1.1s
+gops+asc+n3                              exact value=0.500000 equilibrium W/D/L=0.0000/1.0000/0.0000 nodes=37 mixed nodes=10.8% time=0.0s
+gops+asc+n4                              exact value=0.500000 equilibrium W/D/L=0.0000/1.0000/0.0000 nodes=241 mixed nodes=19.1% time=0.0s
+gops+asc+n5                              exact value=0.500000 equilibrium W/D/L=0.2047/0.5906/0.2047 nodes=1413 mixed nodes=28.9% time=0.0s
+gops+asc+n6                              exact value=0.500000 equilibrium W/D/L=0.3960/0.2080/0.3960 nodes=7625 mixed nodes=35.1% time=0.0s
+gops+n7                                  exact value=0.500000 equilibrium W/D/L=0.4117/0.1767/0.4117 nodes=4923380 mixed nodes=27.3% time=45.9s
+gops+asc+n7                              exact value=0.500000 equilibrium W/D/L=0.4456/0.1088/0.4456 nodes=39167 mixed nodes=43.4% time=0.1s

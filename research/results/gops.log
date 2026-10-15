@@ -1,0 +1,4 @@
+=== base+s234+tbstr
+base+s234+tbstr                  mctsx:4000 vs mctsx:1000     n=2400  A=0.740±0.018  W/D/L 1773/5/622  draw=0.2%  seat0=0.502  margin=+2.50  tA=0.23s tB=0.05s
+    decided=2395 winner behind after cp1=29.4% cp2=24.6%  lead changes/game=0.62  final cp could decide=100.0%  A kinds D/S/R=89/10/1%  B kinds=89/10/1%
+    level on points=1.8% (42 games: A won 30, drew 5, lost 7)
